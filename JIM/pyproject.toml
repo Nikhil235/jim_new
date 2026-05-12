@@ -1,0 +1,22 @@
+[project]
+name = "mini-medallion"
+version = "0.1.0"
+description = "GPU-accelerated Gold (XAU) Trading Engine inspired by Jim Simons"
+requires-python = ">=3.11"
+license = {text = "Proprietary"}
+
+[project.optional-dependencies]
+gpu = [
+    "cudf-cu12",
+    "cuml-cu12",
+    "cusignal",
+    "cupy-cuda12x",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

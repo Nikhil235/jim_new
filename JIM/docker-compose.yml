@@ -1,0 +1,87 @@
+# ============================================================
+# Mini-Medallion: Full Infrastructure Stack
+# ============================================================
+# Start:  docker-compose up -d
+# Stop:   docker-compose down
+# Logs:   docker-compose logs -f [service]
+# ============================================================
+
+services:
+
+  # --- Time-Series Database (Tick Data) ---
+  questdb:
+    image: questdb/questdb:7.4.0
+    container_name: medallion-questdb
+    ports:
+      - "9000:9000"   # Web Console & REST API
+      - "9009:9009"   # ILP (Influx Line Protocol) ingestion
+      - "8812:8812"   # PostgreSQL wire protocol
+    volumes:
+      - ./docker/volumes/questdb:/var/lib/questdb
+    environment:
+      - QDB_LOG_W_STDOUT_LEVEL=ERROR
+    restart: unless-stopped
+
+  # --- In-Memory Cache (Feature Store) ---
+  redis:
+    image: redis:7-alpine
+    container_name: medallion-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./docker/volumes/redis:/data
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+
+  # --- Object Storage (Data Lake) ---
+  minio:
+    image: minio/minio:latest
+    container_name: medallion-minio
+    ports:
+      - "9100:9000"   # API
+      - "9101:9001"   # Console
+    volumes:
+      - ./docker/volumes/minio:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+  # --- ML Model Registry ---
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.1
+    container_name: medallion-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./docker/volumes/mlflow:/mlflow
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow/mlflow.db --default-artifact-root /mlflow/artifacts
+    restart: unless-stopped
+
+  # --- Monitoring: Metrics ---
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: medallion-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./docker/volumes/prometheus:/prometheus
+    restart: unless-stopped
+
+  # --- Monitoring: Dashboards ---
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: medallion-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docker/volumes/grafana:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: medallion
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    depends_on:
+      - prometheus
+      - questdb
+    restart: unless-stopped

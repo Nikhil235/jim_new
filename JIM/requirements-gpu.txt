@@ -1,0 +1,34 @@
+# ============================================
+# Mini-Medallion: GPU-Accelerated Dependencies
+# ============================================
+# Install this along with requirements-base.txt for GPU-enabled environments.
+# Requires: NVIDIA CUDA 12.x and cuDNN
+#
+# Usage: 
+#   1. Create conda environment: conda create -n medallion python=3.11
+#   2. Install RAPIDS: conda install -c rapidsai -c conda-forge -c nvidia rapids=24.04 cuda-version=12.2
+#   3. Install PyTorch CUDA: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#   4. Install other dependencies: pip install -r requirements-base.txt -r requirements-gpu.txt
+
+# --- GPU Data Processing ---
+# RAPIDS (cuDF, cuML, cuGraph) — install via conda above
+# This file lists additional GPU-accelerated packages
+
+# --- PyTorch (CUDA 12.1) ---
+torch>=2.2.0 --index-url https://download.pytorch.org/whl/cu121
+torchvision>=0.17.0 --index-url https://download.pytorch.org/whl/cu121
+torchaudio>=2.2.0 --index-url https://download.pytorch.org/whl/cu121
+
+# --- GPU Array Processing ---
+cupy-cuda12x>=13.0.0
+cusignal>=0.20.0
+
+# --- GPU-Accelerated ML (advanced) ---
+# Note: These are optional and already available via RAPIDS
+# cuml-cu12>=24.04  # GPU K-means, PCA, etc.
+# cugraph-cu12>=24.04  # GPU graph algorithms
+
+# --- Optimization ---
+numba>=0.58.0  # JIT compilation for GPU kernels
+jax>=0.4.0 --index-url https://download.pytorch.org/whl/cu121  # Functional automatic differentiation on GPU
+jaxlib>=0.4.0 --index-url https://download.pytorch.org/whl/cu121

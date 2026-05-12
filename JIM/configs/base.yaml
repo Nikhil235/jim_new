@@ -1,0 +1,151 @@
+# ============================================================
+# Mini-Medallion Gold Trading Engine — Master Configuration
+# ============================================================
+# This file is the SINGLE source of truth for all system params.
+# Override per-environment with configs/dev.yaml, configs/prod.yaml
+# ============================================================
+
+project:
+  name: "mini-medallion"
+  version: "0.1.0"
+  asset: "XAU/USD"
+  mode: "paper"  # paper | live
+
+# --- Database Connections ---
+database:
+  questdb:
+    host: "localhost"
+    port: 9009           # ILP ingestion port
+    http_port: 9000      # REST/SQL port
+    database: "medallion"
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 0
+    password: ""
+  minio:
+    host: "localhost"
+    port: 9100
+    access_key: "minioadmin"
+    secret_key: "minioadmin"
+    bucket: "medallion-data"
+
+# --- Data Sources ---
+data:
+  gold:
+    symbol: "GC=F"           # Yahoo Finance gold futures
+    spot_symbol: "XAUUSD=X"  # XAU/USD spot
+    interval: "1m"           # 1-minute bars for dev
+    history_years: 10
+  macro:
+    dxy_symbol: "DX-Y.NYB"
+    vix_symbol: "^VIX"
+    tlt_symbol: "TLT"       # Treasury proxy
+    tips_symbol: "TIP"      # TIPS proxy
+  fred:
+    api_key: "${FRED_API_KEY}"
+    series:
+      - "DFF"               # Fed Funds Rate
+      - "DFII10"            # 10Y Real Yield
+      - "T10Y2Y"            # Yield curve
+      - "DTWEXBGS"          # Trade-weighted USD
+
+# --- Feature Engineering ---
+features:
+  lookback_windows: [5, 10, 20, 50, 100, 200]
+  volatility_windows: [10, 20, 50]
+  correlation_windows: [20, 50, 100]
+  wavelet:
+    family: "db4"
+    levels: 5
+    denoise_remove_levels: [1, 2]
+
+# --- Models ---
+models:
+  hmm:
+    n_regimes: 3
+    covariance_type: "full"
+    n_iter: 1000
+    retrain_frequency: "daily"
+  genetic:
+    population_size: 1000
+    generations: 500
+    crossover_prob: 0.7
+    mutation_prob: 0.1
+    fitness: "sharpe_adjusted"
+    tournament_size: 5
+  lstm:
+    hidden_size: 128
+    num_layers: 3
+    bidirectional: true
+    dropout: 0.2
+    sequence_length: 100
+    batch_size: 256
+    learning_rate: 0.001
+    epochs: 100
+  ensemble:
+    method: "stacking"       # stacking | voting
+    meta_learner: "xgboost"
+
+# --- Risk Management ---
+risk:
+  meta_label:
+    confidence_threshold: 0.65
+    model: "xgboost"
+  kelly:
+    fraction: 0.5            # Half-Kelly
+    max_position_pct: 0.05   # Max 5% of portfolio
+    crisis_fraction: 0.25    # Quarter-Kelly in crisis
+  circuit_breakers:
+    daily_loss_limit: 0.02   # 2% daily loss → halt
+    drawdown_reduce: 0.05    # 5% DD → reduce by 50%
+    drawdown_stop: 0.10      # 10% DD → stop all
+    model_disagreement: 0.70 # 70% disagreement → min position
+    max_latency_ms: 500      # Data feed latency limit
+  monte_carlo:
+    n_simulations: 100000
+    run_frequency: "hourly"
+    var_confidence: 0.95
+    cvar_confidence: 0.99
+
+# --- Backtesting ---
+backtest:
+  initial_capital: 100000
+  commission_per_trade: 2.50     # USD
+  slippage_bps: 1.0              # basis points
+  walk_forward:
+    train_years: 3
+    test_years: 1
+  targets:
+    min_sharpe: 2.0
+    max_drawdown: 0.10
+    min_win_rate: 0.51
+    min_profit_factor: 1.5
+    dsr_pvalue: 0.05
+
+# --- Execution ---
+execution:
+  broker: "ibkr"              # ibkr | cqg
+  ibkr:
+    host: "127.0.0.1"
+    port: 7497                # Paper: 7497, Live: 7496
+    client_id: 1
+  order_type: "limit"         # Never market orders
+  algo: "twap"                # twap | vwap
+  max_slippage_bps: 3.0
+
+# --- Monitoring ---
+monitoring:
+  grafana:
+    port: 3000
+  prometheus:
+    port: 9090
+    scrape_interval: "15s"
+
+# --- Logging ---
+logging:
+  level: "INFO"
+  format: "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {module}:{function}:{line} | {message}"
+  file: "logs/medallion.log"
+  rotation: "100 MB"
+  retention: "30 days"
