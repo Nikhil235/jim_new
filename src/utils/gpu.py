@@ -145,7 +145,7 @@ def print_gpu_summary(gpu_info: Optional[Dict] = None) -> None:
     logger.info("=" * 70)
 
 
-
+def get_dataframe_engine():
     """
     Get the best available DataFrame engine.
 

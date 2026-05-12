@@ -42,6 +42,9 @@ data:
     vix_symbol: "^VIX"
     tlt_symbol: "TLT"       # Treasury proxy
     tips_symbol: "TIP"      # TIPS proxy
+    silver_symbol: "SI=F"   # Silver futures (for Gold/Silver ratio)
+    oil_symbol: "CL=F"      # Crude Oil futures (for Gold/Oil ratio)
+    cny_symbol: "CNY=X"     # CNY/USD
   fred:
     api_key: "${FRED_API_KEY}"
     series:
@@ -49,6 +52,11 @@ data:
       - "DFII10"            # 10Y Real Yield
       - "T10Y2Y"            # Yield curve
       - "DTWEXBGS"          # Trade-weighted USD
+  alternative:
+    newsapi_key: "${NEWSAPI_KEY}"
+    cot_url: "https://www.cftc.gov/dea/newcot/deafut.txt"
+    google_trends_keywords: ["buy gold", "gold price", "safe haven"]
+    etf_symbols: ["GLD", "IAU"]
 
 # --- Feature Engineering ---
 features:
@@ -64,7 +72,7 @@ features:
 models:
   hmm:
     n_regimes: 3
-    covariance_type: "full"
+    covariance_type: "diag"
     n_iter: 1000
     retrain_frequency: "daily"
   genetic:
@@ -149,3 +157,30 @@ logging:
   file: "logs/medallion.log"
   rotation: "100 MB"
   retention: "30 days"
+
+# --- Phase 2: Data Pipeline ---
+pipeline:
+  ingestion:
+    batch_size: 5000             # Rows per QuestDB ILP batch
+    retry_attempts: 3
+    retry_delay_seconds: 5
+    history_years: 10            # Years of historical data to fetch
+  data_quality:
+    max_gap_hours: 1             # Alert if gap > 1 trading hour
+    stale_threshold_minutes: 5   # Alert if data older than 5 min
+    outlier_zscore: 5.0          # Flag returns with |Z| > 5
+    min_bars_per_day: 300        # Expected minimum for 1-min bars
+  feature_store:
+    redis_prefix: "feature"
+    ttl_days: 30                 # Keep features in Redis for 30 days
+    archive_to_parquet: true     # Archive expired features to parquet
+  schedule:
+    daily_update_time: "06:00"   # UTC — before London open
+    macro_update_time: "14:00"   # UTC — after US market open
+  orchestrator:
+    default_mode: "full"
+    max_retries: 3
+    retry_backoff_seconds: [5, 15, 30]
+    parallel_fetches: false
+
+

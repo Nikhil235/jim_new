@@ -3,23 +3,63 @@ Gold Data Fetcher
 =================
 Fetches historical and live gold price data from multiple sources.
 Follows the Simons principle: more data = more signal.
+
+Phase 2 enhancements:
+- Multi-symbol batch fetching (GC=F, XAUUSD=X, GLD, IAU)
+- Incremental ingestion (only new data since last fetch)
+- Gold/Silver & Gold/Oil ratio computation
+- Retry logic for flaky API calls
 """
 
+import time
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Dict
 from loguru import logger
 
 from src.utils.config import get_config, PROJECT_ROOT
 
 
+def _retry(max_attempts=3, backoff=2.0):
+    """Retry decorator with exponential backoff."""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            last_err = None
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_err = e
+                    if attempt < max_attempts:
+                        wait = backoff ** attempt
+                        logger.warning(f"  {func.__name__} attempt {attempt} failed: {e} — retry in {wait:.0f}s")
+                        time.sleep(wait)
+            raise last_err
+        return wrapper
+    return decorator
+
+
 class GoldDataFetcher:
     """
-    Fetches gold price data from Yahoo Finance (dev) and 
+    Fetches gold price data from Yahoo Finance (dev) and
     premium feeds (production).
+
+    Supports multiple gold instruments:
+      - GC=F     → Gold Futures (CME)
+      - XAUUSD=X → XAU/USD Spot
+      - GLD      → SPDR Gold Shares ETF
+      - IAU      → iShares Gold Trust ETF
     """
+
+    # All gold-related symbols we track
+    GOLD_SYMBOLS = {
+        "gold_futures": "GC=F",
+        "gold_spot": "XAUUSD=X",
+        "gld_etf": "GLD",
+        "iau_etf": "IAU",
+    }
 
     def __init__(self, config: Optional[dict] = None):
         self.config = config or get_config()
@@ -27,6 +67,7 @@ class GoldDataFetcher:
         self.raw_dir = PROJECT_ROOT / "data" / "raw"
         self.raw_dir.mkdir(parents=True, exist_ok=True)
 
+    @_retry(max_attempts=3, backoff=2.0)
     def fetch_historical(
         self,
         symbol: Optional[str] = None,
@@ -68,6 +109,11 @@ class GoldDataFetcher:
         df.columns = [c.lower().replace(" ", "_") for c in df.columns]
         df.index.name = "timestamp"
 
+        # Drop non-OHLCV metadata columns
+        for drop_col in ["dividends", "stock_splits", "capital_gains"]:
+            if drop_col in df.columns:
+                df = df.drop(columns=[drop_col])
+
         # Add derived columns
         df["returns"] = df["close"].pct_change()
         df["log_returns"] = np.log(df["close"] / df["close"].shift(1))
@@ -82,9 +128,76 @@ class GoldDataFetcher:
 
         return df
 
+    def fetch_multiple_symbols(
+        self,
+        period: str = "10y",
+        interval: str = "1d",
+    ) -> Dict[str, pd.DataFrame]:
+        """Fetch all gold-related symbols in batch.
+
+        Returns:
+            Dict of name → DataFrame for each gold instrument.
+        """
+        logger.info(f"Batch fetching {len(self.GOLD_SYMBOLS)} gold instruments...")
+        results = {}
+
+        for name, symbol in self.GOLD_SYMBOLS.items():
+            try:
+                df = self.fetch_historical(symbol=symbol, period=period, interval=interval)
+                if not df.empty:
+                    results[name] = df
+                    logger.info(f"  ✅ {name} ({symbol}): {len(df)} bars")
+                else:
+                    logger.warning(f"  ⚠️  {name} ({symbol}): empty")
+            except Exception as e:
+                logger.error(f"  ❌ {name} ({symbol}): {e}")
+
+        logger.info(f"Gold batch: {len(results)}/{len(self.GOLD_SYMBOLS)} instruments fetched")
+        return results
+
+    def fetch_incremental(
+        self,
+        symbol: Optional[str] = None,
+        last_timestamp: Optional[datetime] = None,
+        interval: str = "1d",
+    ) -> pd.DataFrame:
+        """Fetch only new data since last_timestamp.
+
+        Args:
+            symbol: Ticker symbol.
+            last_timestamp: Fetch data after this timestamp.
+            interval: Bar interval.
+
+        Returns:
+            DataFrame with only new bars.
+        """
+        symbol = symbol or self.data_config["symbol"]
+
+        if last_timestamp is None:
+            # Check parquet for last saved timestamp
+            parquet_file = self.raw_dir / f"gold_{symbol.replace('=', '_')}.parquet"
+            if parquet_file.exists():
+                existing = pd.read_parquet(parquet_file)
+                if not existing.empty:
+                    last_timestamp = existing.index[-1]
+                    if hasattr(last_timestamp, 'to_pydatetime'):
+                        last_timestamp = last_timestamp.to_pydatetime()
+
+        if last_timestamp is not None:
+            start = (last_timestamp - timedelta(days=1)).strftime("%Y-%m-%d")
+            end = datetime.now().strftime("%Y-%m-%d")
+            logger.info(f"Incremental fetch for {symbol}: {start} → {end}")
+            df = self.fetch_historical(symbol=symbol, start=start, end=end, interval=interval)
+        else:
+            logger.info(f"No prior data found — doing full fetch for {symbol}")
+            df = self.fetch_historical(symbol=symbol, period="10y", interval=interval)
+
+        return df
+
     def fetch_macro_data(self) -> dict:
         """
         Fetch macro-correlate data (DXY, VIX, TLT, TIP).
+        Delegates to MacroFetcher for enhanced version.
 
         Returns:
             Dict of DataFrames keyed by symbol name.
@@ -119,6 +232,7 @@ class GoldDataFetcher:
     def fetch_fred_data(self) -> dict:
         """
         Fetch Federal Reserve Economic Data (FRED) series.
+        Delegates to MacroFetcher for enhanced version.
 
         Returns:
             Dict of Series keyed by series ID.
@@ -159,3 +273,20 @@ class GoldDataFetcher:
         df = pd.read_parquet(filepath, engine="pyarrow")
         logger.info(f"Loaded {len(df)} rows from {filepath}")
         return df
+
+    def get_data_summary(self) -> Dict[str, dict]:
+        """Get summary of all locally cached gold data."""
+        summary = {}
+        for f in self.raw_dir.glob("gold_*.parquet"):
+            try:
+                df = pd.read_parquet(f)
+                summary[f.stem] = {
+                    "rows": len(df),
+                    "columns": list(df.columns),
+                    "start": str(df.index[0]) if len(df) > 0 else None,
+                    "end": str(df.index[-1]) if len(df) > 0 else None,
+                    "size_mb": round(f.stat().st_size / 1_048_576, 2),
+                }
+            except Exception:
+                summary[f.stem] = {"error": "unreadable"}
+        return summary

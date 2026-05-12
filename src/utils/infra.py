@@ -2,6 +2,11 @@
 ===============================
 
 Provides basic connectivity tests for the Phase 1 infrastructure stack.
+
+Phase 1 enhancements:
+- Fixed MLflow detection (was checking wrong config path)
+- Added overall health summary with pass/fail count
+- Added individual service HTTP health check for services that support it
 """
 
 import socket
@@ -17,6 +22,17 @@ def _check_tcp_port(host: str, port: int, timeout: float = 2.0) -> bool:
         with socket.create_connection((host, port), timeout=timeout):
             return True
     except OSError:
+        return False
+
+
+def _check_http_health(url: str, timeout: float = 3.0) -> bool:
+    """Check if an HTTP endpoint returns a 2xx status."""
+    try:
+        import urllib.request
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return 200 <= resp.status < 300
+    except Exception:
         return False
 
 
@@ -40,10 +56,12 @@ def check_stack(config: Optional[dict] = None) -> Dict[str, Dict[str, Optional[s
     }
 
     questdb = config.get("database", {}).get("questdb", {})
+    questdb_host = questdb.get("host", "localhost")
+    questdb_http = questdb.get("http_port", 9000)
     checks["questdb"] = {
         "required": "yes",
-        "available": "yes" if _check_tcp_port(questdb.get("host", "localhost"), questdb.get("port", 9009)) else "no",
-        "details": f"{questdb.get('host', 'localhost')}:{questdb.get('port', 9009)}",
+        "available": "yes" if _check_tcp_port(questdb_host, questdb.get("port", 9009)) else "no",
+        "details": f"{questdb_host}:{questdb.get('port', 9009)} (ILP) / {questdb_http} (HTTP)",
     }
 
     redis = config.get("database", {}).get("redis", {})
@@ -60,19 +78,15 @@ def check_stack(config: Optional[dict] = None) -> Dict[str, Dict[str, Optional[s
         "details": f"{minio.get('host', 'localhost')}:{minio.get('port', 9100)}",
     }
 
-    mlflow_uri = config.get("mlflow", {}).get("tracking_uri") or config.get("project", {}).get("mlflow_tracking_uri")
-    if mlflow_uri and mlflow_uri.startswith("http"):
-        checks["mlflow"] = {
-            "required": "yes",
-            "available": "yes" if _check_tcp_port("localhost", 5000) else "no",
-            "details": mlflow_uri,
-        }
-    else:
-        checks["mlflow"] = {
-            "required": "optional",
-            "available": "unknown",
-            "details": "No MLflow URI configured",
-        }
+    # MLflow — always check port 5000 (the docker-compose port)
+    # The old code looked for config paths that don't exist in base.yaml
+    mlflow_port = 5000
+    mlflow_available = _check_tcp_port("localhost", mlflow_port)
+    checks["mlflow"] = {
+        "required": "yes",
+        "available": "yes" if mlflow_available else "no",
+        "details": f"localhost:{mlflow_port}",
+    }
 
     monitoring = config.get("monitoring", {})
     prometheus_port = monitoring.get("prometheus", {}).get("port", 9090)
@@ -93,11 +107,45 @@ def check_stack(config: Optional[dict] = None) -> Dict[str, Dict[str, Optional[s
     return checks
 
 
+def get_health_summary(checks: Optional[Dict] = None) -> Dict[str, any]:
+    """Get overall infrastructure health summary.
+
+    Returns:
+        Dict with total, available, unavailable counts and overall status.
+    """
+    if checks is None:
+        checks = check_stack()
+
+    required_checks = {k: v for k, v in checks.items() if v.get("required") == "yes"}
+    available = sum(1 for v in required_checks.values() if v.get("available") == "yes")
+    total = len(required_checks)
+
+    return {
+        "total_services": total,
+        "available": available,
+        "unavailable": total - available,
+        "health_pct": (available / total * 100) if total > 0 else 0,
+        "all_healthy": available == total,
+        "details": checks,
+    }
+
+
 def print_stack_summary(checks: Dict[str, Dict[str, Optional[str]]]) -> None:
     """Print a human-readable summary of infrastructure checks."""
-    logger.info("Infrastructure health summary:")
+    logger.info("=" * 60)
+    logger.info("  INFRASTRUCTURE HEALTH CHECK")
+    logger.info("=" * 60)
+
     for service, result in checks.items():
+        status_icon = "✅" if result.get("available") == "yes" else "❌"
         logger.info(
-            f"  - {service}: required={result.get('required')} "
-            f"available={result.get('available')} details={result.get('details')}"
+            f"  {status_icon} {service:20s} | {result.get('details', 'N/A')}"
         )
+
+    summary = get_health_summary(checks)
+    logger.info("-" * 60)
+    logger.info(
+        f"  Summary: {summary['available']}/{summary['total_services']} services online "
+        f"({summary['health_pct']:.0f}%)"
+    )
+    logger.info("=" * 60)

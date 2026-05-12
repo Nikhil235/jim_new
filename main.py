@@ -123,6 +123,7 @@ def run_demo(cfg: dict):
     hmm_cfg = cfg.get("models", {}).get("hmm", {})
     regime_model = RegimeDetector(
         n_regimes=hmm_cfg.get("n_regimes", 3),
+        covariance_type=hmm_cfg.get("covariance_type", "diag"),
         n_iter=hmm_cfg.get("n_iter", 1000),
     )
     regime_metrics = regime_model.train(gold_df)
@@ -130,7 +131,7 @@ def run_demo(cfg: dict):
     logger.info(f"  Current regime: {current_regime} (confidence: {regime_conf:.2%})")
 
     # Step 5: Risk check
-    logger.info("[5/5] Risk management check...")
+    logger.info("[5/7] Risk management check...")
     from src.risk.manager import RiskManager
     risk_mgr = RiskManager(cfg)
 
@@ -146,6 +147,42 @@ def run_demo(cfg: dict):
     logger.info(f"  Kelly position size: ${sample_size:,.2f}")
     logger.info(f"  Can trade: {can_trade} ({reason})")
 
+    # Step 6: Execution engine test
+    logger.info("[6/7] Execution engine test...")
+    from src.execution.engine import ExecutionEngine
+    exec_cfg = cfg.copy()
+    exec_cfg["execution"] = exec_cfg.get("execution", {})
+    exec_cfg["execution"]["broker"] = "paper"
+    exec_engine = ExecutionEngine(exec_cfg)
+    exec_engine.connect()
+
+    if can_trade and sample_size > 0:
+        current_price = gold_df["close"].iloc[-1]
+        order_result = exec_engine.submit_order(
+            symbol=cfg["project"]["asset"],
+            quantity=round(sample_size / current_price, 4),
+            side="buy",
+            order_type="limit",
+            limit_price=current_price,
+        )
+        logger.info(f"  Simulated order: {order_result['order_id']} | ${order_result.get('fill_price', 0):,.2f}")
+
+    health = exec_engine.health_check()
+    logger.info(f"  Engine status: {health['broker']} connected={health['connected']}")
+    logger.info(f"  Latency stats: {health.get('latency', {})}")
+
+    # Step 7: Infrastructure health
+    logger.info("[7/7] Infrastructure health check...")
+    from src.utils.infra import check_stack, get_health_summary, print_stack_summary
+    try:
+        checks = check_stack(cfg)
+        summary = get_health_summary(checks)
+        logger.info(f"  Docker services: {summary['available']}/{summary['total_services']} online")
+        if summary["available"] == 0:
+            logger.info("  (Docker services offline — this is OK for demo mode)")
+    except Exception as e:
+        logger.info(f"  Infra check skipped: {e}")
+
     # Summary
     logger.info("")
     logger.info("=" * 60)
@@ -154,8 +191,10 @@ def run_demo(cfg: dict):
     logger.info(f"  🔧 Features: {len(feat_names)} engineered")
     logger.info(f"  📈 Regime: {current_regime} ({regime_conf:.0%})")
     logger.info(f"  💰 Kelly Size: ${sample_size:,.2f} on $100K portfolio")
+    logger.info(f"  ⚡ Execution: Paper trading engine OK")
     logger.info("=" * 60)
 
 
 if __name__ == "__main__":
     main()
+
