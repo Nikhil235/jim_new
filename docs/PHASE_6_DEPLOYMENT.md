@@ -3,6 +3,14 @@
 
 **Duration**: Weeks 14–18 | **Status**: 🔴 Not Started
 
+**Framework**: 
+- ✅ Execution engine skeleton (`src/execution/engine.py`)
+- ✅ Paper trading mode in main.py
+- 🔴 Full paper trading simulator not yet implemented
+- 🔴 Broker API integration incomplete
+
+**Awaiting**: Phase 5 backtested models to deploy
+
 ---
 
 ## 6.1 Paper Trading (4 weeks minimum)

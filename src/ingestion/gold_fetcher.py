@@ -21,24 +21,7 @@ from loguru import logger
 
 from src.utils.config import get_config, PROJECT_ROOT
 
-
-def _retry(max_attempts=3, backoff=2.0):
-    """Retry decorator with exponential backoff."""
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            last_err = None
-            for attempt in range(1, max_attempts + 1):
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    last_err = e
-                    if attempt < max_attempts:
-                        wait = backoff ** attempt
-                        logger.warning(f"  {func.__name__} attempt {attempt} failed: {e} — retry in {wait:.0f}s")
-                        time.sleep(wait)
-            raise last_err
-        return wrapper
-    return decorator
+from src.utils.resilience import retry
 
 
 class GoldDataFetcher:
@@ -67,7 +50,7 @@ class GoldDataFetcher:
         self.raw_dir = PROJECT_ROOT / "data" / "raw"
         self.raw_dir.mkdir(parents=True, exist_ok=True)
 
-    @_retry(max_attempts=3, backoff=2.0)
+    @retry(max_attempts=3, backoff_multiplier=2.0)
     def fetch_historical(
         self,
         symbol: Optional[str] = None,
@@ -153,6 +136,46 @@ class GoldDataFetcher:
                 logger.error(f"  ❌ {name} ({symbol}): {e}")
 
         logger.info(f"Gold batch: {len(results)}/{len(self.GOLD_SYMBOLS)} instruments fetched")
+        return results
+
+    @retry(max_attempts=3, backoff_multiplier=2.0)
+    def fetch_historical_bulk(self, symbols: List[str], years: int = 10, interval: str = "1d") -> Dict[str, pd.DataFrame]:
+        """Fetch multi-year data for multiple symbols efficiently in 1-year chunks."""
+        import yfinance as yf
+        results = {}
+        current_year = datetime.now().year
+        
+        for symbol in symbols:
+            logger.info(f"Bulk fetching {symbol} for {years} years...")
+            chunks = []
+            for year in range(current_year - years, current_year + 1):
+                start = f"{year}-01-01"
+                end = f"{year}-12-31"
+                try:
+                    ticker = yf.Ticker(symbol)
+                    df = ticker.history(start=start, end=end, interval=interval)
+                    if not df.empty:
+                        chunks.append(df)
+                        logger.info(f"  {symbol}: Fetched {year} ({len(df)} bars)")
+                except Exception as e:
+                    logger.warning(f"  {symbol}: Failed to fetch {year}: {e}")
+                time.sleep(1) # Rate limiting
+                
+            if chunks:
+                full_df = pd.concat(chunks)
+                # Standardize columns
+                full_df.columns = [c.lower().replace(" ", "_") for c in full_df.columns]
+                full_df.index.name = "timestamp"
+                for drop_col in ["dividends", "stock_splits", "capital_gains"]:
+                    if drop_col in full_df.columns:
+                        full_df = full_df.drop(columns=[drop_col])
+                
+                full_df["returns"] = full_df["close"].pct_change()
+                results[symbol] = full_df
+                logger.info(f"Completed {symbol}: {len(full_df)} total bars")
+            else:
+                logger.error(f"Failed to fetch any data for {symbol}")
+                
         return results
 
     def fetch_incremental(

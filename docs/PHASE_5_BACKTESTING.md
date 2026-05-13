@@ -3,6 +3,9 @@
 
 **Duration**: Weeks 10–14 | **Status**: 🔴 Not Started
 
+**Framework**: API endpoint skeleton in place (`POST /backtest/{strategy}`)  
+**Awaiting**: Phase 3 models to implement
+
 ---
 
 ## 5.1 Anti-Overfitting Protocol

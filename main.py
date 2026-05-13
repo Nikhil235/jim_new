@@ -5,12 +5,21 @@ The command center. Run this to start the engine.
 
 Usage:
     python main.py --mode demo        # Quick demo with sample data
+    python main.py --mode api         # REST API server
     python main.py --mode backtest    # Full backtest
     python main.py --mode paper       # Paper trading
     python main.py --mode live        # Live trading (DANGER)
+
+Examples:
+    # Run API server on port 8000
+    python main.py --mode api --port 8000
+
+    # Run API server on custom host/port
+    python main.py --mode api --host 0.0.0.0 --port 8080
 """
 
 import sys
+import os
 import click
 from loguru import logger
 
@@ -20,10 +29,22 @@ from src.utils.gpu import detect_gpu
 
 
 @click.command()
-@click.option("--mode", default="demo", type=click.Choice(["demo", "backtest", "paper", "live"]))
+@click.option("--mode", default="demo", type=click.Choice(["demo", "api", "pipeline", "backtest", "paper", "live"]))
 @click.option("--config", default=None, help="Path to config YAML")
-def main(mode: str, config: str):
-    """Mini-Medallion Gold Trading Engine."""
+@click.option("--port", default=8000, type=int, help="API server port (for --mode api)")
+@click.option("--host", default="0.0.0.0", help="API server host (for --mode api)")
+@click.option("--pipeline-mode", default="full", type=click.Choice(["full", "gold-only", "macro-only", "features-only", "incremental"]), help="Pipeline execution mode")
+def main(mode: str, config: str, port: int, host: str, pipeline_mode: str):
+    """Mini-Medallion Gold Trading Engine.
+    
+    Modes:
+      - demo       : Quick demo with sample data
+      - api        : REST API server (port 8000)
+      - pipeline   : Run data ingestion pipeline
+      - backtest   : Full backtest (coming Phase 5)
+      - paper      : Paper trading (coming Phase 6)
+      - live       : Live trading (coming Phase 7)
+    """
 
     # Load config
     cfg = load_config(config)
@@ -46,6 +67,10 @@ def main(mode: str, config: str):
 
     if mode == "demo":
         run_demo(cfg)
+    elif mode == "api":
+        run_api(cfg, host=host, port=port)
+    elif mode == "pipeline":
+        run_pipeline(cfg, pipeline_mode=pipeline_mode)
     elif mode == "backtest":
         logger.info("Backtest mode — coming in Phase 5")
     elif mode == "paper":
@@ -53,6 +78,78 @@ def main(mode: str, config: str):
     elif mode == "live":
         logger.warning("🚨 LIVE TRADING — NOT YET IMPLEMENTED")
         sys.exit(1)
+
+
+def run_api(cfg: dict, host: str = "0.0.0.0", port: int = 8000):
+    """
+    Run the REST API server.
+    
+    Endpoints:
+      - GET /health              - Service health
+      - GET /signal              - Current trading signal
+      - GET /regime              - Market regime
+      - GET /features            - Engineered features
+      - GET /models              - Model status
+      - GET /data-quality        - Data quality report
+      - POST /backtest/{strategy} - Backtest a strategy
+      - GET /ensemble            - Ensemble prediction
+      - GET /docs               - Swagger documentation
+    """
+    logger.info("--- API MODE ---")
+    logger.info(f"Starting REST API server: {host}:{port}")
+    logger.info("API Documentation: http://{}:{}/docs".format(host, port))
+    
+    try:
+        import uvicorn
+        from src.api.app import app
+        
+        # Run Uvicorn server
+        uvicorn.run(
+            app,
+            host=host,
+            port=port,
+            log_level="info",
+        )
+    except ImportError:
+        logger.error("FastAPI or Uvicorn not installed")
+        logger.error("Install with: pip install fastapi uvicorn")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"API startup failed: {e}")
+        sys.exit(1)
+
+
+def run_pipeline(cfg: dict, pipeline_mode: str = "full"):
+    """
+    Run the data ingestion pipeline.
+    
+    Modes:
+      - full         : All steps (gold + macro + alt + features)
+      - gold-only    : Only gold price data
+      - macro-only   : Only macro + FRED data
+      - features-only: Only feature generation
+      - incremental  : Only new data since last run
+    """
+    logger.info("--- PIPELINE MODE ---")
+    logger.info(f"Pipeline mode: {pipeline_mode}")
+    
+    try:
+        from src.ingestion.pipeline_orchestrator import PipelineOrchestrator
+        
+        orchestrator = PipelineOrchestrator(cfg)
+        report = orchestrator.run(mode=pipeline_mode)
+        
+        # Exit with appropriate code
+        if report.overall_status == "SUCCESS":
+            sys.exit(0)
+        elif report.overall_status == "PARTIAL":
+            sys.exit(1)
+        else:
+            sys.exit(2)
+            
+    except Exception as e:
+        logger.error(f"Pipeline execution failed: {e}", exc_info=True)
+        sys.exit(2)
 
 
 def run_demo(cfg: dict):

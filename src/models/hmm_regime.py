@@ -6,12 +6,15 @@ The algorithm adapts its strategy based on which regime we're in.
 """
 
 import numpy as np
-import pandas as pd
 from typing import Optional, Tuple, List
 from loguru import logger
 from hmmlearn import hmm
 
 from src.models.base import BaseModel
+from src.utils.gpu import get_dataframe_engine, get_array_engine
+
+pd = get_dataframe_engine()
+cp = get_array_engine()
 
 
 class RegimeDetector(BaseModel):
@@ -101,14 +104,21 @@ class RegimeDetector(BaseModel):
             Training metrics including regime statistics.
         """
         obs, idx = self.prepare_features(X, fit=True)  # fit=True to normalize
-        logger.info(f"Training HMM with {len(obs)} observations, {self.n_regimes} regimes")
+        
+        # hmmlearn requires numpy arrays (CPU)
+        if hasattr(obs, "get"):
+            obs_cpu = obs.get()
+        else:
+            obs_cpu = np.asarray(obs)
+            
+        logger.info(f"Training HMM with {len(obs_cpu)} observations, {self.n_regimes} regimes")
         logger.info(f"  Feature mean: {self._feature_mean}")
         logger.info(f"  Feature std: {self._feature_std}")
 
-        self.model.fit(obs)
+        self.model.fit(obs_cpu)
 
         # Decode states
-        states = self.model.predict(obs)
+        states = self.model.predict(obs_cpu)
 
         # Order regimes by volatility (0=lowest vol, 2=highest vol)
         vol_by_state = {}
@@ -151,8 +161,14 @@ class RegimeDetector(BaseModel):
             raise RuntimeError("Model not trained. Call train() first.")
 
         obs, idx = self.prepare_features(X)
-        raw_states = self.model.predict(obs)
-        probs = self.model.predict_proba(obs)
+        
+        if hasattr(obs, "get"):
+            obs_cpu = obs.get()
+        else:
+            obs_cpu = np.asarray(obs)
+            
+        raw_states = self.model.predict(obs_cpu)
+        probs = self.model.predict_proba(obs_cpu)
 
         # Reorder to volatility-based regime IDs
         ordered_states = np.array([self._regime_order[s] for s in raw_states])

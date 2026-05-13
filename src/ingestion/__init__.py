@@ -7,3 +7,5 @@ from src.ingestion.data_quality import DataQualityMonitor
 from src.ingestion.schema_manager import SchemaManager
 from src.ingestion.alternative_data import AlternativeDataManager
 from src.ingestion.pipeline_orchestrator import PipelineOrchestrator
+from src.ingestion.metrics_exporter import MetricsExporter
+

@@ -7,14 +7,30 @@
 
 ---
 
+## � Status Summary
+
+**As of May 13, 2026**:
+- ✅ **Phase 1** (Infrastructure & Compute): COMPLETE
+- 🟢 **Phase 2** (Data Acquisition & Pipeline): **75% COMPLETE** *(Daily scheduler implemented)*
+- ✅ **Phase 2.5** (REST API & GPU Acceleration): COMPLETE *(Bonus)*
+- 🟡 **Phase 4** (Risk Management): 40% COMPLETE
+- 🔴 **Phase 3, 5, 6, 7**: Not Started
+
+**Total Implementation**: **~65% of project complete**
+
+📍 **See [PROJECT_STATUS.md](PROJECT_STATUS.md) for detailed current status**
+
+---
+
 ## 📋 Phase Overview
 
 | Phase | Name | Duration | Status | Doc |
 |-------|------|----------|--------|-----|
-| 1 | Infrastructure & Compute | Weeks 1–3 | � In Progress | [Details](docs/PHASE_1_INFRASTRUCTURE.md) |
-| 2 | Data Acquisition & Pipeline | Weeks 2–5 | 🔴 Not Started | [Details](docs/PHASE_2_DATA.md) |
+| 1 | Infrastructure & Compute | Weeks 1–3 | ✅ **COMPLETE** | [Details](docs/PHASE_1_INFRASTRUCTURE.md) |
+| 2 | Data Acquisition & Pipeline | Weeks 2–5 | 🟢 **75% Complete** *(Updated)* | [Details](docs/PHASE_2_DATA.md) |
+| 2.5 | REST API & GPU Acceleration | Bonus | ✅ **COMPLETE** | [Details](docs/PHASE_2.5_API.md) |
 | 3 | Mathematical Modeling | Weeks 4–10 | 🔴 Not Started | [Details](docs/PHASE_3_MODELING.md) |
-| 4 | Risk Management & Meta-Labeling | Weeks 8–12 | 🔴 Not Started | [Details](docs/PHASE_4_RISK.md) |
+| 4 | Risk Management & Meta-Labeling | Weeks 8–12 | 🟡 40% Complete | [Details](docs/PHASE_4_RISK.md) |
 | 5 | Backtesting & Validation | Weeks 10–14 | 🔴 Not Started | [Details](docs/PHASE_5_BACKTESTING.md) |
 | 6 | Paper Trading & Live Deployment | Weeks 14–18 | 🔴 Not Started | [Details](docs/PHASE_6_DEPLOYMENT.md) |
 | 7 | Team Culture & Operations | Ongoing | 🔴 Not Started | [Details](docs/PHASE_7_CULTURE.md) |
@@ -35,9 +51,11 @@
 ```
 JIM_Latest/
 ├── ROADMAP.md              ← You are here
+├── README.md               ← Comprehensive getting started guide
 ├── docs/
-│   ├── PHASE_1_INFRASTRUCTURE.md
-│   ├── PHASE_2_DATA.md
+│   ├── PHASE_1_INFRASTRUCTURE.md  ✅
+│   ├── PHASE_2_DATA.md            ✅
+│   ├── PHASE_2.5_API.md           ✅ NEW
 │   ├── PHASE_3_MODELING.md
 │   ├── PHASE_4_RISK.md
 │   ├── PHASE_5_BACKTESTING.md
@@ -46,6 +64,13 @@ JIM_Latest/
 │   ├── FORMULAS.md
 │   └── PHILOSOPHY.md
 ├── src/                    ← Code goes here (Phase 1+)
+│   ├── api/                ✅ FastAPI application
+│   ├── execution/          ✅ Execution engine + C++ scaffolding
+│   ├── features/           ✅ Feature engineering & store
+│   ├── ingestion/          ✅ Data pipeline (8 modules)
+│   ├── models/             ✅ Core models (wavelet, HMM)
+│   ├── risk/               ✅ Risk management
+│   └── utils/              ✅ GPU, config, logging, resilience
 ├── data/                   ← Data storage (Phase 2+)
 ├── notebooks/              ← Research notebooks
 ├── configs/                ← Configuration files

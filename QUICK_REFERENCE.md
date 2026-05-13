@@ -1,4 +1,10 @@
-# QUICK REFERENCE: Phase 1 Infrastructure
+# QUICK REFERENCE: Mini-Medallion Commands
+**Mini-Medallion Gold Trading Engine**  
+**Last Updated**: May 13, 2026
+
+🔗 **For complete status, see [PROJECT_STATUS.md](PROJECT_STATUS.md)**
+
+---
 
 ## 🚀 QUICK START (5 minutes)
 

@@ -329,3 +329,73 @@ class DataQualityMonitor:
             "overall_health": "HEALTHY" if failing == 0 else "DEGRADED" if failing < total_sources else "CRITICAL",
             "per_source": reports,
         }
+
+    def check_all_sources(self, data_dir=None) -> dict:
+        """Validate all locally cached parquet data files.
+
+        Scans the raw data directory for parquet files and runs
+        quality checks on each one. Useful for post-pipeline health checks.
+
+        Args:
+            data_dir: Path to scan for parquet files. Defaults to data/raw.
+
+        Returns:
+            Consolidated quality report across all sources.
+        """
+        import pandas as pd
+        from pathlib import Path
+
+        if data_dir is None:
+            from src.utils.config import PROJECT_ROOT
+            data_dir = PROJECT_ROOT / "data" / "raw"
+        else:
+            data_dir = Path(data_dir)
+
+        if not data_dir.exists():
+            return {"status": "no_data_dir", "path": str(data_dir)}
+
+        reports = {}
+        for f in sorted(data_dir.glob("*.parquet")):
+            try:
+                df = pd.read_parquet(f, engine="pyarrow")
+                source_name = f.stem
+                report = self.validate_ohlcv(df, source_name)
+                reports[source_name] = report
+            except Exception as e:
+                reports[f.stem] = {
+                    "overall_status": "FAIL",
+                    "error": str(e),
+                    "total_rows": 0,
+                }
+
+        consolidated = self.generate_report(reports)
+        logger.info(
+            f"Data quality check: {consolidated['passing']}/{consolidated['total_sources']} PASS, "
+            f"{consolidated['total_alerts']} alerts, health={consolidated['overall_health']}"
+        )
+        return consolidated
+
+    def export_prometheus_metrics(self, exporter=None) -> None:
+        """Push current metrics to a MetricsExporter instance.
+
+        Args:
+            exporter: MetricsExporter instance. If None, logs metrics instead.
+        """
+        if exporter is None:
+            logger.debug(f"Data quality metrics (log-only): {self._metrics}")
+            return
+
+        try:
+            # Push source-level metrics
+            for key, value in self._metrics.items():
+                if key.startswith("dq_") and key.endswith("_rows"):
+                    source = key.replace("dq_", "").replace("_rows", "")
+                    exporter.data_rows.labels(source=source).set(value)
+
+            # Push staleness metrics
+            for source, ts in self._source_timestamps.items():
+                if hasattr(ts, 'timestamp'):
+                    exporter.update_staleness(source, ts.timestamp())
+        except Exception as e:
+            logger.debug(f"Failed to export metrics: {e}")
+

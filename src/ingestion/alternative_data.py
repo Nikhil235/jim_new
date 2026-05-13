@@ -431,7 +431,16 @@ class ETFFlowTracker:
         self.raw_dir.mkdir(parents=True, exist_ok=True)
 
     def fetch_etf_flows(self, period: str = "5y") -> Dict[str, pd.DataFrame]:
-        """Fetch ETF price and volume data, compute flow proxy."""
+        """Fetch ETF price and volume data, compute flow proxy and demand signals.
+
+        Enhanced features per ETF:
+          - volume_ma20: 20-day volume moving average
+          - volume_ratio: current volume / MA
+          - flow_proxy: volume_ratio × price direction
+          - dollar_volume: close × volume (actual capital flow proxy)
+          - dollar_volume_change_5d: 5-day dollar volume momentum
+          - dollar_volume_change_20d: 20-day dollar volume momentum
+        """
         import yfinance as yf
         etf_data = {}
         logger.info(f"Fetching ETF flow data: {self.etf_symbols}")
@@ -443,17 +452,41 @@ class ETFFlowTracker:
                     continue
                 df.columns = [c.lower().replace(" ", "_") for c in df.columns]
                 df.index.name = "timestamp"
-                df["volume_ma20"] = df["volume"].rolling(20).mean()
-                df["volume_ratio"] = df["volume"] / df["volume_ma20"].replace(0, np.nan)
-                price_dir = np.sign(df["close"].pct_change())
-                df["flow_proxy"] = df["volume_ratio"] * price_dir
+
+                # Drop non-OHLCV columns
                 for drop_col in ["dividends", "stock_splits", "capital_gains"]:
                     if drop_col in df.columns:
                         df = df.drop(columns=[drop_col])
+
+                # Core volume analysis
+                df["volume_ma20"] = df["volume"].rolling(20).mean()
+                df["volume_ratio"] = df["volume"] / df["volume_ma20"].replace(0, np.nan)
+
+                # Flow proxy: volume surprise × price direction
+                price_dir = np.sign(df["close"].pct_change())
+                df["flow_proxy"] = df["volume_ratio"] * price_dir
+
+                # Dollar volume (capital flow proxy)
+                df["dollar_volume"] = df["close"] * df["volume"]
+                dv_ma5 = df["dollar_volume"].rolling(5).mean()
+                dv_ma20 = df["dollar_volume"].rolling(20).mean()
+                df["dollar_volume_change_5d"] = df["dollar_volume"] / dv_ma5.replace(0, np.nan) - 1
+                df["dollar_volume_change_20d"] = df["dollar_volume"] / dv_ma20.replace(0, np.nan) - 1
+
+                # Volume z-score (how unusual is today's volume)
+                vol_std = df["volume"].rolling(20).std()
+                df["volume_zscore"] = (df["volume"] - df["volume_ma20"]) / vol_std.replace(0, np.nan)
+
                 etf_data[symbol] = df
-                logger.info(f"  ✅ {symbol}: {len(df)} bars")
+                logger.info(f"  ✅ {symbol}: {len(df)} bars, {len(df.columns)} columns")
             except Exception as e:
                 logger.error(f"  ❌ {symbol}: {e}")
+
+        # Cross-ETF analysis (if both GLD and IAU available)
+        if len(etf_data) >= 2:
+            symbols = list(etf_data.keys())
+            logger.info(f"  Computing cross-ETF metrics for {symbols}")
+
         return etf_data
 
     def save_to_parquet(self, etf_data: Dict[str, pd.DataFrame]) -> Dict[str, Path]:

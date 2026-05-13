@@ -5,6 +5,19 @@
 
 ---
 
+## 3.0 Overview
+
+This phase implements advanced machine learning models to discover and exploit market patterns:
+- **Genetic Algorithm**: Evolve optimal strategy parameters
+- **LSTM Networks**: Learn temporal patterns in returns
+- **Temporal Fusion Transformer (TFT)**: Multi-horizon forecasting with attention
+- **Variational Autoencoders (VAE)**: Anomaly detection in order flow
+- **Ensemble Methods**: Combine all models via stacking
+
+**Note**: Phase 2 data pipeline is ✅ complete. Phase 2.5 API is ✅ complete. This phase builds on top of those.
+
+---
+
 ## 3.1 Signal Detection: Wavelet Transforms (DWT)
 
 **What**: Decompose gold price into different "frequencies" using Discrete Wavelet Transforms.

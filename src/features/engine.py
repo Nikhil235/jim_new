@@ -13,7 +13,8 @@ Phase 2 expansion:
 - Lag features (autocorrelation, lagged returns/vol)
 """
 
-import pandas as pd
+from src.utils.gpu import get_dataframe_engine
+pd = get_dataframe_engine()
 import numpy as np
 from typing import List, Optional
 from loguru import logger
@@ -34,12 +35,19 @@ class FeatureEngine:
             self.vol_windows = [10, 20, 50]
             self.corr_windows = [20, 50, 100]
 
-    def generate_all(self, df: pd.DataFrame, macro: Optional[dict] = None) -> pd.DataFrame:
+    def generate_all(
+        self,
+        df: pd.DataFrame,
+        macro: Optional[dict] = None,
+        alt_data: Optional[dict] = None,
+    ) -> pd.DataFrame:
         """Generate all features from raw data.
 
         Args:
             df: Gold OHLCV DataFrame with 'close', 'high', 'low', 'volume' columns.
             macro: Optional dict of macro DataFrames (dxy, vix, etc.).
+            alt_data: Optional dict of alternative data DataFrames
+                      (cot_gold, sentiment_daily, etf_gld, etf_iau, google_trends, etc.).
 
         Returns:
             DataFrame with all engineered features (NaN rows dropped).
@@ -74,13 +82,31 @@ class FeatureEngine:
             features = self._add_cross_asset_features(features, macro)
             features = self._add_cross_asset_enhanced(features, macro)
 
-        # Drop rows with NaN (from lookback calculations)
+        # Alternative data features
+        if alt_data:
+            features = self._add_etf_flow_features(features, alt_data)
+            features = self._add_cot_features(features, alt_data)
+            features = self._add_google_trends_features(features, alt_data)
+
+        # Smart NaN handling: don't let alt data (shorter history) eliminate all rows
+        # 1. Forward-fill alt data columns (COT, ETF, trends) — they are weekly/sparse
+        alt_prefixes = ("cot_", "etf_", "trends_", "google_")
+        alt_cols = [c for c in features.columns if any(c.startswith(p) for p in alt_prefixes)]
+        core_cols = [c for c in features.columns if c not in alt_cols]
+
+        # 2. Drop rows only where core features have NaN (from lookback windows)
         initial_len = len(features)
-        features = features.dropna()
+        if core_cols:
+            features = features.dropna(subset=core_cols)
+
+        # 3. Forward-fill remaining NaN in alt data columns
+        if alt_cols:
+            features[alt_cols] = features[alt_cols].ffill()
+
         feat_names = self.get_feature_names(features)
         logger.info(
             f"Features generated: {len(feat_names)} features | "
-            f"{initial_len - len(features)} rows dropped (NaN) | "
+            f"{initial_len - len(features)} rows dropped (NaN in core) | "
             f"{len(features)} rows remaining"
         )
         return features
@@ -428,6 +454,195 @@ class FeatureEngine:
                 ma = macro_close.rolling(w).mean()
                 std = macro_close.rolling(w).std()
                 df[f"{name}_zscore_{w}"] = (macro_close - ma) / std.replace(0, np.nan)
+        return df
+
+    # ──────────────────────────────────────────────────────
+    # Phase 2: Alternative Data Features
+    # ──────────────────────────────────────────────────────
+
+    @staticmethod
+    def _tz_naive_series(series: pd.Series, target_index: pd.Index) -> pd.Series:
+        """Reindex a series to target_index, handling timezone mismatches.
+
+        Strips timezone info from the series index before reindexing,
+        since gold data (from yfinance) can be tz-naive while
+        ETF/macro data may be tz-aware (America/New_York).
+        """
+        if series.index.tz is not None:
+            series = series.copy()
+            series.index = series.index.tz_localize(None)
+        # Also strip target if needed
+        if target_index.tz is not None:
+            target_index = target_index.tz_localize(None)
+        return series.reindex(target_index, method="ffill")
+
+    def _add_etf_flow_features(self, df: pd.DataFrame, alt_data: dict) -> pd.DataFrame:
+        """ETF flow features from GLD/IAU volume data.
+
+        Generates:
+          - Dollar volume and rolling changes
+          - Flow proxy (volume_ratio × price_direction)
+          - Cross-ETF divergence (GLD vs IAU)
+          - Volume surprise (current vs 20-day MA)
+        """
+        etf_keys = [k for k in alt_data.keys() if k.startswith("etf_")]
+        if not etf_keys:
+            return df
+
+        for key in etf_keys:
+            etf_df = alt_data[key]
+            etf_name = key.replace("etf_", "").lower()
+
+            if "close" not in etf_df.columns or "volume" not in etf_df.columns:
+                continue
+
+            # Align ETF data to gold index (handle timezone mismatch)
+            etf_close = self._tz_naive_series(etf_df["close"], df.index)
+            etf_volume = self._tz_naive_series(etf_df["volume"], df.index)
+
+            # Dollar volume
+            dollar_vol = etf_close * etf_volume
+            df[f"etf_{etf_name}_dollar_vol"] = dollar_vol
+
+            # Dollar volume rolling change (5-day and 20-day)
+            for w in [5, 20]:
+                dv_ma = dollar_vol.rolling(w).mean()
+                df[f"etf_{etf_name}_dollar_vol_change_{w}"] = dollar_vol / dv_ma.replace(0, np.nan) - 1
+
+            # Volume surprise: how unusual is today's volume
+            vol_ma20 = etf_volume.rolling(20).mean()
+            vol_std20 = etf_volume.rolling(20).std()
+            df[f"etf_{etf_name}_vol_zscore"] = (
+                (etf_volume - vol_ma20) / vol_std20.replace(0, np.nan)
+            )
+
+            # Flow proxy: volume_ratio × price_direction
+            if "flow_proxy" in etf_df.columns:
+                flow = self._tz_naive_series(etf_df["flow_proxy"], df.index)
+                df[f"etf_{etf_name}_flow_proxy"] = flow
+                # Rolling flow momentum
+                for w in [5, 10, 20]:
+                    df[f"etf_{etf_name}_flow_ma_{w}"] = flow.rolling(w).mean()
+
+            # ETF return (for correlation with gold)
+            etf_ret = etf_close.pct_change()
+            df[f"etf_{etf_name}_return"] = etf_ret
+
+        # Cross-ETF divergence: GLD vs IAU volume ratio
+        if "etf_GLD" in alt_data and "etf_IAU" in alt_data:
+            gld_vol = self._tz_naive_series(alt_data["etf_GLD"]["volume"], df.index)
+            iau_vol = self._tz_naive_series(alt_data["etf_IAU"]["volume"], df.index)
+            df["etf_gld_iau_vol_ratio"] = gld_vol / iau_vol.replace(0, np.nan)
+
+            gld_ret = self._tz_naive_series(alt_data["etf_GLD"]["close"], df.index).pct_change()
+            iau_ret = self._tz_naive_series(alt_data["etf_IAU"]["close"], df.index).pct_change()
+            df["etf_gld_iau_return_spread"] = gld_ret - iau_ret
+
+        return df
+
+    def _add_cot_features(self, df: pd.DataFrame, alt_data: dict) -> pd.DataFrame:
+        """COT positioning features from CFTC data.
+
+        Generates:
+          - Net commercial/non-commercial position levels
+          - Week-over-week position changes
+          - Commercial hedger ratio
+          - Speculator crowding indicator
+          - Open interest momentum
+        """
+        cot_key = None
+        for k in alt_data.keys():
+            if "cot" in k.lower():
+                cot_key = k
+                break
+
+        if cot_key is None:
+            return df
+
+        cot_df = alt_data[cot_key]
+
+        # Align weekly COT to daily gold index (forward-fill, handle tz)
+        for col in ["net_commercial", "net_noncommercial", "open_interest",
+                    "commercial_long", "commercial_short",
+                    "noncommercial_long", "noncommercial_short"]:
+            if col in cot_df.columns:
+                aligned = self._tz_naive_series(cot_df[col], df.index)
+                df[f"cot_{col}"] = aligned
+
+        # Net position changes (week-over-week, resampled to daily fill)
+        if "net_noncommercial" in cot_df.columns:
+            nc_net = self._tz_naive_series(cot_df["net_noncommercial"], df.index)
+            df["cot_nc_net_change"] = nc_net.diff()
+            # Speculator sentiment: z-score of net non-commercial
+            for w in [26, 52]:  # 6-month and 1-year windows (in weekly terms)
+                daily_w = w * 5  # Convert to daily
+                ma = nc_net.rolling(daily_w).mean()
+                std = nc_net.rolling(daily_w).std()
+                df[f"cot_nc_zscore_{w}w"] = (nc_net - ma) / std.replace(0, np.nan)
+
+        if "net_commercial" in cot_df.columns:
+            c_net = self._tz_naive_series(cot_df["net_commercial"], df.index)
+            df["cot_c_net_change"] = c_net.diff()
+
+        # Commercial hedger ratio: commercial_long / (commercial_long + commercial_short)
+        if "commercial_long" in cot_df.columns and "commercial_short" in cot_df.columns:
+            c_long = self._tz_naive_series(cot_df["commercial_long"], df.index)
+            c_short = self._tz_naive_series(cot_df["commercial_short"], df.index)
+            total = (c_long + c_short).replace(0, np.nan)
+            df["cot_commercial_ratio"] = c_long / total
+
+        # Open interest momentum
+        if "open_interest" in cot_df.columns:
+            oi = self._tz_naive_series(cot_df["open_interest"], df.index)
+            df["cot_oi_change"] = oi.pct_change(5)  # 1-week change
+            df["cot_oi_change_20"] = oi.pct_change(20)  # ~1-month change
+
+        # Speculator crowding: |net_noncommercial| / open_interest
+        if "net_noncommercial" in cot_df.columns and "open_interest" in cot_df.columns:
+            nc_net = self._tz_naive_series(cot_df["net_noncommercial"], df.index).abs()
+            oi = self._tz_naive_series(cot_df["open_interest"], df.index).replace(0, np.nan)
+            df["cot_crowding"] = nc_net / oi
+
+        return df
+
+    def _add_google_trends_features(self, df: pd.DataFrame, alt_data: dict) -> pd.DataFrame:
+        """Google Trends interest features.
+
+        Generates:
+          - Interest level for each keyword (aligned to daily)
+          - Interest momentum (week-over-week change)
+          - Combined gold interest index
+        """
+        trends_key = None
+        for k in alt_data.keys():
+            if "trends" in k.lower() or "google" in k.lower():
+                trends_key = k
+                break
+
+        if trends_key is None:
+            return df
+
+        trends_df = alt_data[trends_key]
+
+        for col in trends_df.columns:
+            if trends_df[col].dtype in [np.float64, np.float32, np.int64, np.int32]:
+                # Align weekly trends to daily (handle tz)
+                aligned = self._tz_naive_series(trends_df[col], df.index)
+                safe_col = col.replace(" ", "_").replace("/", "_").lower()
+                df[f"trends_{safe_col}"] = aligned
+
+                # Interest momentum
+                df[f"trends_{safe_col}_change"] = aligned.pct_change(7)  # Week-over-week
+
+        # Combined gold interest index (mean of all keyword columns)
+        trends_cols = [c for c in df.columns if c.startswith("trends_") and not c.endswith("_change")]
+        if trends_cols:
+            df["trends_gold_index"] = df[trends_cols].mean(axis=1)
+            df["trends_gold_index_zscore"] = (
+                (df["trends_gold_index"] - df["trends_gold_index"].rolling(52).mean())
+                / df["trends_gold_index"].rolling(52).std().replace(0, np.nan)
+            )
+
         return df
 
     # ──────────────────────────────────────────────────────

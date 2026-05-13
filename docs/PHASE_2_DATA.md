@@ -1,7 +1,9 @@
 # Phase 2: Data Acquisition & Pipeline
 > *Simons searched for "invariants" — patterns that persist regardless of the news.*
 
-**Duration**: Weeks 2–5 | **Status**: 🔴 Not Started
+**Duration**: Weeks 2–5 | **Status**: ✅ **75% Complete** (May 13, 2026 Updated)
+
+**Completed Core Pipeline**: ✅ Gold fetcher, Macro fetcher, QuestDB integration, Feature store, Data quality monitoring, Pipeline orchestration, **Daily Scheduler**
 
 ---
 
@@ -100,14 +102,108 @@
 
 ## 2.6 Deliverables Checklist
 
-- [ ] Historical XAU tick data loaded (minimum 10 years)
-- [ ] Gold Futures L2/L3 data feed operational
-- [ ] All macro-correlate feeds ingesting into QuestDB
-- [ ] News sentiment NLP pipeline running
-- [ ] COT report auto-parser built
-- [ ] Feature engineering pipeline producing 200+ features
-- [ ] Data quality monitoring alerts configured
-- [ ] Kafka/Redis streaming pipeline tested
+### DATA SOURCES (✅ COMPLETE)
+- [x] Gold data fetcher (`src/ingestion/gold_fetcher.py`)
+  - Historical data fetching (10+ years)
+  - Multiple symbol support with parallel fetching
+  - Incremental fetch capability (new data only)
+  - Parquet storage and loading
+  - Data summary reporting
+- [x] Macro-correlate fetcher (`src/ingestion/macro_fetcher.py`)
+  - Yahoo Finance sources (DXY, VIX, TLT, TIP, Silver, Oil, CNY)
+  - FRED API integration (Fed Funds, TIPS, Yield Curve, Trade-Weighted USD)
+  - Google Trends data fetching capability
+  - Automatic timeseries alignment and ratio computation
+  - Parquet persistence with load/save methods
+- [x] Alternative data manager (`src/ingestion/alternative_data.py`)
+  - CFTC COT report parser (historical + current)
+  - News sentiment scoring (NewsAPI integration)
+  - ETF flow tracking (GLD, IAU)
+  - Synthetic data fallback for development
+
+### DATABASE INTEGRATION (✅ COMPLETE)
+- [x] QuestDB schema manager (`src/ingestion/schema_manager.py`)
+  - Multi-resolution gold data (1m, 1h, 1d)
+  - Macro-correlate daily table
+  - FRED economic series table
+  - COT weekly table
+  - Sentiment daily table
+  - Feature tables (daily and hourly)
+  - Gold ticks table for L1/L2 order book
+  - Automatic deduplication via UPSERT keys
+- [x] QuestDB writer (`src/ingestion/questdb_writer.py`)
+  - ILP (Influx Line Protocol) batch writes
+  - REST SQL API queries
+  - Graceful fallback to parquet if QuestDB unavailable
+  - Availability checking and health monitoring
+  - Batch-size optimization
+
+### FEATURE ENGINEERING & STORAGE (✅ COMPLETE)
+- [x] Feature store (`src/features/feature_store.py`)
+  - Redis-backed real-time feature serving
+  - Parquet fallback for development/offline
+  - Batch-optimized storage (chunked writes)
+  - Feature drift detection and reporting
+  - Latest feature retrieval
+  - Historical feature retrieval with lookback
+  - TTL and archival policies
+- [x] Feature engineering (existing from Phase 1, `src/features/engine.py`)
+  - 200+ engineered features
+  - Return features (multi-horizon)
+  - Volatility features (Parkinson, rolling std)
+  - Momentum features (RSI, MACD, SMA/EMA distance)
+  - Price level features (ATR, support/resistance)
+  - Temporal features (cyclical encoding)
+  - Cross-asset correlation features
+
+### DATA QUALITY & MONITORING (✅ COMPLETE)
+- [x] Data quality monitor (`src/ingestion/data_quality.py`)
+  - Completeness checks (row counts, date ranges)
+  - Gap detection (missing bars)
+  - Outlier detection (z-score based)
+  - OHLC sanity checks (open/high/low/close relationships)
+  - Null value checking
+  - Staleness monitoring (last update timestamps)
+  - Cross-source alignment validation
+  - Correlation break detection
+  - Prometheus metrics exposure
+- [x] Metrics exporter (`src/ingestion/metrics_exporter.py`)
+  - Data row count metrics per source
+  - Data staleness metrics
+  - Data quality alert counts
+  - Pipeline duration metrics
+  - Pipeline status metrics
+  - Feature count and drift metrics
+  - Prometheus HTTP server for scraping
+
+### PIPELINE ORCHESTRATION (✅ COMPLETE)
+- [x] Pipeline orchestrator (`src/ingestion/pipeline_orchestrator.py`)
+  - Multiple execution modes:
+    - `full` - All steps (gold + macro + alt + features)
+    - `gold-only` - Only gold price data
+    - `macro-only` - Only macro + FRED data
+    - `features-only` - Regenerate features from existing data
+    - `incremental` - Only new data since last run
+  - Automatic retries with exponential backoff
+  - Step-by-step failure tracking and recovery
+  - Comprehensive reporting with timing and row counts
+  - Data quality validation after ingestion
+  - Feature generation and storage in pipeline
+
+### DEPENDENCIES & UTILITIES (✅ COMPLETE)
+- [x] Resilience utilities (`src/utils/resilience.py`)
+  - `@retry` decorator with configurable backoff
+  - `@timeout` decorator for long operations
+  - `CircuitBreaker` class for fault tolerance
+  - Applied to all data fetchers for robustness
+
+### TODO - NOT YET COMPLETE
+- [ ] Streaming data ingestion (Kafka/Redis Streams) - Current: batch fetching only
+- [ ] Production-scale L2/L3 order book data - Current: OHLCV only
+- [ ] Live tick-by-tick data feeds - Current: Daily/hourly data
+- [ ] Advanced NLP sentiment analysis - Current: Basic keyword scoring
+- [ ] Mining production data integration - Current: Not implemented
+- [ ] Options chain data integration - Current: Not implemented
 
 ---
 

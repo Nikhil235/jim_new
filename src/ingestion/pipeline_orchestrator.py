@@ -31,6 +31,7 @@ from src.ingestion.alternative_data import AlternativeDataManager
 from src.ingestion.questdb_writer import QuestDBWriter
 from src.ingestion.schema_manager import SchemaManager
 from src.ingestion.data_quality import DataQualityMonitor
+from src.ingestion.metrics_exporter import MetricsExporter
 from src.features.engine import FeatureEngine
 from src.features.feature_store import FeatureStore
 
@@ -210,6 +211,16 @@ class PipelineOrchestrator:
     def _step_fetch_macro(self) -> tuple:
         self._macro_data = self.macro_fetcher.fetch_all_yahoo_macro(period="10y")
         self.macro_fetcher.save_macro_to_parquet(self._macro_data)
+
+        # Compute Gold/Silver, Gold/Oil, Gold/DXY ratios
+        if self._gold_df is not None and not self._gold_df.empty and self._macro_data:
+            ratios = self.macro_fetcher.compute_ratios(self._gold_df, self._macro_data)
+            if not ratios.empty:
+                # Merge ratios into gold_df for feature engineering
+                for col in ratios.columns:
+                    self._gold_df[col] = ratios[col]
+                logger.info(f"  Computed {len(ratios.columns)} cross-asset ratios")
+
         total = sum(len(df) for df in self._macro_data.values())
         return total, {"feeds": list(self._macro_data.keys())}
 
@@ -275,7 +286,16 @@ class PipelineOrchestrator:
         if not self._macro_data:
             self._macro_data = self.macro_fetcher.load_macro_from_parquet()
 
-        self._features_df = self.feature_engine.generate_all(self._gold_df, self._macro_data or None)
+        # Build alt_data dict from stored alternative data
+        alt_data_for_features = {}
+        if self._alt_data:
+            alt_data_for_features = self._alt_data
+
+        self._features_df = self.feature_engine.generate_all(
+            self._gold_df,
+            self._macro_data or None,
+            alt_data_for_features or None,
+        )
         feat_count = self.feature_engine.get_feature_count(self._features_df)
         return len(self._features_df), {"feature_count": feat_count}
 

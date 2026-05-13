@@ -1,0 +1,76 @@
+{
+  "full": {
+    "status": "SUCCESS",
+    "start_time": "2026-05-13T05:18:07.792015",
+    "end_time": "2026-05-13T05:20:06.205035",
+    "duration_sec": 118.41,
+    "total_rows": 120164,
+    "feature_count": 285,
+    "steps": [
+      {
+        "name": "ensure_schemas",
+        "status": "success",
+        "rows": 0,
+        "duration": 4.02,
+        "error": null
+      },
+      {
+        "name": "fetch_gold",
+        "status": "success",
+        "rows": 2513,
+        "duration": 1.32,
+        "error": null
+      },
+      {
+        "name": "fetch_macro",
+        "status": "success",
+        "rows": 17681,
+        "duration": 1.98,
+        "error": null
+      },
+      {
+        "name": "fetch_fred",
+        "status": "success",
+        "rows": 26249,
+        "duration": 3.26,
+        "error": null
+      },
+      {
+        "name": "fetch_alt",
+        "status": "success",
+        "rows": 2668,
+        "duration": 3.79,
+        "error": null
+      },
+      {
+        "name": "validate_quality",
+        "status": "success",
+        "rows": 20194,
+        "duration": 0.16,
+        "error": null
+      },
+      {
+        "name": "write_storage",
+        "status": "success",
+        "rows": 49111,
+        "duration": 56.3,
+        "error": null
+      },
+      {
+        "name": "generate_features",
+        "status": "success",
+        "rows": 874,
+        "duration": 1.68,
+        "error": null
+      },
+      {
+        "name": "store_features",
+        "status": "success",
+        "rows": 874,
+        "duration": 45.9,
+        "error": null
+      }
+    ]
+  },
+  "last_updated": "2026-05-13T05:20:06.208415"
+}
