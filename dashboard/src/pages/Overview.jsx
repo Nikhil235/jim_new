@@ -1,6 +1,6 @@
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Target, Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { portfolioKPIs, recentPrices, regimeData, signals, equityCurve, riskMetrics } from '../data/mockData';
+import { portfolioKPIs, recentPrices, regimeData, signals, equityCurve, riskMetrics, phaseProgress } from '../data/mockData';
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -24,7 +24,7 @@ export default function Overview() {
     { label: 'Max Drawdown', value: `${portfolioKPIs.maxDrawdown}%`, change: 'Limit: -10%', positive: false, icon: <TrendingDown size={18} />, bg: 'var(--red-dim)', color: 'var(--red)' },
   ];
 
-  const regimeColors = { bull: 'var(--green)', sideways: 'var(--orange)', bear: 'var(--red)' };
+  const regimeColors = { GROWTH: 'var(--green)', NORMAL: 'var(--orange)', CRISIS: 'var(--red)' };
 
   return (
     <>
@@ -79,16 +79,19 @@ export default function Overview() {
             <div className="card animate-in">
               <div className="card-header">
                 <span className="card-title">Market Regime</span>
-                <span className={`card-badge ${regimeData.current === 'bull' ? 'badge-green' : regimeData.current === 'bear' ? 'badge-red' : 'badge-orange'}`}>
-                  {regimeData.current.toUpperCase()} {(regimeData.confidence * 100).toFixed(0)}%
+                <span className={`card-badge ${regimeData.current === 'GROWTH' ? 'badge-green' : regimeData.current === 'CRISIS' ? 'badge-red' : 'badge-orange'}`}>
+                  {regimeData.current} {(regimeData.confidence * 100).toFixed(0)}%
                 </span>
               </div>
               <div className="regime-bar">
                 {Object.entries(regimeData.probabilities).map(([regime, prob]) => (
-                  <div key={regime} className={`regime-segment regime-${regime} ${regime === regimeData.current ? 'active' : ''}`}>
-                    {regime.charAt(0).toUpperCase() + regime.slice(1)} {(prob * 100).toFixed(0)}%
+                  <div key={regime} className={`regime-segment regime-${regime.toLowerCase()} ${regime === regimeData.current ? 'active' : ''}`}>
+                    {regime} {(prob * 100).toFixed(0)}%
                   </div>
                 ))}
+              </div>
+              <div style={{ marginTop: 10, fontSize: 10, color: 'var(--text-muted)' }}>
+                HMM: {modelMetricsLabel('3 regimes • full covariance • daily retrain')}
               </div>
             </div>
 
@@ -148,10 +151,10 @@ export default function Overview() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 8 }}>
               {[
-                { label: 'Current Drawdown', value: `${riskMetrics.currentDrawdown}%`, limit: `Limit: ${riskMetrics.maxDrawdownLimit}%`, pct: Math.abs(riskMetrics.currentDrawdown) / riskMetrics.maxDrawdownLimit, color: 'var(--orange)' },
-                { label: 'Daily Loss', value: `${riskMetrics.currentDailyLoss}%`, limit: `Limit: ${riskMetrics.dailyLossLimit}%`, pct: Math.abs(riskMetrics.currentDailyLoss) / riskMetrics.dailyLossLimit, color: 'var(--green)' },
-                { label: 'Kelly Size', value: `$${riskMetrics.halfKelly.toLocaleString()}`, limit: 'Half-Kelly', pct: 0.35, color: 'var(--blue)' },
-                { label: 'VaR (95%)', value: `$${riskMetrics.dailyVaR95.toLocaleString()}`, limit: 'Daily', pct: 0.6, color: 'var(--purple)' },
+                { label: 'Current Drawdown', value: `${riskMetrics.currentDrawdown}%`, limit: `Stop: ${riskMetrics.maxDrawdownLimit}%`, pct: Math.abs(riskMetrics.currentDrawdown) / riskMetrics.maxDrawdownLimit, color: 'var(--orange)' },
+                { label: 'Daily Loss', value: `${riskMetrics.currentDailyLoss}%`, limit: `Halt: ${riskMetrics.dailyLossLimit}%`, pct: Math.abs(riskMetrics.currentDailyLoss) / riskMetrics.dailyLossLimit, color: 'var(--green)' },
+                { label: 'Kelly Size', value: `$${riskMetrics.halfKelly.toLocaleString()}`, limit: 'Half-Kelly (f*×0.5)', pct: 0.35, color: 'var(--blue)' },
+                { label: 'VaR (95%)', value: `$${riskMetrics.dailyVaR95.toLocaleString()}`, limit: '100K simulations', pct: 0.6, color: 'var(--purple)' },
               ].map((r, i) => (
                 <div key={i} style={{ padding: '8px 0' }}>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{r.label}</div>
@@ -165,7 +168,38 @@ export default function Overview() {
             </div>
           </div>
         </div>
+
+        {/* Phase Progress */}
+        <div className="card animate-in">
+          <div className="card-header">
+            <span className="card-title">Development Roadmap</span>
+            <span className="card-badge badge-gold">7 Phases</span>
+          </div>
+          <div className="phase-timeline">
+            {phaseProgress.map(p => (
+              <div key={p.phase} className="phase-row">
+                <div className="phase-label">
+                  <span className={`phase-num ${p.status}`}>P{p.phase}</span>
+                  <span className="phase-name">{p.name}</span>
+                </div>
+                <div className="phase-bar-wrap">
+                  <div className="progress-bar" style={{ height: 8, flex: 1 }}>
+                    <div className="progress-fill" style={{
+                      width: `${p.progress}%`,
+                      background: p.status === 'complete' ? 'var(--green)' : p.status === 'in-progress' ? 'var(--gold-primary)' : 'var(--bg-input)'
+                    }} />
+                  </div>
+                  <span className="mono" style={{ fontSize: 11, minWidth: 36, textAlign: 'right' }}>{p.progress}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </>
   );
+}
+
+function modelMetricsLabel(text) {
+  return <span style={{ fontStyle: 'italic' }}>{text}</span>;
 }

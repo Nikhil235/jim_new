@@ -1,11 +1,12 @@
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap } from 'lucide-react';
+import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch } from 'lucide-react';
 import Overview from './pages/Overview';
 import MarketData from './pages/MarketData';
 import Models from './pages/Models';
 import RiskManagement from './pages/RiskManagement';
 import Portfolio from './pages/Portfolio';
 import Infrastructure from './pages/Infrastructure';
+import Execution from './pages/Execution';
 
 const navItems = [
   { section: 'Trading' },
@@ -16,6 +17,7 @@ const navItems = [
   { path: '/risk', icon: ShieldCheck, label: 'Risk Management' },
   { path: '/portfolio', icon: Wallet, label: 'Portfolio' },
   { section: 'System' },
+  { path: '/execution', icon: Zap, label: 'Execution Engine' },
   { path: '/infra', icon: Server, label: 'Infrastructure' },
 ];
 
@@ -61,6 +63,10 @@ export default function App() {
             <Zap size={12} style={{ color: 'var(--gold-primary)' }} />
             <span>RTX 3050 • CUDA 12.1</span>
           </div>
+          <div className="status-badge" style={{ marginTop: 6 }}>
+            <GitBranch size={12} style={{ color: 'var(--green)' }} />
+            <span>Phase 1 • 95% Complete</span>
+          </div>
         </div>
       </aside>
 
@@ -72,6 +78,7 @@ export default function App() {
           <Route path="/models" element={<Models />} />
           <Route path="/risk" element={<RiskManagement />} />
           <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/execution" element={<Execution />} />
           <Route path="/infra" element={<Infrastructure />} />
         </Routes>
       </main>
