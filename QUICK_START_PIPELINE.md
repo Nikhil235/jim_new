@@ -1,6 +1,10 @@
 # QUICK START: RUNNING THE PHASE 2 DATA PIPELINE
-**Date**: May 13, 2026  
+**Date**: May 13, 2026 (Operations Ready)  
 **For**: Developers, DevOps, Operations
+
+🔗 **For detailed operations procedures, see [OPERATIONAL_PROCEDURES.md](OPERATIONAL_PROCEDURES.md)**  
+📊 **For monitoring setup, see [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md)**  
+🔧 **For troubleshooting, see [TROUBLESHOOTING_GUIDE.md](TROUBLESHOOTING_GUIDE.md)**
 
 ---
 
@@ -9,7 +13,7 @@
 ### Step 1: Install Dependencies
 ```bash
 cd /path/to/JIM_Latest
-pip install -r requirements-base.txt
+pip install -r requirements-merged.txt  # Updated: consolidated requirements
 ```
 
 ### Step 2: Verify Docker Stack
@@ -21,7 +25,7 @@ docker-compose ps
 
 ### Step 3: Test Once (Don't Schedule Yet)
 ```bash
-python run_daily_pipeline.py --once
+python scripts/daily_scheduler.py --once --mode full
 ```
 
 **Expected output**: Green checkmarks for each step, final status "SUCCESS"
@@ -38,14 +42,17 @@ curl -X GET http://localhost:9000/exec -d "SELECT COUNT(*) FROM gold_1d"
 
 ### Option A: Command-Line (Development)
 ```bash
-# Run once now
-python run_daily_pipeline.py --once
+# Run once now (test)
+python scripts/daily_scheduler.py --once --mode full
 
 # Run once with specific mode
-python run_daily_pipeline.py --once --mode gold-only
+python scripts/daily_scheduler.py --once --mode gold-only
 
 # Start scheduler in foreground (Ctrl+C to stop)
-python run_daily_pipeline.py --schedule
+python scripts/daily_scheduler.py
+
+# Run in background
+nohup python scripts/daily_scheduler.py > logs/scheduler.log 2>&1 &
 ```
 
 ### Option B: Python Script (Simple)

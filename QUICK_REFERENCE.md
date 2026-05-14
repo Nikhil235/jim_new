@@ -1,8 +1,11 @@
 # QUICK REFERENCE: Mini-Medallion Commands
 **Mini-Medallion Gold Trading Engine**  
-**Last Updated**: May 13, 2026
+**Last Updated**: May 13, 2026 (Operations ready)
 
-🔗 **For complete status, see [PROJECT_STATUS.md](PROJECT_STATUS.md)**
+🔗 **For complete status, see [PROJECT_STATUS.md](PROJECT_STATUS.md)**  
+🔗 **For production operations, see [OPERATIONAL_PROCEDURES.md](OPERATIONAL_PROCEDURES.md)**  
+🔗 **For monitoring setup, see [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md)**  
+🔗 **For troubleshooting, see [TROUBLESHOOTING_GUIDE.md](TROUBLESHOOTING_GUIDE.md)**
 
 ---
 
@@ -34,7 +37,37 @@ python scripts/benchmark_gpu.py --size 100
 
 ---
 
-## 🔗 SERVICE ENDPOINTS
+## � PRODUCTION OPERATIONS
+
+### Run Pipeline in Background
+```bash
+# Start scheduler daemon (will run daily automatically)
+python scripts/daily_scheduler.py
+
+# Or use Task Scheduler/Cron/PM2 (see OPERATIONAL_PROCEDURES.md)
+```
+
+### Monitor Pipeline
+```bash
+# Check latest status
+cat data/pipeline_health.json | jq '.full | {status, duration_sec, total_rows}'
+
+# View real-time logs
+tail -f logs/pipeline.log
+
+# Trigger manual run
+python scripts/daily_scheduler.py --once --mode full
+```
+
+### View Monitoring Dashboard
+```
+Prometheus: http://localhost:9090
+Grafana:    http://localhost:3000 (admin/medallion)
+```
+
+---
+
+## �🔗 SERVICE ENDPOINTS
 
 | Service | URL | Credentials |
 |---------|-----|---|

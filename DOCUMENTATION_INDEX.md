@@ -1,81 +1,150 @@
-# 📑 DOCUMENTATION INDEX - SESSION 2 DELIVERABLES
+# 📑 DOCUMENTATION INDEX
 
-**Created**: May 13, 2026  
-**Purpose**: Guide to all new consolidation documentation
+**Updated**: May 13, 2026  
+**Purpose**: Guide to all project documentation
 
 ---
 
 ## 🎯 WHERE TO START
 
 ### If you have 2 minutes:
-📄 **[FINAL_SUMMARY.md](FINAL_SUMMARY.md)** - Quick overview of consolidation
+📄 **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Current status snapshot
 
 ### If you have 5 minutes:
-📄 **[START_HERE_SESSION2.md](START_HERE_SESSION2.md)** - Visual summary with before/after
+📄 **[README.md](README.md)** - Project overview and quick start
 
 ### If you have 10 minutes:
-📄 **[CLEANUP_RECOMMENDATIONS.md](CLEANUP_RECOMMENDATIONS.md)** - What to delete + ready script
+📄 **[OPERATIONAL_PROCEDURES.md](OPERATIONAL_PROCEDURES.md)** - How to run in production
 
-### If you want complete details:
-📄 **[SESSION_2_COMPLETION.md](SESSION_2_COMPLETION.md)** - Full session summary
-📄 **[DELIVERABLES_SUMMARY.md](DELIVERABLES_SUMMARY.md)** - All deliverables listed
+### For complete details:
+📄 **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Master reference (1,200+ lines)
 
 ---
 
-## 📚 NEW FILES CREATED (6 TOTAL)
+## 📚 DOCUMENTATION BY CATEGORY
 
-### Master Reference
-📍 **[PROJECT_STATUS.md](PROJECT_STATUS.md)** ⭐ NEW MASTER REFERENCE
-- 1,200+ lines of consolidated project status
-- All phases documented
-- Architecture overview
-- Quick start guide
-- Troubleshooting section
-- Metrics and monitoring
-- **USE THIS**: For current project status
+### 🎯 Project Status & Planning
+- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** ⭐ Master reference
+  - Current completion: 70%
+  - All phases documented
+  - Architecture & components
+  
+- **[ROADMAP.md](ROADMAP.md)** 
+  - Project timeline
+  - Phase status
+  - Key milestones
 
-### Organization Guides
-📍 **[FILE_STRUCTURE.md](FILE_STRUCTURE.md)** ⭐ NEW
-- Documentation organization
-- File purposes and hierarchy
-- Usage guidelines by role
-- File mapping (old → new)
-- **USE THIS**: When confused about where to find information
+### 🚀 Running the Pipeline
+- **[QUICK_START_PIPELINE.md](QUICK_START_PIPELINE.md)**
+  - Quick setup in 10 minutes
+  - How to run pipeline modes
+  
+- **[OPERATIONAL_PROCEDURES.md](OPERATIONAL_PROCEDURES.md)** ⭐ NEW
+  - Daily operations guide
+  - Scheduler setup (Windows/Linux/Docker/PM2)
+  - Monitoring commands
+  - Configuration changes
+  - Data freshness verification
 
-📍 **[CLEANUP_RECOMMENDATIONS.md](CLEANUP_RECOMMENDATIONS.md)** ⭐ NEW
-- 10 files to delete (specific list)
-- Ready-to-run cleanup script
-- Before/after comparison
-- Completion checklist
-- **USE THIS**: To execute cleanup safely
+### 📊 Monitoring & Observability
+- **[PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md)** ⭐ NEW
+  - Metrics & KPIs
+  - Health monitoring system
+  - Prometheus integration
+  - Grafana dashboards (3 templates)
+  - Alert rules setup
+  - Monitoring tools
 
-### Session Documentation
-📍 **[SESSION_2_COMPLETION.md](SESSION_2_COMPLETION.md)**
-- Complete session work summary
-- What was done and why
-- Benefits achieved
-- Next steps
-- **USE THIS**: Full record of consolidation work
+### 🔧 Troubleshooting
+- **[TROUBLESHOOTING_GUIDE.md](TROUBLESHOOTING_GUIDE.md)** ⭐ NEW
+  - Critical issues (pipeline, data sources, database)
+  - Performance issues (slow, memory leak)
+  - Data quality issues
+  - Configuration issues
+  - Support escalation
 
-📍 **[START_HERE_SESSION2.md](START_HERE_SESSION2.md)**
-- Quick visual summary
-- 10 files to delete
-- 9 files to keep
-- Before vs after
-- **USE THIS**: Quick reference for the consolidation
+### 📋 Testing & Validation
+- **[SCHEDULER_TEST_REPORT.md](SCHEDULER_TEST_REPORT.md)**
+  - Scheduler testing results
+  - All 5 execution modes tested
+  - Performance metrics
+  - Test statistics
 
-📍 **[DELIVERABLES_SUMMARY.md](DELIVERABLES_SUMMARY.md)**
-- All deliverables listed
-- File count comparisons
-- Implementation timeline
-- Benefits analysis
-- **USE THIS**: Complete deliverables record
+### 📚 Reference
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)**
+  - Command cheat sheet
+  - Service endpoints
+  - Dependency installation
+  - Build commands
 
-📍 **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** (This file)
-- Navigation guide for all new docs
-- Quick reference by purpose
-- File organization map
-- **USE THIS**: Find the right document
+- **[GPU_ACCELERATION_AND_REST_API.md](GPU_ACCELERATION_AND_REST_API.md)**
+  - API endpoints (10+)
+  - GPU acceleration details
+  - REST API documentation
+
+### 📖 Phase Details (in docs/ folder)
+- `docs/PHASE_1_INFRASTRUCTURE.md` ✅ Complete
+- `docs/PHASE_2_DATA.md` ✅ 85% Complete
+- `docs/PHASE_2.5_API.md` ✅ Complete
+- `docs/PHASE_3_MODELING.md` 🔴 Not Started
+- `docs/PHASE_4_RISK.md` 🟡 Partial
+- `docs/PHILOSOPHY.md` - Jim Simons methodology
+- `docs/FORMULAS.md` - Mathematical reference
+
+### 🧹 Consolidation & Organization
+- **[FILE_STRUCTURE.md](FILE_STRUCTURE.md)**
+  - Documentation organization
+  - File purposes by role
+  - Usage guidelines
+
+- **[CLEANUP_RECOMMENDATIONS.md](CLEANUP_RECOMMENDATIONS.md)**
+  - Files to delete (with script)
+  - Files to keep
+  - Before/after comparison
+
+---
+
+## 👥 BY USER ROLE
+
+### 👤 Project Manager / Leader
+**First read:**
+1. [README.md](README.md) - Overview
+2. [PROJECT_STATUS.md](PROJECT_STATUS.md) - Current state
+3. [ROADMAP.md](ROADMAP.md) - Timeline
+
+**Then:**
+- [SCHEDULER_TEST_REPORT.md](SCHEDULER_TEST_REPORT.md) - Testing status
+- [PHASE_2_SCHEDULER_TESTING_COMPLETE.md](PHASE_2_SCHEDULER_TESTING_COMPLETE.md) - Completion summary
+
+### 👨‍💻 Developer / Data Scientist
+**First read:**
+1. [QUICK_START_PIPELINE.md](QUICK_START_PIPELINE.md) - How to run
+2. [docs/PHASE_2_DATA.md](docs/PHASE_2_DATA.md) - Data pipeline details
+3. [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - Commands
+
+**Then:**
+- [OPERATIONAL_PROCEDURES.md](OPERATIONAL_PROCEDURES.md) - Production deployment
+- [GPU_ACCELERATION_AND_REST_API.md](GPU_ACCELERATION_AND_REST_API.md) - API usage
+
+### 🔧 DevOps / Operations
+**First read:**
+1. [OPERATIONAL_PROCEDURES.md](OPERATIONAL_PROCEDURES.md) - Daily operations
+2. [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md) - Monitoring setup
+3. [TROUBLESHOOTING_GUIDE.md](TROUBLESHOOTING_GUIDE.md) - Troubleshooting
+
+**Then:**
+- [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - Command cheat sheet
+- [PROJECT_STATUS.md](PROJECT_STATUS.md) - System architecture
+
+### 👨‍🔬 Researcher / Analyst
+**First read:**
+1. [README.md](README.md) - Overview
+2. [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) - Jim Simons methodology
+3. [docs/FORMULAS.md](docs/FORMULAS.md) - Mathematical reference
+
+**Then:**
+- [docs/PHASE_3_MODELING.md](docs/PHASE_3_MODELING.md) - Advanced models
+- [GPU_ACCELERATION_AND_REST_API.md](GPU_ACCELERATION_AND_REST_API.md) - Model deployment
 
 ---
 
@@ -84,19 +153,88 @@
 ### "What is the current project status?"
 👉 **[PROJECT_STATUS.md](PROJECT_STATUS.md)** ⭐ Master reference
 
+### "How do I run the pipeline in production?"
+👉 **[OPERATIONAL_PROCEDURES.md](OPERATIONAL_PROCEDURES.md)** - Complete guide
+
+### "How do I set up monitoring?"
+👉 **[PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md)** - Monitoring setup guide
+
+### "Something broke, what do I do?"
+👉 **[TROUBLESHOOTING_GUIDE.md](TROUBLESHOOTING_GUIDE.md)** - Diagnostic procedures
+
+### "How do I run it for the first time?"
+👉 **[QUICK_START_PIPELINE.md](QUICK_START_PIPELINE.md)** - 10-minute setup
+
+### "What commands do I need?"
+👉 **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Command cheat sheet
+
 ### "Which files should I read?"
 👉 **[FILE_STRUCTURE.md](FILE_STRUCTURE.md)** - Organization guide
-👉 **[START_HERE_SESSION2.md](START_HERE_SESSION2.md)** - Quick summary
 
-### "How do I clean up redundant files?"
-👉 **[CLEANUP_RECOMMENDATIONS.md](CLEANUP_RECOMMENDATIONS.md)** - Ready-to-run script
+### "What was tested?"
+👉 **[SCHEDULER_TEST_REPORT.md](SCHEDULER_TEST_REPORT.md)** - Test results
 
-### "What exactly was accomplished?"
-👉 **[SESSION_2_COMPLETION.md](SESSION_2_COMPLETION.md)** - Full details
-👉 **[DELIVERABLES_SUMMARY.md](DELIVERABLES_SUMMARY.md)** - Deliverables list
+### "What is the API?"
+👉 **[GPU_ACCELERATION_AND_REST_API.md](GPU_ACCELERATION_AND_REST_API.md)** - API documentation
 
-### "Quick visual summary?"
-👉 **[START_HERE_SESSION2.md](START_HERE_SESSION2.md)** - Best for quick understanding
+---
+
+## 📌 PHASE 2 COMPLETION STATUS
+
+### ✅ Completed Items
+- ✅ Data acquisition pipeline (Phase 2)
+- ✅ REST API with GPU acceleration (Phase 2.5)
+- ✅ Scheduler implementation and testing
+- ✅ Operational procedures documented
+- ✅ Monitoring setup documented
+- ✅ Troubleshooting guide created
+
+### 🔄 In Progress  
+- 🔄 Live daemon monitoring (7 days)
+- 🔄 Production deployment
+
+### 📋 Remaining (5%)
+- ⏳ Performance optimization review
+- ⏳ Capacity planning
+- ⏳ Team training
+
+---
+
+## 🔗 Quick Links
+
+**Status Updates**
+- [README.md](README.md) - Quick status badge
+- [PROJECT_STATUS.md](PROJECT_STATUS.md) - Detailed status
+- [ROADMAP.md](ROADMAP.md) - Timeline
+
+**Operations**
+- [OPERATIONAL_PROCEDURES.md](OPERATIONAL_PROCEDURES.md) - Daily ops
+- [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md) - Monitoring
+- [TROUBLESHOOTING_GUIDE.md](TROUBLESHOOTING_GUIDE.md) - Help
+
+**Development**
+- [QUICK_START_PIPELINE.md](QUICK_START_PIPELINE.md) - Getting started
+- [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - Commands
+- [GPU_ACCELERATION_AND_REST_API.md](GPU_ACCELERATION_AND_REST_API.md) - API
+
+---
+
+## 📊 File Statistics
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Master Status | 1 | ✅ |
+| Operations | 3 | ✅ NEW |
+| Reference | 3 | ✅ |
+| Phase Details | 9 | 🟢 In Progress |
+| Testing | 2 | ✅ |
+| **Total** | **18** | **All Ready** |
+
+---
+
+**Last Updated**: May 13, 2026  
+**Total Documentation**: 18 files  
+**Status**: ✅ Complete and production-ready
 
 ### "Where to start if overwhelmed?"
 👉 **[FINAL_SUMMARY.md](FINAL_SUMMARY.md)** - 2-minute overview
