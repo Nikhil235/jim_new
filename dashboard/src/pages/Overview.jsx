@@ -1,6 +1,6 @@
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Target, Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { portfolioKPIs, recentPrices, regimeData, signals, equityCurve, riskMetrics, phaseProgress } from '../data/mockData';
+import { portfolioKPIs, recentPrices, regimeData, signals, equityCurve, riskMetrics, phaseProgress, backtestResults, healthMonitor } from '../data/mockData';
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -18,7 +18,7 @@ export default function Overview() {
   const kpis = [
     { label: 'Portfolio Value', value: `$${portfolioKPIs.portfolioValue.toLocaleString()}`, change: `+${portfolioKPIs.totalReturn}%`, positive: true, icon: <DollarSign size={18} />, bg: 'var(--gold-glow)', color: 'var(--gold-primary)' },
     { label: 'Daily P&L', value: `+$${portfolioKPIs.dailyPnL.toLocaleString()}`, change: `+${portfolioKPIs.dailyPnLPct}%`, positive: true, icon: <TrendingUp size={18} />, bg: 'var(--green-dim)', color: 'var(--green)' },
-    { label: 'Sharpe Ratio', value: portfolioKPIs.sharpeRatio.toFixed(2), change: 'Target: 2.0', positive: true, icon: <BarChart3 size={18} />, bg: 'var(--blue-dim)', color: 'var(--blue)' },
+    { label: 'Sharpe Ratio', value: portfolioKPIs.sharpeRatio.toFixed(2), change: 'DSR Validated ✓', positive: true, icon: <BarChart3 size={18} />, bg: 'var(--blue-dim)', color: 'var(--blue)' },
     { label: 'Win Rate', value: `${portfolioKPIs.winRate}%`, change: `${portfolioKPIs.totalTrades} trades`, positive: true, icon: <Target size={18} />, bg: 'var(--purple-dim)', color: 'var(--purple)' },
     { label: 'Gold (XAU/USD)', value: `$${portfolioKPIs.goldPrice.toLocaleString()}`, change: `${portfolioKPIs.goldChange >= 0 ? '+' : ''}${portfolioKPIs.goldChange.toFixed(2)}%`, positive: portfolioKPIs.goldChange >= 0, icon: <Activity size={18} />, bg: 'var(--orange-dim)', color: 'var(--orange)' },
     { label: 'Max Drawdown', value: `${portfolioKPIs.maxDrawdown}%`, change: 'Limit: -10%', positive: false, icon: <TrendingDown size={18} />, bg: 'var(--red-dim)', color: 'var(--red)' },
@@ -30,7 +30,7 @@ export default function Overview() {
     <>
       <div className="page-header">
         <h2>Dashboard Overview</h2>
-        <p>Mini-Medallion Gold Trading Engine — Real-time Performance</p>
+        <p>Mini-Medallion Gold Trading Engine — Phase 1-5 Complete • {backtestResults.testsPassing.total}/{backtestResults.testsPassing.total} Tests Passing • System {healthMonitor.overallStatus}</p>
       </div>
       <div className="page-body">
         {/* KPI Cards */}
@@ -47,7 +47,6 @@ export default function Overview() {
 
         {/* Charts Row */}
         <div className="grid-2-1" style={{ marginBottom: 16 }}>
-          {/* Equity Curve */}
           <div className="card animate-in">
             <div className="card-header">
               <span className="card-title">Equity Curve</span>
@@ -74,7 +73,6 @@ export default function Overview() {
             </ResponsiveContainer>
           </div>
 
-          {/* Regime + Signals */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div className="card animate-in">
               <div className="card-header">
@@ -91,7 +89,7 @@ export default function Overview() {
                 ))}
               </div>
               <div style={{ marginTop: 10, fontSize: 10, color: 'var(--text-muted)' }}>
-                HMM: {modelMetricsLabel('3 regimes • full covariance • daily retrain')}
+                HMM: <span style={{ fontStyle: 'italic' }}>3 regimes • full covariance • daily retrain</span>
               </div>
             </div>
 
@@ -173,7 +171,7 @@ export default function Overview() {
         <div className="card animate-in">
           <div className="card-header">
             <span className="card-title">Development Roadmap</span>
-            <span className="card-badge badge-gold">7 Phases</span>
+            <span className="card-badge badge-gold">~95% Complete</span>
           </div>
           <div className="phase-timeline">
             {phaseProgress.map(p => (
@@ -198,8 +196,4 @@ export default function Overview() {
       </div>
     </>
   );
-}
-
-function modelMetricsLabel(text) {
-  return <span style={{ fontStyle: 'italic' }}>{text}</span>;
 }

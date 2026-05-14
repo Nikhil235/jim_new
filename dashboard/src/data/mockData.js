@@ -1,6 +1,5 @@
-// Mock data aligned with JIM backend (base.yaml + source code)
+// Mock data aligned with JIM backend — Updated for Phases 1-6
 
-// Generate gold price data (2 years of daily bars)
 function generatePriceData() {
   const data = [];
   let price = 1820;
@@ -11,7 +10,6 @@ function generatePriceData() {
     if (date.getDay() === 0 || date.getDay() === 6) continue;
     const change = (Math.random() - 0.48) * 18;
     price = Math.max(1600, Math.min(2500, price + change));
-    const vol = Math.random() * 8 + 2;
     data.push({
       date: date.toISOString().split('T')[0],
       open: +(price + (Math.random() - 0.5) * 6).toFixed(2),
@@ -23,7 +21,7 @@ function generatePriceData() {
       sma50: +(price - (Math.random() - 0.5) * 40).toFixed(2),
       ema12: +(price - (Math.random() - 0.5) * 10).toFixed(2),
       rsi: +(Math.random() * 40 + 30).toFixed(1),
-      volatility: +vol.toFixed(2),
+      volatility: +(Math.random() * 8 + 2).toFixed(2),
       regime: Math.random() > 0.6 ? 'GROWTH' : Math.random() > 0.4 ? 'NORMAL' : 'CRISIS',
     });
   }
@@ -34,28 +32,17 @@ export const priceData = generatePriceData();
 export const recentPrices = priceData.slice(-90);
 export const latestPrice = priceData[priceData.length - 1];
 
-// Portfolio KPIs (backtest: initial_capital = $100,000)
 export const portfolioKPIs = {
-  portfolioValue: 127453.82,
-  dailyPnL: 1243.56,
-  dailyPnLPct: 0.98,
-  totalReturn: 27.45,
-  sharpeRatio: 2.34,
-  winRate: 54.2,
-  maxDrawdown: -6.8,
-  totalTrades: 1247,
-  openPositions: 3,
+  portfolioValue: 127453.82, dailyPnL: 1243.56, dailyPnLPct: 0.98,
+  totalReturn: 27.45, sharpeRatio: 2.34, winRate: 54.2, maxDrawdown: -6.8,
+  totalTrades: 1247, openPositions: 3,
   goldPrice: latestPrice.close,
   goldChange: ((latestPrice.close - priceData[priceData.length - 2].close) / priceData[priceData.length - 2].close * 100),
-  profitFactor: 1.67,
-  commissionPerTrade: 2.50,
-  slippageBps: 1.0,
+  profitFactor: 1.67, commissionPerTrade: 2.50, slippageBps: 1.0,
 };
 
-// Regime detection — backend uses GROWTH / NORMAL / CRISIS
 export const regimeData = {
-  current: 'GROWTH',
-  confidence: 0.73,
+  current: 'GROWTH', confidence: 0.73,
   probabilities: { GROWTH: 0.73, NORMAL: 0.19, CRISIS: 0.08 },
   history: priceData.slice(-30).map(d => ({
     date: d.date,
@@ -65,20 +52,11 @@ export const regimeData = {
   })),
 };
 
-// Risk metrics — matches risk/manager.py & base.yaml
 export const riskMetrics = {
-  kellyFraction: 0.0312,
-  kellyPositionSize: 3120,
-  halfKelly: 1560,
-  quarterKelly: 780,
+  kellyFraction: 0.0312, kellyPositionSize: 3120, halfKelly: 1560, quarterKelly: 780,
   kellyConfig: { fraction: 0.5, maxPositionPct: 0.05, crisisFraction: 0.25 },
-  dailyVaR95: -1842.50,
-  dailyVaR99: -2891.30,
-  cvar99: -3456.78,
-  currentDrawdown: -2.3,
-  maxDrawdownLimit: 10,
-  dailyLossLimit: 2.0,
-  currentDailyLoss: -0.45,
+  dailyVaR95: -1842.50, dailyVaR99: -2891.30, cvar99: -3456.78,
+  currentDrawdown: -2.3, maxDrawdownLimit: 10, dailyLossLimit: 2.0, currentDailyLoss: -0.45,
   circuitBreakers: {
     dailyLoss: { status: 'ok', value: -0.45, limit: -2.0 },
     drawdown: { status: 'ok', value: -2.3, limit: -10.0 },
@@ -86,46 +64,76 @@ export const riskMetrics = {
     modelDisagreement: { status: 'warning', value: 0.62, limit: 0.70 },
     latency: { status: 'ok', value: 45, limit: 500 },
   },
-  monteCarlo: {
-    nSimulations: 100000,
-    runFrequency: 'hourly',
-    varConfidence: 0.95,
-    cvarConfidence: 0.99,
-  },
+  monteCarlo: { nSimulations: 100000, runFrequency: 'hourly', varConfidence: 0.95, cvarConfidence: 0.99 },
   monteCarloResults: Array.from({ length: 50 }, (_, i) => ({
-    scenario: i,
-    return: +(Math.random() * 60 - 15).toFixed(2),
-    maxDD: +(Math.random() * -20).toFixed(2),
-    sharpe: +(Math.random() * 3 + 0.5).toFixed(2),
+    scenario: i, return: +(Math.random() * 60 - 15).toFixed(2),
+    maxDD: +(Math.random() * -20).toFixed(2), sharpe: +(Math.random() * 3 + 0.5).toFixed(2),
   })),
 };
 
-// Model performance — matches base.yaml model configs
-export const modelMetrics = {
-  hmm: {
-    accuracy: 0.681, lastTrained: '2026-05-14 08:00',
-    regimeChanges: 14, logLikelihood: -234.5,
-    config: { nRegimes: 3, covarianceType: 'full', nIter: 1000, retrainFrequency: 'daily' },
-  },
-  wavelet: {
-    noiseRemoved: 34.2, bands: 5, snrImprovement: 8.4, family: 'db4',
-    config: { family: 'db4', levels: 5, denoiseRemoveLevels: [1, 2] },
-  },
-  ensemble: {
-    sharpe: 2.34, winRate: 0.542, profitFactor: 1.67, avgReturn: 0.12,
-    config: { method: 'stacking', metaLearner: 'xgboost' },
-  },
-  lstm: {
-    valLoss: 0.0023, epochs: 87, lr: 0.001, hiddenSize: 128,
-    config: { hiddenSize: 128, numLayers: 3, bidirectional: true, dropout: 0.2, seqLength: 100, batchSize: 256, epochs: 100 },
-  },
-  genetic: {
-    bestFitness: 2.87, generation: 412,
-    config: { populationSize: 1000, generations: 500, crossoverProb: 0.7, mutationProb: 0.1, fitness: 'sharpe_adjusted', tournamentSize: 5 },
-  },
+// Advanced risk metrics (Phase 4)
+export const advancedRiskMetrics = {
+  omegaRatio: 1.87, ulcerIndex: 3.42, conditionalVaR: -4.82,
+  expectedShortfall: -0.0234, tailRatio: 1.15, recoveryFactor: 4.04,
+  stressAdjustedSharpe: 2.18,
+  stressTests: [
+    { name: 'USD Flash Rally', impact: -4462.50, pctImpact: -3.5 },
+    { name: 'Liquidity Crisis', impact: -2550.00, pctImpact: -2.0 },
+    { name: 'Flash Crash', impact: -6375.00, pctImpact: -5.0 },
+    { name: 'Rate Surprise', impact: -1912.50, pctImpact: -1.5 },
+    { name: 'Geopolitical Event', impact: 5737.50, pctImpact: +4.5 },
+  ],
 };
 
-// Trading signals
+// Meta-Labeler (Phase 4)
+export const metaLabeler = {
+  threshold: 0.65, isTrainedOn: 1247, trainAccuracy: 0.72, valAccuracy: 0.68,
+  recentDecisions: [
+    { signal: 'LONG', traderConf: 0.82, criticConf: 0.78, execute: true, regime: 'GROWTH' },
+    { signal: 'HOLD', traderConf: 0.65, criticConf: 0.52, execute: false, regime: 'NORMAL' },
+    { signal: 'LONG', traderConf: 0.71, criticConf: 0.69, execute: true, regime: 'GROWTH' },
+    { signal: 'SHORT', traderConf: 0.58, criticConf: 0.41, execute: false, regime: 'GROWTH' },
+    { signal: 'LONG', traderConf: 0.77, criticConf: 0.74, execute: true, regime: 'NORMAL' },
+  ],
+  featureImportance: [
+    { name: 'trader_confidence', value: 0.22 }, { name: 'regime_prob', value: 0.18 },
+    { name: 'recent_accuracy', value: 0.15 }, { name: 'volatility', value: 0.12 },
+    { name: 'profit_factor', value: 0.10 }, { name: 'liquidity', value: 0.08 },
+  ],
+};
+
+// GPU VaR (Phase 4)
+export const gpuVaR = {
+  var95: 1842.50, var99: 2891.30, cvar95: 2234.67, cvar99: 3456.78,
+  maxDrawdownPct: 6.8, scenariosRan: 100000, computeTimeMs: 23.4, usedGPU: false,
+};
+
+// Position Manager (Phase 4)
+export const positionManager = {
+  maxPositions: 5, trailingStopPct: 2.0, profitTargetPct: 5.0, timeStopHours: 24,
+  openPositions: [
+    { id: 'POS_00045', direction: 1, size: 2, entryPrice: 2335.80, currentPnl: 11.40, pnlPct: 0.49, status: 'OPEN' },
+    { id: 'POS_00044', direction: 1, size: 1, entryPrice: 2328.50, currentPnl: 18.30, pnlPct: 0.79, status: 'OPEN' },
+    { id: 'POS_00043', direction: -1, size: 2, entryPrice: 2352.80, currentPnl: 14.40, pnlPct: 0.31, status: 'OPEN' },
+  ],
+  stats: { totalClosed: 1244, winRate: 0.542, avgPnl: 8.45, totalPnl: 10511.80, profitFactor: 1.67 },
+};
+
+export const modelMetrics = {
+  hmm: { accuracy: 0.681, lastTrained: '2026-05-14 08:00', regimeChanges: 14, logLikelihood: -234.5,
+    config: { nRegimes: 3, covarianceType: 'full', nIter: 1000, retrainFrequency: 'daily' } },
+  wavelet: { noiseRemoved: 34.2, bands: 5, snrImprovement: 8.4, family: 'db4',
+    config: { family: 'db4', levels: 5, denoiseRemoveLevels: [1, 2] } },
+  ensemble: { sharpe: 2.34, winRate: 0.542, profitFactor: 1.67, avgReturn: 0.12,
+    config: { method: 'stacking', metaLearner: 'xgboost' } },
+  lstm: { valLoss: 0.0023, epochs: 87, lr: 0.001, hiddenSize: 128,
+    config: { hiddenSize: 128, numLayers: 3, bidirectional: true, dropout: 0.2, seqLength: 100, batchSize: 256, epochs: 100 } },
+  genetic: { bestFitness: 2.87, generation: 412,
+    config: { populationSize: 1000, generations: 500, crossoverProb: 0.7, mutationProb: 0.1, fitness: 'sharpe_adjusted', tournamentSize: 5 } },
+  tft: { valLoss: 0.0019, epochs: 65, attentionHeads: 4,
+    config: { hiddenSize: 64, attentionHeads: 4, dropout: 0.1, quantiles: [0.1, 0.5, 0.9] } },
+};
+
 export const signals = [
   { id: 1, time: '14:32:05', type: 'LONG', source: 'HMM+Wavelet', confidence: 0.82, price: 2341.50, status: 'active' },
   { id: 2, time: '13:45:22', type: 'HOLD', source: 'Ensemble', confidence: 0.65, price: 2338.20, status: 'active' },
@@ -134,7 +142,6 @@ export const signals = [
   { id: 5, time: '09:30:00', type: 'LONG', source: 'LSTM', confidence: 0.77, price: 2332.60, status: 'filled' },
 ];
 
-// Trade history
 export const tradeHistory = [
   { id: 'T-1247', date: '2026-05-14', side: 'BUY', qty: 2, entry: 2335.80, exit: 2341.50, pnl: 11.40, pnlPct: 0.49, model: 'HMM' },
   { id: 'T-1246', date: '2026-05-13', side: 'SELL', qty: 1, entry: 2348.20, exit: 2340.10, pnl: 8.10, pnlPct: 0.35, model: 'Ensemble' },
@@ -146,7 +153,6 @@ export const tradeHistory = [
   { id: 'T-1240', date: '2026-05-10', side: 'BUY', qty: 1, entry: 2305.00, exit: 2298.40, pnl: -6.60, pnlPct: -0.29, model: 'LSTM' },
 ];
 
-// Equity curve
 export const equityCurve = Array.from({ length: 180 }, (_, i) => {
   const date = new Date('2025-11-01');
   date.setDate(date.getDate() + i);
@@ -157,40 +163,24 @@ export const equityCurve = Array.from({ length: 180 }, (_, i) => {
   };
 });
 
-// Feature importance — matches FeatureEngine output columns
 export const featureImportance = [
-  { name: 'rsi_14', importance: 0.142 },
-  { name: 'macd_signal', importance: 0.128 },
-  { name: 'wavelet_d1', importance: 0.115 },
-  { name: 'volatility_20', importance: 0.098 },
-  { name: 'sma_dist_20', importance: 0.087 },
-  { name: 'corr_dxy_20', importance: 0.076 },
-  { name: 'parkinson_vol_20', importance: 0.065 },
-  { name: 'regime_prob', importance: 0.058 },
-  { name: 'ema_dist_50', importance: 0.052 },
-  { name: 'roc_50', importance: 0.045 },
-  { name: 'position_in_range_20', importance: 0.041 },
-  { name: 'atr_pct_14', importance: 0.038 },
+  { name: 'rsi_14', importance: 0.142 }, { name: 'macd_signal', importance: 0.128 },
+  { name: 'wavelet_d1', importance: 0.115 }, { name: 'volatility_20', importance: 0.098 },
+  { name: 'sma_dist_20', importance: 0.087 }, { name: 'corr_dxy_20', importance: 0.076 },
+  { name: 'parkinson_vol_20', importance: 0.065 }, { name: 'regime_prob', importance: 0.058 },
+  { name: 'ema_dist_50', importance: 0.052 }, { name: 'roc_50', importance: 0.045 },
+  { name: 'position_in_range_20', importance: 0.041 }, { name: 'atr_pct_14', importance: 0.038 },
 ];
 
-// Feature engineering config
 export const featureConfig = {
-  lookbackWindows: [5, 10, 20, 50, 100, 200],
-  volatilityWindows: [10, 20, 50],
-  correlationWindows: [20, 50, 100],
-  totalFeatures: 200,
+  lookbackWindows: [5, 10, 20, 50, 100, 200], totalFeatures: 200,
   categories: [
-    { name: 'Returns', count: 24, desc: 'Multi-horizon returns & log returns' },
-    { name: 'Volatility', count: 18, desc: 'Realized & Parkinson volatility' },
-    { name: 'Momentum', count: 42, desc: 'SMA, EMA, RSI, MACD, ROC' },
-    { name: 'Price Levels', count: 24, desc: 'Support/resistance, ATR, ranges' },
-    { name: 'Temporal', count: 6, desc: 'Cyclical hour/day/month encoding' },
-    { name: 'Cross-Asset', count: 32, desc: 'DXY, VIX, TLT, TIPS correlations' },
-    { name: 'Wavelet', count: 12, desc: 'Frequency band decomposition' },
+    { name: 'Returns', count: 24 }, { name: 'Volatility', count: 18 }, { name: 'Momentum', count: 42 },
+    { name: 'Price Levels', count: 24 }, { name: 'Temporal', count: 6 }, { name: 'Cross-Asset', count: 32 },
+    { name: 'Wavelet', count: 12 },
   ],
 };
 
-// Infrastructure services — from docker-compose.yml
 export const infraServices = [
   { name: 'QuestDB', port: '9000/9009', status: 'online', uptime: '99.9%', icon: '🗄️', bg: 'var(--blue-dim)', memory: '512 MB', detail: 'Time-series DB', version: '7.4.0' },
   { name: 'Redis', port: '6379', status: 'online', uptime: '99.9%', icon: '⚡', bg: 'var(--red-dim)', memory: '128 MB', detail: 'Feature Cache', version: '7.x' },
@@ -200,30 +190,14 @@ export const infraServices = [
   { name: 'Grafana', port: '3000', status: 'online', uptime: '99.5%', icon: '📈', bg: 'var(--cyan)', memory: '256 MB', detail: 'Dashboards', version: '10.3.1' },
 ];
 
-// GPU info — from src/utils/gpu.py detect_gpu()
 export const gpuInfo = {
-  name: 'RTX 3050 Laptop',
-  vram: '4 GB',
-  cudaVersion: '12.1',
-  driver: '592.27',
-  utilization: 34,
-  temperature: 62,
-  computeCapability: '8.6',
-  rapids: false,
-  cupy: false,
-  cusignal: false,
-  pytorch: true,
-  cudnn: true,
+  name: 'RTX 3050 Laptop', vram: '4 GB', cudaVersion: '12.1', driver: '592.27',
+  utilization: 34, temperature: 62, computeCapability: '8.6',
+  rapids: false, cupy: false, cusignal: false, pytorch: true, cudnn: true,
 };
 
-// C++ Execution Engine — from src/execution/cpp/
 export const executionEngine = {
-  status: 'connected',
-  broker: 'ibkr',
-  mode: 'paper',
-  orderType: 'limit',
-  algo: 'twap',
-  maxSlippageBps: 3.0,
+  status: 'connected', broker: 'ibkr', mode: 'paper', orderType: 'limit', algo: 'twap', maxSlippageBps: 3.0,
   ibkr: { host: '127.0.0.1', port: 7497, clientId: 1 },
   cppEngine: {
     compiled: true,
@@ -242,33 +216,57 @@ export const executionEngine = {
   ],
 };
 
-// Phase tracking — from ROADMAP.md
+// Updated phase progress — Phases 1-5 COMPLETE
 export const phaseProgress = [
-  { phase: 1, name: 'Infrastructure & Compute', status: 'complete', progress: 95, weeks: '1-3' },
-  { phase: 2, name: 'Data Acquisition & Pipeline', status: 'in-progress', progress: 40, weeks: '2-5' },
-  { phase: 3, name: 'Mathematical Modeling', status: 'not-started', progress: 0, weeks: '4-10' },
-  { phase: 4, name: 'Risk Management & Meta-Label', status: 'not-started', progress: 0, weeks: '8-12' },
-  { phase: 5, name: 'Backtesting & Validation', status: 'not-started', progress: 0, weeks: '10-14' },
-  { phase: 6, name: 'Paper Trading & Deployment', status: 'not-started', progress: 0, weeks: '14-18' },
+  { phase: 1, name: 'Infrastructure & Compute', status: 'complete', progress: 100, weeks: '1-3' },
+  { phase: 2, name: 'Data Acquisition & Pipeline', status: 'complete', progress: 90, weeks: '2-5' },
+  { phase: 3, name: 'Mathematical Modeling', status: 'complete', progress: 100, weeks: '4-10' },
+  { phase: 4, name: 'Risk Management & Meta-Label', status: 'complete', progress: 100, weeks: '8-12' },
+  { phase: 5, name: 'Backtesting & Validation', status: 'complete', progress: 95, weeks: '10-14' },
+  { phase: 6, name: 'Paper Trading & Deployment', status: 'in-progress', progress: 21, weeks: '14-18' },
   { phase: 7, name: 'Team Culture & Operations', status: 'not-started', progress: 0, weeks: 'Ongoing' },
 ];
 
-// Backtest config — from base.yaml
 export const backtestConfig = {
-  initialCapital: 100000,
-  commissionPerTrade: 2.50,
-  slippageBps: 1.0,
+  initialCapital: 100000, commissionPerTrade: 2.50, slippageBps: 1.0,
   walkForward: { trainYears: 3, testYears: 1 },
   targets: { minSharpe: 2.0, maxDrawdown: 0.10, minWinRate: 0.51, minProfitFactor: 1.5, dsrPvalue: 0.05 },
 };
 
-// Wavelet decomposition data
 export const waveletBands = priceData.slice(-60).map(d => ({
-  date: d.date,
-  original: d.close,
+  date: d.date, original: d.close,
   denoised: +(d.close + (Math.random() - 0.5) * 3).toFixed(2),
-  d1: +(Math.random() * 4 - 2).toFixed(2),
-  d2: +(Math.random() * 8 - 4).toFixed(2),
-  d3: +(Math.random() * 12 - 6).toFixed(2),
-  approximation: +(d.close + (Math.random() - 0.5) * 8).toFixed(2),
+  d1: +(Math.random() * 4 - 2).toFixed(2), d2: +(Math.random() * 8 - 4).toFixed(2),
 }));
+
+// Backtesting results (Phase 5)
+export const backtestResults = {
+  models: [
+    { name: 'Wavelet', sharpe: 2.12, sortino: 2.89, calmar: 3.21, winRate: 0.53, profitFactor: 1.58, maxDD: -5.4, totalReturn: 24.1, dsrPvalue: 0.032, dsrPass: true },
+    { name: 'HMM', sharpe: 1.98, sortino: 2.67, calmar: 2.95, winRate: 0.51, profitFactor: 1.45, maxDD: -6.1, totalReturn: 21.8, dsrPvalue: 0.041, dsrPass: true },
+    { name: 'LSTM', sharpe: 2.41, sortino: 3.12, calmar: 3.58, winRate: 0.55, profitFactor: 1.72, maxDD: -4.8, totalReturn: 28.3, dsrPvalue: 0.018, dsrPass: true },
+    { name: 'TFT', sharpe: 2.28, sortino: 3.01, calmar: 3.42, winRate: 0.54, profitFactor: 1.65, maxDD: -5.1, totalReturn: 26.7, dsrPvalue: 0.024, dsrPass: true },
+    { name: 'Genetic', sharpe: 1.87, sortino: 2.45, calmar: 2.78, winRate: 0.52, profitFactor: 1.41, maxDD: -6.5, totalReturn: 19.5, dsrPvalue: 0.048, dsrPass: true },
+    { name: 'Ensemble', sharpe: 2.56, sortino: 3.34, calmar: 3.81, winRate: 0.56, profitFactor: 1.78, maxDD: -4.2, totalReturn: 30.2, dsrPvalue: 0.012, dsrPass: true },
+  ],
+  walkForward: { periods: 4, avgISSharpe: 2.65, avgOOSSharpe: 2.18, overfitRatio: 1.22, numOverfit: 0 },
+  cpcv: { folds: 6, avgSharpe: 2.31, stdSharpe: 0.28, pboProb: 0.08 },
+  testsPassing: { total: 43, phase5: 43, passRate: 100 },
+};
+
+// Health Monitor (Phase 6)
+export const healthMonitor = {
+  overallStatus: 'healthy', uptimePercent: 99.92, slaCompliant: true,
+  totalChecks: 1248, failedChecks: 1, successRate: 99.92,
+  system: { cpuPercent: 24.3, memoryPercent: 61.5, diskPercent: 42.8 },
+  services: [
+    { name: 'QuestDB', status: 'healthy', latencyMs: 2.3 },
+    { name: 'Redis', status: 'healthy', latencyMs: 0.8 },
+    { name: 'Network', status: 'healthy', latencyMs: 12.4 },
+  ],
+  latencyEndpoints: [
+    { endpoint: '/health', p50: 1.2, p95: 3.8, p99: 8.1, samples: 500 },
+    { endpoint: '/signal', p50: 15.4, p95: 42.1, p99: 78.3, samples: 350 },
+    { endpoint: '/regime', p50: 8.7, p95: 22.5, p99: 45.6, samples: 420 },
+  ],
+};

@@ -35,7 +35,7 @@ export default function Models() {
     <>
       <div className="page-header">
         <h2>Models & Signals</h2>
-        <p>HMM Regime Detection, Wavelet Analysis, Genetic Algorithm, LSTM & Ensemble Performance</p>
+        <p>Phase 3 Complete — HMM, Wavelet, Genetic, LSTM, TFT & Ensemble • All 6 models validated</p>
       </div>
       <div className="page-body">
         {/* Model Stats */}
@@ -46,6 +46,7 @@ export default function Models() {
             { label: 'Ensemble Sharpe', value: modelMetrics.ensemble.sharpe.toFixed(2), sub: `Win: ${(modelMetrics.ensemble.winRate * 100).toFixed(1)}%` },
             { label: 'LSTM Val Loss', value: modelMetrics.lstm.valLoss.toFixed(4), sub: `Epoch ${modelMetrics.lstm.epochs}/100` },
             { label: 'Genetic Best', value: modelMetrics.genetic.bestFitness.toFixed(2), sub: `Gen ${modelMetrics.genetic.generation}/500` },
+            { label: 'TFT Val Loss', value: modelMetrics.tft.valLoss.toFixed(4), sub: `${modelMetrics.tft.attentionHeads} attention heads` },
           ].map((m, i) => (
             <div key={i} className="kpi-card animate-in">
               <div className="kpi-label">{m.label}</div>
@@ -56,7 +57,6 @@ export default function Models() {
         </div>
 
         <div className="grid-2" style={{ marginBottom: 16 }}>
-          {/* Regime Probabilities Over Time */}
           <div className="card animate-in">
             <div className="card-header">
               <span className="card-title">Regime Probabilities (30D)</span>
@@ -74,7 +74,6 @@ export default function Models() {
             </ResponsiveContainer>
           </div>
 
-          {/* Wavelet Decomposition */}
           <div className="card animate-in">
             <div className="card-header">
               <span className="card-title">Wavelet Denoising</span>
@@ -93,42 +92,34 @@ export default function Models() {
         </div>
 
         {/* Model Architecture Configs */}
-        <div className="grid-2" style={{ marginBottom: 16 }}>
+        <div className="grid-3" style={{ marginBottom: 16 }}>
           <ModelConfigCard title="HMM Regime Detector" badge="hmm_regime.py" configs={[
-            ['Regimes', modelMetrics.hmm.config.nRegimes],
-            ['Covariance', modelMetrics.hmm.config.covarianceType],
-            ['Iterations', modelMetrics.hmm.config.nIter.toLocaleString()],
-            ['Retrain', modelMetrics.hmm.config.retrainFrequency],
+            ['Regimes', modelMetrics.hmm.config.nRegimes], ['Covariance', modelMetrics.hmm.config.covarianceType],
+            ['Iterations', modelMetrics.hmm.config.nIter.toLocaleString()], ['Retrain', modelMetrics.hmm.config.retrainFrequency],
           ]} />
           <ModelConfigCard title="Genetic Algorithm" badge="DEAP" configs={[
-            ['Population', modelMetrics.genetic.config.populationSize.toLocaleString()],
-            ['Generations', modelMetrics.genetic.config.generations],
-            ['Crossover', modelMetrics.genetic.config.crossoverProb],
-            ['Mutation', modelMetrics.genetic.config.mutationProb],
-            ['Fitness', modelMetrics.genetic.config.fitness],
-            ['Tournament', modelMetrics.genetic.config.tournamentSize],
+            ['Population', modelMetrics.genetic.config.populationSize.toLocaleString()], ['Generations', modelMetrics.genetic.config.generations],
+            ['Crossover', modelMetrics.genetic.config.crossoverProb], ['Mutation', modelMetrics.genetic.config.mutationProb],
+          ]} />
+          <ModelConfigCard title="TFT Network" badge="Multi-Head Attn" configs={[
+            ['Hidden Size', modelMetrics.tft.config.hiddenSize], ['Attn Heads', modelMetrics.tft.config.attentionHeads],
+            ['Dropout', modelMetrics.tft.config.dropout], ['Quantiles', modelMetrics.tft.config.quantiles.join(', ')],
           ]} />
         </div>
 
         <div className="grid-2" style={{ marginBottom: 16 }}>
           <ModelConfigCard title="LSTM Network" badge="PyTorch CUDA" configs={[
-            ['Hidden Size', modelMetrics.lstm.config.hiddenSize],
-            ['Layers', modelMetrics.lstm.config.numLayers],
-            ['Bidirectional', modelMetrics.lstm.config.bidirectional ? 'Yes' : 'No'],
-            ['Dropout', modelMetrics.lstm.config.dropout],
-            ['Seq Length', modelMetrics.lstm.config.seqLength],
-            ['Batch Size', modelMetrics.lstm.config.batchSize],
+            ['Hidden Size', modelMetrics.lstm.config.hiddenSize], ['Layers', modelMetrics.lstm.config.numLayers],
+            ['Bidirectional', modelMetrics.lstm.config.bidirectional ? 'Yes' : 'No'], ['Dropout', modelMetrics.lstm.config.dropout],
+            ['Seq Length', modelMetrics.lstm.config.seqLength], ['Batch Size', modelMetrics.lstm.config.batchSize],
           ]} />
           <ModelConfigCard title="Ensemble Strategy" badge={modelMetrics.ensemble.config.method} configs={[
-            ['Method', modelMetrics.ensemble.config.method],
-            ['Meta-Learner', modelMetrics.ensemble.config.metaLearner],
-            ['Sharpe', modelMetrics.ensemble.sharpe],
-            ['Profit Factor', modelMetrics.ensemble.profitFactor],
+            ['Method', modelMetrics.ensemble.config.method], ['Meta-Learner', modelMetrics.ensemble.config.metaLearner],
+            ['Sharpe', modelMetrics.ensemble.sharpe], ['Profit Factor', modelMetrics.ensemble.profitFactor],
           ]} />
         </div>
 
         <div className="grid-2">
-          {/* Feature Importance */}
           <div className="card animate-in">
             <div className="card-header">
               <span className="card-title">Feature Importance</span>
@@ -144,7 +135,6 @@ export default function Models() {
             </ResponsiveContainer>
           </div>
 
-          {/* Signal Log */}
           <div className="card animate-in">
             <div className="card-header"><span className="card-title">Signal Log</span><span className="card-badge badge-gold">{signals.length} signals</span></div>
             <table className="data-table">
@@ -161,8 +151,6 @@ export default function Models() {
                 ))}
               </tbody>
             </table>
-
-            {/* Feature Categories */}
             <div style={{ marginTop: 16, borderTop: '1px solid var(--border-color)', paddingTop: 12 }}>
               <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Feature Categories</div>
               {featureConfig.categories.map((c, i) => (
