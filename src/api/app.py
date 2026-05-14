@@ -3,12 +3,13 @@ Mini-Medallion REST API
 ========================
 FastAPI application for signal generation, backtesting, and monitoring.
 Endpoints:
-  - GET /health               - Service health
+  - GET /health               - Service health with advanced monitoring
   - GET /signal              - Current trading signal
   - GET /ensemble            - Ensemble prediction
   - GET /regime              - Current market regime
   - GET /features            - Current features
   - GET /models              - Model status
+  - GET /models/performance  - Model performance tracking
   - GET /data-quality        - Data quality report
   - POST /backtest/{strategy} - Backtest a strategy
   - GET /docs               - Swagger documentation
@@ -29,6 +30,10 @@ from src.utils.config import load_config, PROJECT_ROOT
 from src.utils.logger import setup_logger
 from src.utils.gpu import detect_gpu, print_gpu_summary
 from src.utils.gpu_models import get_gpu_accelerators
+
+# Integration: Advanced monitoring (Phase 6)
+from src.infrastructure.health_monitor import HealthMonitor
+from src.models.performance_monitor import ModelPerformanceMonitor
 
 from src.api.models import (
     HealthResponse,
@@ -72,11 +77,15 @@ GPU_ACCELERATORS = None
 LAST_SIGNAL = None
 LAST_SIGNAL_TIME = None
 
+# Integration: Advanced monitoring (Phase 6)
+HEALTH_MONITOR = None
+PERFORMANCE_MONITOR = None
+
 
 @app.on_event("startup")
 async def startup():
     """Initialize app on startup."""
-    global CONFIG, GPU_INFO, GPU_ACCELERATORS
+    global CONFIG, GPU_INFO, GPU_ACCELERATORS, HEALTH_MONITOR, PERFORMANCE_MONITOR
     
     logger.info("=" * 70)
     logger.info("MINI-MEDALLION REST API STARTUP")
@@ -109,6 +118,19 @@ async def startup():
         logger.info("✓ QuestDB connected")
     except Exception as e:
         logger.warning(f"⚠ QuestDB connection failed: {e}")
+    
+    # Integration: Initialize advanced monitoring (Phase 6)
+    try:
+        HEALTH_MONITOR = HealthMonitor()
+        logger.info("✓ Health monitor initialized")
+    except Exception as e:
+        logger.warning(f"⚠ Health monitor initialization failed: {e}")
+    
+    try:
+        PERFORMANCE_MONITOR = ModelPerformanceMonitor()
+        logger.info("✓ Performance monitor initialized")
+    except Exception as e:
+        logger.warning(f"⚠ Performance monitor initialization failed: {e}")
     
     logger.info("API ready to serve requests")
     logger.info("=" * 70)
@@ -198,11 +220,33 @@ def compute_current_signal() -> Optional[CurrentSignalResponse]:
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """
-    Health check endpoint.
-    Returns service status and component availability.
+    Health check endpoint with advanced monitoring.
+    
+    Returns:
+        Service status including SLA compliance, latency metrics, and component health.
     """
     try:
-        # Check database
+        # Use advanced health monitor if available (Phase 6 integration)
+        if HEALTH_MONITOR:
+            try:
+                health_data = HEALTH_MONITOR.run_full_health_check()
+                
+                return HealthResponse(
+                    status=health_data.get("overall_status", "ok"),
+                    gpu_available=GPU_INFO["gpu_available"],
+                    gpu_count=GPU_INFO["device_count"],
+                    rapids_available=GPU_INFO["rapids_available"],
+                    database_connected=health_data.get("services", {}).get("questdb", {}).get("status") == "healthy",
+                    redis_connected=health_data.get("services", {}).get("redis", {}).get("status") == "healthy",
+                    models_loaded=GPU_ACCELERATORS is not None,
+                    # Phase 6: Extended metrics
+                    sla_compliant=health_data.get("sla_compliant", False),
+                    uptime_percent=health_data.get("uptime_percent", 0),
+                )
+            except Exception as e:
+                logger.warning(f"Advanced health check failed, using fallback: {e}")
+        
+        # Fallback: Basic health checks
         db_ok = True
         try:
             from src.ingestion.questdb_writer import QuestDBWriter
@@ -211,7 +255,6 @@ async def health_check():
         except:
             db_ok = False
         
-        # Check Redis
         redis_ok = True
         try:
             import redis
@@ -220,7 +263,6 @@ async def health_check():
         except:
             redis_ok = False
         
-        # Determine overall status
         status = "ok" if db_ok and redis_ok else ("degraded" if db_ok or redis_ok else "error")
         
         return HealthResponse(
@@ -375,6 +417,34 @@ async def get_model_status():
     
     except Exception as e:
         logger.error(f"Models endpoint failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/models/performance")
+async def get_model_performance():
+    """
+    Get model performance tracking (Phase 6 integration).
+    
+    Returns:
+        Daily performance metrics for all 6 Phase 3 models with degradation detection.
+    """
+    try:
+        if not PERFORMANCE_MONITOR:
+            raise HTTPException(status_code=503, detail="Performance monitor not initialized")
+        
+        summary = PERFORMANCE_MONITOR.get_summary()
+        report = PERFORMANCE_MONITOR.generate_daily_report()
+        
+        return {
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "summary": summary,
+            "daily_report": report,
+            "models": ["wavelet", "hmm", "lstm", "tft", "genetic", "ensemble"],
+        }
+    
+    except Exception as e:
+        logger.error(f"Model performance endpoint failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
