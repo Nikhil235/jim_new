@@ -7,40 +7,72 @@
 ## 🚀 Quick Start (2 minutes)
 
 ### Step 1: Start the API Server
-```bash
+```powershell
 python main.py --mode api --port 8000
 ```
 
-### Step 2: Open Swagger UI
-```
-http://localhost:8000/docs
+### Step 2: Open Swagger UI (Recommended — test everything visually!)
+```powershell
+Start-Process "http://localhost:8000/docs"
 ```
 
 ### Step 3: Initialize Trading
+
+**PowerShell:**
+```powershell
+$body = @{
+    initial_capital   = 100000
+    kelly_fraction    = 0.25
+    max_position_pct  = 0.10
+    max_daily_loss_pct = 0.02
+    max_drawdown_pct  = 0.15
+    min_confidence    = 0.60
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/start" `
+    -Method Post -Body $body -ContentType "application/json" | ConvertTo-Json -Depth 5
+```
+
+**Linux/Mac (curl):**
 ```bash
 curl -X POST http://localhost:8000/paper-trading/start \
   -H "Content-Type: application/json" \
-  -d '{
-    "initial_capital": 100000,
-    "kelly_fraction": 0.25,
-    "max_position_pct": 0.10,
-    "max_daily_loss_pct": 0.02
-  }'
+  -d '{"initial_capital": 100000, "kelly_fraction": 0.25, "max_position_pct": 0.10, "max_daily_loss_pct": 0.02}'
 ```
 
 ### Step 4: Inject Signal & Trade
+
+**PowerShell:**
+```powershell
+$signal = @{
+    model_name  = "ensemble"
+    signal_type = "LONG"
+    confidence  = 0.85
+    price       = 2350.00
+    regime      = "NORMAL"
+    reasoning   = "Strong uptrend detected"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/signal" `
+    -Method Post -Body $signal -ContentType "application/json" | ConvertTo-Json -Depth 5
+```
+
+**Linux/Mac (curl):**
 ```bash
 curl -X POST http://localhost:8000/paper-trading/signal \
   -H "Content-Type: application/json" \
-  -d '{
-    "model_name": "ensemble",
-    "signal_type": "LONG",
-    "confidence": 0.85,
-    "price": 2045.50
-  }'
+  -d '{"model_name": "ensemble", "signal_type": "LONG", "confidence": 0.85, "price": 2350.00}'
 ```
 
 ### Step 5: Check Results
+
+**PowerShell:**
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/performance" | ConvertTo-Json -Depth 5
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/portfolio" | ConvertTo-Json -Depth 5
+```
+
+**Linux/Mac (curl):**
 ```bash
 curl http://localhost:8000/paper-trading/performance | jq
 curl http://localhost:8000/paper-trading/portfolio | jq
@@ -53,7 +85,7 @@ curl http://localhost:8000/paper-trading/portfolio | jq
 ### Trading Lifecycle
 
 **Start Engine**
-```bash
+```
 POST /paper-trading/start
 Content-Type: application/json
 
@@ -68,227 +100,224 @@ Content-Type: application/json
 
 Response: 200 OK
 {
-  "status": "RUNNING",
-  "capital": 100000,
-  "cash": 100000,
-  "positions": {}
+  "status": "success",
+  "message": "Paper trading engine started",
+  "config": { "initial_capital": 100000.0, ... },
+  "details": { "status": "RUNNING", "started_at": "...", "current_value": 100000.0 }
 }
 ```
 
 **Check Status**
-```bash
+```
 GET /paper-trading/status
 
 Response: 200 OK
 {
   "status": "RUNNING",
-  "total_value": 100000,
-  "cash": 100000,
-  "positions": {},
-  "num_trades": 0,
-  "num_open_positions": 0
+  "started_at": "2026-05-15T00:03:20",
+  "uptime_seconds": 120.5,
+  "portfolio": { "total_value": 100000, "cash": 88250, ... },
+  "trading": { "num_trades": 1, "win_rate": 0.0, "position_status": "LONG" },
+  "models": { "wavelet": { "signal_count": 1 }, "hmm": { ... }, ... }
 }
 ```
 
 **Stop Engine**
-```bash
+```
 POST /paper-trading/stop
 
 Response: 200 OK
 {
-  "status": "STOPPED",
-  "final_pnl": 1250.50,
-  "final_value": 101250.50
+  "status": "success",
+  "message": "Paper trading stopped",
+  "details": { "status": "STOPPED", "total_pnl": 1250.50 }
 }
 ```
 
 ### Performance & Monitoring
 
 **Performance Metrics**
-```bash
+```
 GET /paper-trading/performance
 
 Response: 200 OK
 {
-  "total_return": 0.0125,
+  "total_value": 101250.50,
+  "cash": 95000.50,
+  "pnl_total": 1250.50,
+  "pnl_realized": 450.00,
+  "pnl_unrealized": 800.50,
+  "pnl_daily": 1250.50,
+  "return_pct": 1.25,
   "sharpe_ratio": 1.45,
-  "max_drawdown": -0.05,
+  "max_drawdown": 0.05,
   "win_rate": 0.65,
   "num_trades": 12,
-  "num_wins": 8,
-  "daily_pnl": 1250.50
+  "daily_trades": 3
 }
 ```
 
 **Portfolio Snapshot**
-```bash
+```
 GET /paper-trading/portfolio
 
 Response: 200 OK
 {
-  "timestamp": "2026-05-14T10:30:00Z",
-  "total_value": 101250.50,
-  "cash": 95000.50,
-  "positions": {
-    "GOLD": {
-      "quantity": 100,
-      "entry_price": 2045.50,
-      "current_price": 2050.00,
-      "unrealized_pnl": 450.00,
-      "status": "OPEN"
-    }
-  }
+  "timestamp": "2026-05-15T00:05:48",
+  "total_value": 100000.0,
+  "cash": 88250.0,
+  "position_quantity": 5.0,
+  "position_value": 11750.0,
+  "pnl_total": 0.0,
+  "daily_pnl": 0.0,
+  "return_pct": 0.0,
+  "sharpe_ratio": 0.0,
+  "max_drawdown": 0.0,
+  "win_rate": 0.0,
+  "num_trades": 1
 }
 ```
 
 **Trade History**
-```bash
-GET /paper-trading/trades?limit=10&offset=0&status=CLOSED
+```
+GET /paper-trading/trades?limit=10&offset=0&status_filter=ALL
 
 Response: 200 OK
-{
-  "trades": [
-    {
-      "trade_id": "trade_001",
-      "model_name": "ensemble",
-      "signal_type": "LONG",
-      "entry_price": 2045.50,
-      "exit_price": 2050.00,
-      "quantity": 100,
-      "realized_pnl": 450.00,
-      "status": "CLOSED",
-      "created_at": "2026-05-14T10:15:00Z",
-      "closed_at": "2026-05-14T10:20:00Z"
-    }
-  ],
-  "total": 1,
-  "limit": 10,
-  "offset": 0
-}
+[
+  {
+    "trade_id": "5a93ff46",
+    "model_name": "wavelet",
+    "signal_type": "LONG",
+    "entry_price": 2350.0,
+    "exit_price": null,
+    "quantity": 5.0,
+    "entry_time": "2026-05-15T00:05:38",
+    "exit_time": null,
+    "pnl": 0.0,
+    "pnl_pct": 0.0,
+    "status": "OPEN",
+    "regime": "NORMAL",
+    "confidence": 0.85
+  }
+]
 ```
 
 **Risk Report**
-```bash
+```
 GET /paper-trading/risk-report
 
 Response: 200 OK
 {
-  "daily_start_equity": 100000,
-  "peak_equity": 101250.50,
-  "current_equity": 101250.50,
-  "daily_pnl": 1250.50,
-  "max_allowed_daily_loss": 2000,
-  "daily_loss_used": -1250.50,
-  "max_drawdown_allowed": 15000,
-  "current_drawdown": 0,
-  "model_exposure": {
-    "ensemble": 0.05,
-    "lstm": 0.0,
-    "wavelet": 0.0,
-    "hmm": 0.0,
-    "genetic": 0.0,
-    "tft": 0.0
-  },
-  "consecutive_losses": 0
+  "status": "success",
+  "risk_report": {
+    "current_equity": 100000.0,
+    "peak_equity": 100000.0,
+    "drawdown_pct": 0.0,
+    "daily_pnl": 0.0,
+    "consecutive_losses": 0,
+    "risk_limits": {
+      "max_position_pct": 10.0,
+      "max_daily_loss_pct": 2.0,
+      "max_drawdown_pct": 15.0,
+      "max_consecutive_losses": 3
+    },
+    "violations": []
+  }
 }
 ```
 
 ### Signal Injection & Control
 
 **Inject Trading Signal**
-```bash
+```
 POST /paper-trading/signal
 Content-Type: application/json
 
 {
-  "model_name": "ensemble",
-  "signal_type": "LONG",          # LONG, SHORT, CLOSE, HOLD
-  "confidence": 0.85,              # 0.0 to 1.0
-  "price": 2045.50,
-  "regime": "GROWTH",
+  "model_name": "ensemble",       // wavelet, hmm, lstm, tft, genetic, ensemble
+  "signal_type": "LONG",          // LONG, SHORT, CLOSE, HOLD
+  "confidence": 0.85,             // 0.0 to 1.0
+  "price": 2350.00,
+  "regime": "NORMAL",             // GROWTH, NORMAL, CRISIS
   "reasoning": "Strong uptrend"
 }
 
 Response: 200 OK
 {
-  "trade_id": "trade_001",
-  "quantity": 50,
-  "entry_price": 2045.50,
-  "executed_price": 2045.75,
-  "commission": 1.02,
-  "slippage": 0.13,
-  "status": "OPEN",
-  "created_at": "2026-05-14T10:15:00Z"
-}
-```
-
-**Update Configuration**
-```bash
-POST /paper-trading/config
-Content-Type: application/json
-
-{
-  "kelly_fraction": 0.30,          # Optional
-  "max_position_pct": 0.15,        # Optional
-  "max_daily_loss_pct": 0.03,      # Optional
-  "max_drawdown_pct": 0.20,        # Optional
-  "min_confidence": 0.70           # Optional
-}
-
-Response: 200 OK
-{
-  "updated_fields": ["kelly_fraction", "max_daily_loss_pct"],
-  "config": {
-    "kelly_fraction": 0.30,
-    "max_position_pct": 0.15,
-    "max_daily_loss_pct": 0.03,
-    "max_drawdown_pct": 0.20,
-    "min_confidence": 0.70
+  "status": "success",
+  "signal_processed": true,
+  "model": "wavelet",
+  "trade_executed": true,
+  "trade": {
+    "trade_id": "5a93ff46",
+    "signal_type": "LONG",
+    "entry_price": 2350.0,
+    "quantity": 5.0,
+    "status": "OPEN"
   }
 }
 ```
 
+**Update Configuration**
+```
+POST /paper-trading/config
+Content-Type: application/json
+
+{
+  "kelly_fraction": 0.30,          // Optional
+  "max_position_pct": 0.15,        // Optional
+  "max_daily_loss_pct": 0.03,      // Optional
+  "max_drawdown_pct": 0.20,        // Optional
+  "min_confidence": 0.70           // Optional
+}
+
+Response: 200 OK
+{
+  "status": "success",
+  "message": "Configuration updated",
+  "updated_fields": { "kelly_fraction": 0.30, ... }
+}
+```
+
 **Reset Daily Counters**
-```bash
+```
 POST /paper-trading/reset-daily
 
 Response: 200 OK
 {
-  "status": "DAILY_RESET",
-  "daily_pnl_before": 1250.50,
-  "num_trades_before": 12,
-  "daily_pnl_after": 0,
-  "num_trades_after": 0
+  "status": "success",
+  "message": "Daily counters reset",
+  "previous_daily_pnl": 1250.50,
+  "reset_time": "2026-05-15T00:00:00"
 }
 ```
 
 ### WebSocket (Real-Time Updates)
 
 **Connect to WebSocket**
-```bash
-wscat -c ws://localhost:8000/paper-trading/ws
+```
+ws://localhost:8000/paper-trading/ws
 ```
 
-**Listen for Updates**
+**Events Received:**
 ```json
-{
-  "event_type": "portfolio_update",
-  "timestamp": "2026-05-14T10:30:00Z",
-  "total_value": 101250.50,
-  "cash": 95000.50,
-  "daily_pnl": 1250.50,
-  "num_open_positions": 1
-}
+// On connect
+{"event": "connected", "data": { "status": "RUNNING", ... }}
 
-{
-  "event_type": "trade_executed",
-  "timestamp": "2026-05-14T10:35:00Z",
-  "trade_id": "trade_002",
-  "model_name": "lstm",
-  "signal_type": "CLOSE",
-  "realized_pnl": 450.00,
-  "status": "CLOSED"
-}
+// Every 5 seconds (while engine running)
+{"event": "portfolio_update", "data": { "total_value": 101250.50, "daily_pnl": 1250.50, ... }}
+
+// When trade executes
+{"event": "trade_executed", "data": { "trade_id": "...", "signal_type": "LONG", ... }}
+```
+
+**Send Commands:**
+```json
+// Ping/pong keepalive
+{"type": "ping"}
+
+// Request status update
+{"type": "get_status"}
 ```
 
 ---
@@ -311,17 +340,17 @@ print(f"Engine started: {response.json()}")
 # Get status
 response = requests.get(f"{BASE_URL}/paper-trading/status")
 status = response.json()
-print(f"Status: {status['status']}, Capital: {status['total_value']}")
+print(f"Status: {status['status']}, Capital: {status['portfolio']['total_value']}")
 
 # Inject signal
 response = requests.post(f"{BASE_URL}/paper-trading/signal", json={
     "model_name": "ensemble",
     "signal_type": "LONG",
     "confidence": 0.85,
-    "price": 2045.50
+    "price": 2350.00
 })
 trade = response.json()
-print(f"Trade created: {trade['trade_id']}, Qty: {trade['quantity']}")
+print(f"Signal processed: {trade}")
 
 # Get performance
 response = requests.get(f"{BASE_URL}/paper-trading/performance")
@@ -331,7 +360,7 @@ print(f"Sharpe: {perf['sharpe_ratio']:.2f}, Max DD: {perf['max_drawdown']:.2%}")
 # Stop trading
 response = requests.post(f"{BASE_URL}/paper-trading/stop")
 final = response.json()
-print(f"Final P&L: ${final['final_pnl']:,.2f}")
+print(f"Stopped: {final}")
 ```
 
 ### WebSocket Monitoring
@@ -345,10 +374,11 @@ async def monitor():
     async with websockets.connect(uri) as websocket:
         async for message in websocket:
             event = json.loads(message)
-            if event['event_type'] == 'portfolio_update':
-                print(f"Portfolio: ${event['total_value']:,.2f}")
-            elif event['event_type'] == 'trade_executed':
-                print(f"Trade closed: P&L ${event['realized_pnl']:,.2f}")
+            if event['event'] == 'portfolio_update':
+                data = event['data']
+                print(f"Portfolio: ${data['total_value']:,.2f} | P&L: ${data['pnl_total']:+,.2f}")
+            elif event['event'] == 'trade_executed':
+                print(f"Trade: {event['data']}")
 
 asyncio.run(monitor())
 ```
@@ -405,21 +435,21 @@ asyncio.run(monitor())
 
 ## 🧪 Run Tests
 
-```bash
+```powershell
 # All tests (62 total)
-pytest tests/test_paper_trading.py tests/test_paper_trading_api.py -v
-
-# Just API tests (31)
-pytest tests/test_paper_trading_api.py -v
+python -m pytest tests/test_paper_trading.py tests/test_paper_trading_api.py -v
 
 # Just engine tests (31)
-pytest tests/test_paper_trading.py -v
+python -m pytest tests/test_paper_trading.py -v
+
+# Just API tests (31)
+python -m pytest tests/test_paper_trading_api.py -v
 
 # Specific test
-pytest tests/test_paper_trading_api.py::TestPaperTradingAPISignalEndpoint -v
+python -m pytest tests/test_paper_trading_api.py::TestPaperTradingAPISignalEndpoint -v
 
 # With coverage
-pytest tests/test_paper_trading_api.py --cov=src.api --cov-report=html
+python -m pytest tests/test_paper_trading_api.py --cov=src.api --cov-report=html
 ```
 
 **Result**: ✅ All 62 tests passing (100% pass rate, ~8 seconds)
@@ -455,6 +485,9 @@ pytest tests/test_paper_trading_api.py --cov=src.api --cov-report=html
 **Q: How do I start the API?**
 A: `python main.py --mode api --port 8000`
 
+**Q: PowerShell `curl` doesn't work!**
+A: PowerShell aliases `curl` to `Invoke-WebRequest`. Use `Invoke-RestMethod` instead, or use the Swagger UI at http://localhost:8000/docs.
+
 **Q: Can I use it in production now?**
 A: Yes! Add JWT auth (templates provided) for security.
 
@@ -480,7 +513,7 @@ A: Very! Includes commission (0.1%), realistic slippage, and latency.
 
 ## 🎯 Next Steps
 
-1. **Try the API** - Start server and make test requests (5 min)
+1. **Try the API** - Start server and use Swagger UI (5 min)
 2. **Review Documentation** - Read full API reference (15 min)
 3. **Run Tests** - Verify everything works (5 min)
 4. **Integrate** - Add to your trading system (1-2 hours)
@@ -488,6 +521,6 @@ A: Very! Includes commission (0.1%), realistic slippage, and latency.
 
 ---
 
-**Version**: 1.0 | **Status**: ✅ Production Ready | **Last Updated**: May 14, 2026
+**Version**: 1.0 | **Status**: ✅ Production Ready | **Last Updated**: May 15, 2026
 
 **For detailed information**: See [PHASE_6B_REST_API_DOCS.md](docs/PHASE_6B_REST_API_DOCS.md)

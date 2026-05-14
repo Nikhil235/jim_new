@@ -1,19 +1,19 @@
 # ⚡ Quick Start Guide - 30 Minutes to Live Trading
 
-**Fast-track setup guide for immediate deployment. Follow these steps sequentially.**
+**Fast-track setup guide for immediate deployment on Windows. Follow these steps sequentially.**
 
 ---
 
 ## 🚀 5-Minute System Check
 
-```bash
+```powershell
 # Terminal 1: Verify Python
 python --version  # Should show 3.11+
 
 # Verify pip
 pip --version     # Should show pip from your environment
 
-# Verify Docker
+# Verify Docker (optional — for Grafana, QuestDB, etc.)
 docker --version          # Should show Docker version
 docker-compose --version  # Should show Docker Compose version
 ```
@@ -24,7 +24,7 @@ docker-compose --version  # Should show Docker Compose version
 
 ## 📦 Installation (5 Minutes)
 
-```bash
+```powershell
 # 1. Navigate to project
 cd e:\PRO\JIM_Latest
 
@@ -43,7 +43,7 @@ python -c "import pandas, numpy, fastapi; print('✅ Ready')"
 
 ## 🐳 Start Infrastructure (3 Minutes)
 
-```bash
+```powershell
 # Terminal 1: Start all services
 docker-compose up -d
 
@@ -63,7 +63,7 @@ docker-compose ps
 
 ## ⚙️ Configuration (5 Minutes)
 
-```bash
+```powershell
 # Edit configuration
 # File: configs/base.yaml
 
@@ -80,7 +80,7 @@ docker-compose ps
 
 ### Terminal 1: Start API Server
 
-```bash
+```powershell
 python main.py --mode api
 
 # Expected output:
@@ -90,38 +90,61 @@ python main.py --mode api
 
 ### Terminal 2: Initialize Trading
 
-```bash
-curl -X POST http://localhost:8000/paper-trading/start \
-  -H "Content-Type: application/json" \
-  -d '{
-    "initial_capital": 100000,
-    "kelly_fraction": 0.25,
-    "max_position_pct": 0.10,
-    "max_daily_loss_pct": 0.02,
-    "max_drawdown_pct": 0.15,
-    "min_confidence": 0.60
-  }'
+> **Note:** On Windows, use `Invoke-RestMethod` (PowerShell) instead of `curl`.
+> Alternatively, open the **Swagger UI** at http://localhost:8000/docs to test endpoints interactively.
 
-# Expected: Session initialized
+```powershell
+# Start paper trading engine
+$body = @{
+    initial_capital  = 100000
+    kelly_fraction   = 0.25
+    max_position_pct = 0.10
+    max_daily_loss_pct = 0.02
+    max_drawdown_pct = 0.15
+    min_confidence   = 0.60
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/start" `
+    -Method Post -Body $body -ContentType "application/json" | ConvertTo-Json -Depth 5
+
+# Expected: {"status": "success", "message": "Paper trading engine started", ...}
 ```
 
 ### Terminal 3: Monitor Live
 
-```bash
-# Get current status (repeat every 30 seconds)
-curl http://localhost:8000/paper-trading/status | python -m json.tool
+```powershell
+# Get current status
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/status" | ConvertTo-Json -Depth 5
 
-# Or run Python dashboard
-python scripts/dashboard.py
+# Get performance metrics
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/performance" | ConvertTo-Json -Depth 5
+
+# Get portfolio snapshot
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/portfolio" | ConvertTo-Json -Depth 5
+```
+
+---
+
+## 🌐 Open Swagger API Docs (Easiest Way!)
+
+```powershell
+# Open the interactive API docs in your default browser
+Start-Process "http://localhost:8000/docs"
+
+# From Swagger UI you can:
+# ✅ Test ALL endpoints directly in the browser
+# ✅ Start/stop paper trading
+# ✅ Inject signals, view trades, check risk reports
+# ✅ No PowerShell commands needed!
 ```
 
 ---
 
 ## 📊 View Grafana Dashboard (1 Minute)
 
-```bash
-# Open browser
-http://localhost:3000
+```powershell
+# Open Grafana in your default browser
+Start-Process "http://localhost:3000"
 
 # Login
 # Username: admin
@@ -139,15 +162,15 @@ http://localhost:3000
 
 ## ✅ Verify Everything Works
 
-```bash
-# Check data feed
-curl http://localhost:8000/health | python -m json.tool
+```powershell
+# Check API health
+Invoke-RestMethod -Uri "http://localhost:8000/health" | ConvertTo-Json -Depth 3
 
 # Should show all ✅:
-# ✅ Database
-# ✅ Cache
-# ✅ Data Feed
-# ✅ API Server
+# ✅ database_connected: true
+# ✅ redis_connected: true
+# ✅ gpu_available: true
+# ✅ models_loaded: true
 ```
 
 ---
@@ -200,27 +223,28 @@ kelly_fraction: 0.25               # Conservative sizing
 
 ### Morning (Before market open)
 
-```bash
+```powershell
 # 1. Check system health
-curl http://localhost:8000/health
+Invoke-RestMethod -Uri "http://localhost:8000/health" | ConvertTo-Json
 
-# 2. Verify data feed
-curl http://localhost:8000/paper-trading/status | grep -i data
+# 2. Get paper trading status
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/status" | ConvertTo-Json -Depth 5
 
-# 3. Check overnight alerts (if any)
+# 3. Check risk report
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/risk-report" | ConvertTo-Json -Depth 5
 
-# 4. Confirm circuit breaker is NORMAL
-curl http://localhost:8000/paper-trading/status | grep -i circuit
+# 4. Reset daily counters at market open
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/reset-daily" -Method Post | ConvertTo-Json
 ```
 
 ### Throughout Day
 
-```bash
+```powershell
 # Monitor in Grafana dashboard
-# http://localhost:3000
+Start-Process "http://localhost:3000"
 
-# Or use Python dashboard
-python scripts/dashboard.py
+# Or check via API
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/performance" | ConvertTo-Json -Depth 3
 
 # Watch for:
 # ✅ Trades executing normally
@@ -230,9 +254,12 @@ python scripts/dashboard.py
 
 ### Evening (After market close)
 
-```bash
-# Get daily report
-curl http://localhost:8000/paper-trading/daily-report | python -m json.tool
+```powershell
+# Get full performance report
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/performance" | ConvertTo-Json -Depth 5
+
+# Get trade history
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/trades?limit=20" | ConvertTo-Json -Depth 3
 
 # Review:
 # - Daily P&L
@@ -244,13 +271,34 @@ curl http://localhost:8000/paper-trading/daily-report | python -m json.tool
 
 ---
 
+## 💉 Inject a Trading Signal (Manual Test)
+
+```powershell
+# Inject a LONG signal from the wavelet model
+$signal = @{
+    model_name  = "wavelet"
+    signal_type = "LONG"
+    confidence  = 0.85
+    price       = 2350.00
+    regime      = "NORMAL"
+    reasoning   = "Manual test signal"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/signal" `
+    -Method Post -Body $signal -ContentType "application/json" | ConvertTo-Json -Depth 5
+
+# Expected: trade_executed = true/false depending on risk checks
+```
+
+---
+
 ## 🆘 If Something Goes Wrong
 
 ### Issue: No trades executing
 
-```bash
-# 1. Check model signals
-curl http://localhost:8000/models/signals
+```powershell
+# 1. Check model signals via Swagger
+Start-Process "http://localhost:8000/docs"
 
 # 2. Check confidence threshold
 # (Edit configs/base.yaml: min_confidence)
@@ -262,12 +310,12 @@ curl http://localhost:8000/models/signals
 
 ### Issue: System showing errors
 
-```bash
+```powershell
 # 1. Restart infrastructure
 docker-compose restart
 
 # 2. Wait 30 seconds
-sleep 30
+Start-Sleep -Seconds 30
 
 # 3. Verify all services
 docker-compose ps
@@ -279,12 +327,16 @@ docker-compose logs redis
 
 ### Issue: Circuit breaker red
 
-```bash
+```powershell
 # 1. STOP trading immediately
-# 2. Review what happened:
-curl http://localhost:8000/paper-trading/history | tail -5
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/stop" -Method Post | ConvertTo-Json
 
-# 3. Analyze recent trades
+# 2. Review risk report
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/risk-report" | ConvertTo-Json -Depth 5
+
+# 3. Review recent trades
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/trades?limit=10" | ConvertTo-Json -Depth 3
+
 # 4. Identify issue (bad market? settings too aggressive?)
 # 5. Adjust settings in configs/base.yaml
 # 6. Restart when ready
@@ -292,10 +344,9 @@ curl http://localhost:8000/paper-trading/history | tail -5
 
 ### Issue: High latency
 
-```bash
+```powershell
 # 1. Check system resources
-# Windows: Task Manager
-# Linux: top
+# Windows: Open Task Manager (Ctrl+Shift+Esc)
 
 # 2. Check active terminals
 # Close unnecessary windows/processes
@@ -303,28 +354,28 @@ curl http://localhost:8000/paper-trading/history | tail -5
 # 3. Restart Docker
 docker-compose restart
 
-# 4. Monitor latency
-curl http://localhost:8000/health | grep latency
+# 4. Monitor health
+Invoke-RestMethod -Uri "http://localhost:8000/health" | ConvertTo-Json
 ```
 
 ---
 
 ## 📱 Access Points
 
-| Interface | URL | Purpose |
-|-----------|-----|---------|
-| **Grafana Dashboard** | http://localhost:3000 | Real-time visualization |
-| **API Swagger** | http://localhost:8000/docs | API documentation |
-| **QuestDB Console** | http://localhost:9000 | Database browser |
-| **Prometheus** | http://localhost:9090 | Metrics explorer |
-| **Python CLI** | Terminal | Direct access |
+| Interface | URL | How to Open |
+|-----------|-----|-------------|
+| **Swagger API Docs** | http://localhost:8000/docs | `Start-Process "http://localhost:8000/docs"` |
+| **Grafana Dashboard** | http://localhost:3000 | `Start-Process "http://localhost:3000"` |
+| **QuestDB Console** | http://localhost:9000 | `Start-Process "http://localhost:9000"` |
+| **Prometheus** | http://localhost:9090 | `Start-Process "http://localhost:9090"` |
+| **Python CLI** | Terminal | `python main.py --mode paper` |
 
 ---
 
 ## 💰 Transitioning to Real Money (After 4 Weeks)
 
 ### Week 1-4: Paper Trading Validation
-```bash
+```powershell
 # ✅ Sharpe > 1.0
 # ✅ Win rate > 50%
 # ✅ Max drawdown < 15%
@@ -333,7 +384,7 @@ curl http://localhost:8000/health | grep latency
 ```
 
 ### Moving to Live (When Ready)
-```bash
+```powershell
 # Edit: configs/base.yaml
 # Change: trading.mode: "paper" → "live"
 # Change: initial_capital: 10000 (start SMALL)
@@ -370,18 +421,21 @@ For comprehensive guides, see:
 
 ## 🚨 Emergency Kill Switch
 
-```bash
+```powershell
 # If absolutely everything is failing:
 
-# 1. Stop API server
-Ctrl+C  # In Terminal 1
+# 1. Stop paper trading via API
+Invoke-RestMethod -Uri "http://localhost:8000/paper-trading/stop" -Method Post
 
-# 2. Stop Docker services
+# 2. Stop API server
+# Press Ctrl+C in Terminal 1
+
+# 3. Stop Docker services
 docker-compose down
 
-# 3. Wait 10 seconds
+# 4. Wait 10 seconds
 
-# 4. Restart when ready
+# 5. Restart when ready
 docker-compose up -d
 python main.py --mode api
 ```
@@ -402,4 +456,3 @@ python main.py --mode api
 ---
 
 **Questions? See DEPLOYMENT_GUIDE.md for comprehensive details. Happy trading! 🚀**
-
