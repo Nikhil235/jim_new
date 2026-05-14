@@ -35,6 +35,14 @@ from src.utils.gpu_models import get_gpu_accelerators
 from src.infrastructure.health_monitor import HealthMonitor
 from src.models.performance_monitor import ModelPerformanceMonitor
 
+# Phase 6B: Paper trading API routes
+try:
+    from src.api.paper_trading_routes import router as paper_trading_router
+    PAPER_TRADING_ROUTES_AVAILABLE = True
+except ImportError:
+    PAPER_TRADING_ROUTES_AVAILABLE = False
+    logger.warning("Paper trading routes not available")
+
 from src.api.models import (
     HealthResponse,
     CurrentSignalResponse,
@@ -69,6 +77,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Phase 6B: Include paper trading routes
+if PAPER_TRADING_ROUTES_AVAILABLE:
+    app.include_router(paper_trading_router)
+    logger.info("Paper trading routes included")
 
 # Global state
 CONFIG = None

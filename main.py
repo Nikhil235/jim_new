@@ -74,7 +74,7 @@ def main(mode: str, config: str, port: int, host: str, pipeline_mode: str):
     elif mode == "backtest":
         logger.info("Backtest mode — coming in Phase 5")
     elif mode == "paper":
-        logger.info("Paper trading mode — coming in Phase 6")
+        run_paper_trading(cfg)
     elif mode == "live":
         logger.warning("🚨 LIVE TRADING — NOT YET IMPLEMENTED")
         sys.exit(1)
@@ -150,6 +150,167 @@ def run_pipeline(cfg: dict, pipeline_mode: str = "full"):
     except Exception as e:
         logger.error(f"Pipeline execution failed: {e}", exc_info=True)
         sys.exit(2)
+
+
+
+def run_paper_trading(cfg: dict):
+    """
+    Run paper trading simulation.
+    
+    Initializes the paper trading engine, fetches current gold data,
+    generates signals from available models, and executes a simulation loop.
+    
+    Usage:
+        python main.py --mode paper
+    """
+    import time
+    import numpy as np
+    import pandas as pd
+
+    logger.info("--- PAPER TRADING MODE ---")
+    logger.info("Phase 6B: Paper Trading Engine")
+
+    # Step 1: Initialize engine
+    logger.info("[1/5] Initializing paper trading engine...")
+    try:
+        from src.paper_trading.engine import (
+            PaperTradingEngine,
+            PaperTradingConfig,
+            ModelSignal,
+            SignalType,
+        )
+        from src.paper_trading.risk_manager import RiskManager, RiskLimits
+
+        pt_cfg = PaperTradingConfig(
+            initial_capital=cfg.get("paper_trading", {}).get("initial_capital", 100000.0),
+            kelly_fraction=cfg.get("paper_trading", {}).get("kelly_fraction", 0.25),
+            max_position_pct=cfg.get("paper_trading", {}).get("max_position_pct", 0.10),
+            max_daily_loss_pct=cfg.get("paper_trading", {}).get("max_daily_loss_pct", 0.02),
+            max_drawdown_pct=cfg.get("paper_trading", {}).get("max_drawdown_pct", 0.15),
+            min_confidence=cfg.get("paper_trading", {}).get("min_confidence", 0.60),
+        )
+        engine = PaperTradingEngine(pt_cfg)
+        risk_mgr = RiskManager(pt_cfg.initial_capital, RiskLimits(
+            max_position_pct=pt_cfg.max_position_pct,
+            max_daily_loss_pct=pt_cfg.max_daily_loss_pct,
+            max_drawdown_pct=pt_cfg.max_drawdown_pct,
+        ))
+        logger.info(f"  Engine initialized with ${pt_cfg.initial_capital:,.0f} capital")
+    except Exception as e:
+        logger.error(f"Failed to initialize paper trading: {e}")
+        sys.exit(1)
+
+    # Step 2: Fetch gold data
+    logger.info("[2/5] Fetching gold price data...")
+    try:
+        from src.ingestion.gold_fetcher import GoldDataFetcher
+        fetcher = GoldDataFetcher(cfg)
+        gold_df = fetcher.fetch_historical(period="60d", interval="1d")
+        if gold_df.empty:
+            raise ValueError("No gold data returned")
+        current_price = float(gold_df["close"].iloc[-1])
+        logger.info(f"  Current gold price: ${current_price:,.2f}")
+        logger.info(f"  Data points: {len(gold_df)} daily bars")
+    except Exception as e:
+        logger.warning(f"Live data fetch failed: {e}")
+        logger.info("  Using synthetic price for demo...")
+        np.random.seed(42)
+        current_price = 2350.0 + np.random.randn() * 20
+        dates = pd.date_range("2024-01-01", periods=60, freq="B")
+        price = 2300 + np.cumsum(np.random.randn(60) * 10)
+        gold_df = pd.DataFrame({
+            "open": price + np.random.randn(60) * 2,
+            "high": price + abs(np.random.randn(60) * 5),
+            "low": price - abs(np.random.randn(60) * 5),
+            "close": price,
+            "volume": np.random.randint(10000, 100000, 60),
+        }, index=dates)
+        gold_df.index.name = "timestamp"
+        gold_df["returns"] = gold_df["close"].pct_change()
+        current_price = float(gold_df["close"].iloc[-1])
+        logger.info(f"  Synthetic price: ${current_price:,.2f}")
+
+    # Step 3: Detect market regime
+    logger.info("[3/5] Detecting market regime...")
+    regime = "NORMAL"
+    try:
+        from src.models.hmm_regime import RegimeDetector
+        detector = RegimeDetector()
+        detector.train(gold_df)
+        regime, confidence = detector.get_current_regime(gold_df)
+        logger.info(f"  Regime: {regime} (confidence: {confidence:.0%})")
+    except Exception as e:
+        logger.warning(f"  Regime detection failed: {e}, defaulting to NORMAL")
+
+    # Step 4: Start engine and run simulation
+    logger.info("[4/5] Starting paper trading simulation...")
+    engine.start()
+
+    # Generate signals from models (simulated for CLI mode)
+    model_names = ["wavelet", "hmm", "lstm", "tft", "genetic", "ensemble"]
+    np.random.seed(int(time.time()) % 10000)
+
+    num_simulation_steps = 10
+    logger.info(f"  Running {num_simulation_steps} simulation steps...")
+    logger.info("")
+
+    for step in range(num_simulation_steps):
+        # Simulate price movement
+        price_change = np.random.randn() * current_price * 0.003
+        current_price += price_change
+
+        # Pick a random model to generate a signal
+        model_name = model_names[step % len(model_names)]
+        confidence = 0.50 + np.random.rand() * 0.40
+        signal_type = SignalType.LONG if price_change > 0 else SignalType.SHORT
+
+        signal = ModelSignal(
+            model_name=model_name,
+            signal_type=signal_type,
+            confidence=confidence,
+            entry_price=current_price,
+            current_price=current_price,
+            timestamp=pd.Timestamp.now(),
+            reasoning=f"Step {step+1}: {model_name} signal",
+            regime=regime,
+        )
+
+        trade = engine.process_signal(model_name, signal)
+        engine.update_price(current_price, pd.Timestamp.now())
+
+        status = "TRADE" if trade else "SKIP"
+        pnl = engine.get_total_pnl()
+        logger.info(
+            f"  Step {step+1:2d}/{num_simulation_steps} | "
+            f"{model_name:10s} | {signal_type.value:5s} | "
+            f"conf={confidence:.2f} | price=${current_price:,.2f} | "
+            f"P&L=${pnl:+,.2f} | {status}"
+        )
+
+    # Step 5: Summary
+    logger.info("")
+    logger.info("[5/5] Paper trading simulation complete")
+    result = engine.stop()
+
+    snapshot = engine._create_portfolio_snapshot(current_price)
+
+    logger.info("")
+    logger.info("=" * 60)
+    logger.info("  📊 PAPER TRADING RESULTS")
+    logger.info(f"  💰 Initial Capital:  ${pt_cfg.initial_capital:>12,.2f}")
+    logger.info(f"  💵 Final Value:      ${snapshot.total_value:>12,.2f}")
+    logger.info(f"  📈 Total P&L:        ${snapshot.pnl_total:>+12,.2f}")
+    logger.info(f"  📊 Return:           {snapshot.return_pct:>+11.2f}%")
+    logger.info(f"  📉 Max Drawdown:     {snapshot.max_drawdown:>11.2f}%")
+    logger.info(f"  🏆 Win Rate:         {snapshot.win_rate*100:>11.1f}%")
+    logger.info(f"  🔄 Total Trades:     {len(engine.trades):>11d}")
+    logger.info("=" * 60)
+    logger.info("")
+    logger.info("  To run with REST API monitoring:")
+    logger.info("    python main.py --mode api --port 8000")
+    logger.info("  Then use POST /paper-trading/start to begin")
+    logger.info("  WebSocket: ws://localhost:8000/paper-trading/ws")
+    logger.info("=" * 60)
 
 
 def run_demo(cfg: dict):
