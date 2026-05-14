@@ -127,7 +127,7 @@ class PaperTradingConfig:
     commission_per_trade: float = 5.0
     commission_pct: float = 0.0001
     slippage_model: str = "spread"         # 'fixed', 'spread', 'impact'
-    slippage_pct: float = 0.3              # Typical bid-ask spread for gold
+    slippage_pct: float = 0.01             # Typical bid-ask spread for gold (1 bps)
     
     # Signal configuration
     min_confidence: float = 0.6            # Min confidence to trade

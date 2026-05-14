@@ -21,12 +21,18 @@ class HealthResponse(BaseModel):
     """Health check response."""
     status: str = Field(..., description="Service status (ok/degraded/error)")
     timestamp: datetime = Field(default_factory=datetime.now)
-    gpu_available: bool = Field(..., description="Whether GPU is detected")
-    gpu_count: int = Field(..., description="Number of GPUs available")
+    gpu_available: bool = Field(..., description="Whether GPU is usable via PyTorch CUDA")
+    gpu_count: int = Field(..., description="Number of CUDA GPUs available")
     rapids_available: bool = Field(..., description="Whether RAPIDS is available")
     database_connected: bool = Field(..., description="QuestDB connectivity")
     redis_connected: bool = Field(..., description="Redis connectivity")
     models_loaded: bool = Field(..., description="Whether models are loaded")
+    # Hardware GPU presence (independent of PyTorch CUDA build)
+    hardware_gpu_detected: bool = Field(default=False, description="GPU hardware found via nvidia-smi")
+    hardware_gpu_names: List[str] = Field(default_factory=list, description="GPU hardware names from nvidia-smi")
+    # Phase 6: Extended metrics (optional)
+    sla_compliant: Optional[bool] = Field(default=None, description="SLA compliance status")
+    uptime_percent: Optional[float] = Field(default=None, description="Uptime percentage")
 
 
 class CurrentSignalResponse(BaseModel):

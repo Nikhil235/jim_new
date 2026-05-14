@@ -7,8 +7,30 @@ Follows the Simons principle: use maximum compute available.
 
 import os
 import sys
+import subprocess
 from loguru import logger
 from typing import Dict, Optional, List
+
+
+def _detect_hardware_gpu_via_nvidiasmi() -> Dict:
+    """
+    Detect NVIDIA GPU hardware via nvidia-smi even when PyTorch CUDA is unavailable.
+    Returns dict with 'detected' bool and 'names' list.
+    """
+    result = {"detected": False, "names": []}
+    try:
+        proc = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5
+        )
+        if proc.returncode == 0:
+            names = [n.strip() for n in proc.stdout.strip().splitlines() if n.strip()]
+            if names:
+                result["detected"] = True
+                result["names"] = names
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        pass
+    return result
 
 
 def detect_gpu() -> Dict:
@@ -39,6 +61,9 @@ def detect_gpu() -> Dict:
         "cupy_available": False,
         "cusignal_available": False,
         "compute_capability": [],
+        # Hardware detection (independent of PyTorch CUDA)
+        "hardware_gpu_detected": False,
+        "hardware_gpu_names": [],
     }
 
     # Check PyTorch CUDA
@@ -71,6 +96,16 @@ def detect_gpu() -> Dict:
         logger.warning("PyTorch not installed")
     except Exception as e:
         logger.warning(f"GPU detection failed: {e}")
+
+    # Always probe hardware via nvidia-smi (works even with CPU-only PyTorch)
+    hw = _detect_hardware_gpu_via_nvidiasmi()
+    info["hardware_gpu_detected"] = hw["detected"]
+    info["hardware_gpu_names"] = hw["names"]
+    if hw["detected"] and not info["gpu_available"]:
+        logger.info(
+            f"Hardware GPU detected via nvidia-smi: {', '.join(hw['names'])} "
+            f"— but PyTorch is CPU-only. Install CUDA PyTorch to enable acceleration."
+        )
 
     # Check RAPIDS
     try:
@@ -114,9 +149,16 @@ def print_gpu_summary(gpu_info: Optional[Dict] = None) -> None:
     logger.info("=" * 70)
     
     if not gpu_info["gpu_available"]:
-        logger.info("❌ No GPU detected — running on CPU only")
-        logger.info("   To enable GPU: install PyTorch with CUDA support")
-        logger.info("   Command: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121")
+        if gpu_info.get("hardware_gpu_detected"):
+            hw_names = ', '.join(gpu_info['hardware_gpu_names'])
+            logger.info(f"⚠ Hardware GPU detected: {hw_names}")
+            logger.info("  But PyTorch is installed WITHOUT CUDA support (CPU-only build)")
+            logger.info("  ➜ Fix: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128")
+            logger.info("  RTX 50-series requires CUDA 12.8+ and PyTorch 2.7+")
+        else:
+            logger.info("❌ No GPU detected — running on CPU only")
+            logger.info("   To enable GPU: install PyTorch with CUDA support")
+            logger.info("   Command: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128")
     else:
         logger.info(f"✓ GPU Available: {gpu_info['device_count']} device(s)")
         logger.info(f"  CUDA Version: {gpu_info['cuda_version']}")

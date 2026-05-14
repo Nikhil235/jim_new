@@ -99,24 +99,18 @@ def run_api(cfg: dict, host: str = "0.0.0.0", port: int = 8000):
     logger.info(f"Starting REST API server: {host}:{port}")
     logger.info("API Documentation: http://{}:{}/docs".format(host, port))
     
-    try:
-        import uvicorn
-        from src.api.app import app
+    
+    import uvicorn
+    from src.api.app import app
         
-        # Run Uvicorn server
-        uvicorn.run(
-            app,
-            host=host,
-            port=port,
-            log_level="info",
-        )
-    except ImportError:
-        logger.error("FastAPI or Uvicorn not installed")
-        logger.error("Install with: pip install fastapi uvicorn")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"API startup failed: {e}")
-        sys.exit(1)
+    # Run Uvicorn server
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="info",
+    )
+    
 
 
 def run_pipeline(cfg: dict, pipeline_mode: str = "full"):

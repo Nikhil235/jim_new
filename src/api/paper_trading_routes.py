@@ -36,11 +36,18 @@ try:
         TradeStatus,
     )
     from src.paper_trading.risk_manager import RiskManager, RiskLimits
+    from src.paper_trading.live_inference import (
+        LiveInferenceLoop,
+        LIVE_MODEL_SIGNALS,
+        CURRENT_GOLD_PRICE,
+        LAST_PRICE_UPDATE,
+    )
     PAPER_TRADING_AVAILABLE = True
 except ImportError:
     logger.warning("Paper trading modules not available")
     PaperTradingEngine = None
     RiskManager = None
+    LiveInferenceLoop = None
     PAPER_TRADING_AVAILABLE = False
 
 
@@ -148,6 +155,8 @@ _paper_trading_engine: Optional['PaperTradingEngine'] = None
 _paper_trading_config: Optional['PaperTradingConfig'] = None
 _risk_manager: Optional['RiskManager'] = None
 _websocket_clients: List[WebSocket] = []
+_inference_loop: Optional['LiveInferenceLoop'] = None
+_inference_task: Optional[asyncio.Task] = None
 
 
 def get_engine():
@@ -235,7 +244,19 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict:
         
         # Start engine
         result = _paper_trading_engine.start()
-        
+
+        # ── Start live inference loop ──────────────────────────────────────
+        global _inference_loop, _inference_task
+        if LiveInferenceLoop is not None:
+            _inference_loop = LiveInferenceLoop(
+                engine=_paper_trading_engine,
+                broadcast_fn=broadcast_update,
+                interval_seconds=60,
+            )
+            _inference_task = asyncio.create_task(_inference_loop.run())
+            logger.info("Live inference loop started (60s cadence, all 6 models)")
+        # ─────────────────────────────────────────────────────────────────
+
         logger.info(f"Paper trading started with ${request.initial_capital:,.0f} capital")
         
         # Broadcast to WebSocket clients
@@ -345,7 +366,15 @@ async def stop_paper_trading() -> Dict:
     
     try:
         result = _paper_trading_engine.stop()
-        
+
+        # ── Stop live inference loop ──────────────────────────────────────
+        global _inference_loop, _inference_task
+        if _inference_loop is not None:
+            _inference_loop.stop()
+            _inference_loop = None
+            logger.info("Live inference loop stopped")
+        # ─────────────────────────────────────────────────────────────────
+
         logger.info(f"Paper trading stopped. Final P&L: ${result.get('total_pnl', 0):.2f}")
         
         # Broadcast to WebSocket clients
@@ -647,6 +676,59 @@ async def reset_daily_counters() -> Dict:
     except Exception as e:
         logger.error(f"Failed to reset daily counters: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to reset: {str(e)}")
+
+# ============================================================================
+# LIVE INFERENCE ENDPOINTS
+# ============================================================================
+
+@router.get("/live-signals", response_model=Dict)
+async def get_live_signals() -> Dict:
+    """
+    Get the latest signal from every model, updated every 60 seconds by the
+    live inference loop running in the background.
+
+    Returns per-model: signal, confidence, regime, price, reasoning, last_updated.
+    This is the primary data source for the Models tab live view.
+    """
+    try:
+        import src.paper_trading.live_inference as li
+        signals = dict(li.LIVE_MODEL_SIGNALS)
+        return {
+            "status": "ok",
+            "current_price": li.CURRENT_GOLD_PRICE,
+            "last_price_update": li.LAST_PRICE_UPDATE.isoformat() if li.LAST_PRICE_UPDATE else None,
+            "inference_running": _inference_loop is not None and _inference_loop._running,
+            "iteration": _inference_loop.iteration if _inference_loop else 0,
+            "models": signals,
+        }
+    except Exception as e:
+        logger.error(f"Failed to get live signals: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/inference-status", response_model=Dict)
+async def get_inference_status() -> Dict:
+    """
+    Get live inference loop health status: running state, cadence, iteration count,
+    last run time, and any errors.
+    """
+    if _inference_loop is None:
+        return {
+            "running": False,
+            "message": "Inference loop not started. Start the paper trading engine first.",
+            "iteration": 0,
+            "last_run": None,
+            "last_error": None,
+            "interval_seconds": 60,
+        }
+    return {
+        "running": _inference_loop._running,
+        "iteration": _inference_loop.iteration,
+        "last_run": _inference_loop.last_run.isoformat() if _inference_loop.last_run else None,
+        "last_error": _inference_loop.last_error,
+        "interval_seconds": _inference_loop.interval_seconds,
+        "message": "Live inference loop running — all 6 models updating every 60s",
+    }
 
 
 # ============================================================================

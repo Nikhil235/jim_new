@@ -17,10 +17,12 @@ Endpoints:
 
 import os
 import asyncio
+from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 import pandas as pd
@@ -82,6 +84,21 @@ app.add_middleware(
 if PAPER_TRADING_ROUTES_AVAILABLE:
     app.include_router(paper_trading_router)
     logger.info("Paper trading routes included")
+
+# Mount static files for the trading dashboard
+_static_dir = Path(PROJECT_ROOT) / "static"
+if _static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
+    logger.info(f"Static files mounted from {_static_dir}")
+
+
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard():
+    """Serve the trading dashboard UI."""
+    html_path = Path(PROJECT_ROOT) / "static" / "dashboard.html"
+    if html_path.exists():
+        return FileResponse(str(html_path), media_type="text/html")
+    return JSONResponse({"error": "Dashboard not found. Ensure static/dashboard.html exists."}, status_code=404)
 
 # Global state
 CONFIG = None
@@ -252,6 +269,8 @@ async def health_check():
                     database_connected=health_data.get("services", {}).get("questdb", {}).get("status") == "healthy",
                     redis_connected=health_data.get("services", {}).get("redis", {}).get("status") == "healthy",
                     models_loaded=GPU_ACCELERATORS is not None,
+                    hardware_gpu_detected=GPU_INFO.get("hardware_gpu_detected", False),
+                    hardware_gpu_names=GPU_INFO.get("hardware_gpu_names", []),
                     # Phase 6: Extended metrics
                     sla_compliant=health_data.get("sla_compliant", False),
                     uptime_percent=health_data.get("uptime_percent", 0),
@@ -286,6 +305,8 @@ async def health_check():
             database_connected=db_ok,
             redis_connected=redis_ok,
             models_loaded=GPU_ACCELERATORS is not None,
+            hardware_gpu_detected=GPU_INFO.get("hardware_gpu_detected", False),
+            hardware_gpu_names=GPU_INFO.get("hardware_gpu_names", []),
         )
     
     except Exception as e:
@@ -636,6 +657,65 @@ async def get_ensemble_prediction():
     
     except Exception as e:
         logger.error(f"Ensemble endpoint failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/gold-price")
+async def get_gold_price(
+    interval: str = Query("15m", description="Candle interval: 1m, 5m, 15m, 1h, 1d"),
+    period: str = Query("5d", description="Lookback period: 1d, 5d, 1mo, 3mo, 1y"),
+):
+    """
+    Get gold OHLC candlestick data for the dashboard chart.
+    
+    Returns candle data suitable for rendering candlestick charts.
+    """
+    try:
+        import yfinance as yf
+        
+        valid_intervals = ["1m", "5m", "15m", "30m", "1h", "1d"]
+        if interval not in valid_intervals:
+            raise HTTPException(status_code=400, detail=f"Invalid interval. Use: {valid_intervals}")
+        
+        ticker = yf.Ticker("GC=F")
+        df = ticker.history(period=period, interval=interval)
+        
+        if df.empty:
+            raise HTTPException(status_code=503, detail="No gold price data available")
+        
+        df.columns = [c.lower().replace(" ", "_") for c in df.columns]
+        
+        candles = []
+        for ts, row in df.iterrows():
+            candles.append({
+                "time": int(ts.timestamp() * 1000),
+                "open": round(float(row["open"]), 2),
+                "high": round(float(row["high"]), 2),
+                "low": round(float(row["low"]), 2),
+                "close": round(float(row["close"]), 2),
+                "volume": int(row.get("volume", 0)),
+            })
+        
+        current = candles[-1]["close"] if candles else 0
+        prev_close = candles[-2]["close"] if len(candles) > 1 else current
+        change = current - prev_close
+        change_pct = (change / prev_close * 100) if prev_close else 0
+        
+        return {
+            "symbol": "GC=F (Gold Futures)",
+            "interval": interval,
+            "period": period,
+            "current_price": current,
+            "change": round(change, 2),
+            "change_pct": round(change_pct, 3),
+            "candles": candles,
+            "count": len(candles),
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Gold price endpoint failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
