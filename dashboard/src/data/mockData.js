@@ -216,15 +216,15 @@ export const executionEngine = {
   ],
 };
 
-// Updated phase progress — Phases 1-5 COMPLETE
+// Updated phase progress — Phases 1-7 COMPLETE
 export const phaseProgress = [
   { phase: 1, name: 'Infrastructure & Compute', status: 'complete', progress: 100, weeks: '1-3' },
-  { phase: 2, name: 'Data Acquisition & Pipeline', status: 'complete', progress: 90, weeks: '2-5' },
+  { phase: 2, name: 'Data Acquisition & Pipeline', status: 'complete', progress: 100, weeks: '2-5' },
   { phase: 3, name: 'Mathematical Modeling', status: 'complete', progress: 100, weeks: '4-10' },
   { phase: 4, name: 'Risk Management & Meta-Label', status: 'complete', progress: 100, weeks: '8-12' },
-  { phase: 5, name: 'Backtesting & Validation', status: 'complete', progress: 95, weeks: '10-14' },
-  { phase: 6, name: 'Paper Trading & Deployment', status: 'in-progress', progress: 21, weeks: '14-18' },
-  { phase: 7, name: 'Team Culture & Operations', status: 'not-started', progress: 0, weeks: 'Ongoing' },
+  { phase: 5, name: 'Backtesting & Validation', status: 'complete', progress: 100, weeks: '10-14' },
+  { phase: 6, name: 'Paper Trading & Deployment', status: 'complete', progress: 100, weeks: '14-18' },
+  { phase: 7, name: 'Team Culture & Operations', status: 'complete', progress: 100, weeks: 'Ongoing' },
 ];
 
 export const backtestConfig = {
@@ -269,4 +269,214 @@ export const healthMonitor = {
     { endpoint: '/signal', p50: 15.4, p95: 42.1, p99: 78.3, samples: 350 },
     { endpoint: '/regime', p50: 8.7, p95: 22.5, p99: 45.6, samples: 420 },
   ],
+};
+
+// ================================================================
+// Phase 6B — Paper Trading Engine
+// ================================================================
+export const paperTrading = {
+  status: 'RUNNING',
+  startedAt: '2026-05-14T08:00:00Z',
+  config: {
+    initialCapital: 100000, symbol: 'XAUUSD', kellyFraction: 0.25,
+    maxPositionPct: 0.10, maxDailyLossPct: 0.02, maxDrawdownPct: 0.15,
+    commissionPerTrade: 5.0, slippageModel: 'spread', slippagePct: 0.3,
+    minConfidence: 0.6,
+  },
+  portfolio: {
+    totalValue: 103842.67, cash: 91245.30, positionQuantity: 5.12,
+    positionValue: 12597.37, pnlRealized: 2918.45, pnlUnrealized: 924.22,
+    pnlTotal: 3842.67, dailyPnl: 412.30, returnPct: 3.84,
+    sharpeRatio: 1.92, maxDrawdown: -2.1, winRate: 0.58, numTrades: 47,
+  },
+  modelSignals: {
+    wavelet: { lastSignal: 'LONG', confidence: 0.78, signalCount: 142 },
+    hmm: { lastSignal: 'LONG', confidence: 0.72, signalCount: 138 },
+    lstm: { lastSignal: 'HOLD', confidence: 0.65, signalCount: 155 },
+    tft: { lastSignal: 'LONG', confidence: 0.81, signalCount: 148 },
+    genetic: { lastSignal: 'SHORT', confidence: 0.59, signalCount: 130 },
+    ensemble: { lastSignal: 'LONG', confidence: 0.76, signalCount: 160 },
+  },
+  recentTrades: [
+    { tradeId: 'PT-0047', model: 'TFT', signal: 'LONG', entry: 2341.50, exit: 2348.20, qty: 1.2, pnl: 8.04, pnlPct: 0.29, status: 'CLOSED', time: '14:32' },
+    { tradeId: 'PT-0046', model: 'Ensemble', signal: 'LONG', entry: 2335.80, exit: 2341.50, qty: 1.5, pnl: 8.55, pnlPct: 0.24, status: 'CLOSED', time: '13:15' },
+    { tradeId: 'PT-0045', model: 'HMM', signal: 'SHORT', entry: 2352.10, exit: 2348.20, qty: 0.8, pnl: 3.12, pnlPct: 0.17, status: 'CLOSED', time: '11:45' },
+    { tradeId: 'PT-0044', model: 'LSTM', signal: 'LONG', entry: 2328.50, exit: 2335.80, qty: 2.0, pnl: 14.60, pnlPct: 0.31, status: 'CLOSED', time: '10:20' },
+    { tradeId: 'PT-0043', model: 'Wavelet', signal: 'LONG', entry: 2320.00, exit: 2315.40, qty: 1.0, pnl: -4.60, pnlPct: -0.20, status: 'CLOSED', time: '09:30' },
+    { tradeId: 'PT-0042', model: 'Genetic', signal: 'SHORT', entry: 2345.60, exit: 2348.20, qty: 0.5, pnl: -1.30, pnlPct: -0.11, status: 'CLOSED', time: '08:50' },
+  ],
+  equityCurve: Array.from({ length: 30 }, (_, i) => {
+    const d = new Date('2026-04-15');
+    d.setDate(d.getDate() + i);
+    return {
+      date: d.toISOString().split('T')[0],
+      equity: +(100000 + i * 128 + Math.sin(i / 4) * 800 + Math.random() * 500).toFixed(2),
+    };
+  }),
+  dailyPnLHistory: Array.from({ length: 14 }, (_, i) => {
+    const d = new Date('2026-05-01');
+    d.setDate(d.getDate() + i);
+    return { date: d.toISOString().split('T')[0], pnl: +((Math.random() - 0.35) * 800).toFixed(2) };
+  }),
+};
+
+// ================================================================
+// Phase 6C — Stress Testing
+// ================================================================
+export const stressTestData = {
+  resilienceScore: 78.4,
+  riskLevel: 'moderate',
+  scenariosPassed: 7,
+  scenariosFailed: 2,
+  avgMaxDrawdown: 8.42,
+  avgPnlChange: -3.18,
+  scenarios: [
+    { name: '2008 Financial Crisis', type: 'historical', pnlChange: 2.1, maxDD: 3.2, recovery: 8, status: 'passed', prob: 0.02 },
+    { name: '2020 COVID-19 Crash', type: 'historical', pnlChange: 1.4, maxDD: 4.1, recovery: 12, status: 'passed', prob: 0.01 },
+    { name: 'Flash Crash (2011)', type: 'historical', pnlChange: 0.8, maxDD: 2.5, recovery: 3, status: 'passed', prob: 0.005 },
+    { name: 'Unexpected Rate Spike', type: 'hypothetical', pnlChange: -4.2, maxDD: 6.8, recovery: 14, status: 'passed', prob: 0.03 },
+    { name: 'Geopolitical Escalation', type: 'hypothetical', pnlChange: 5.8, maxDD: 3.5, recovery: 7, status: 'passed', prob: 0.02 },
+    { name: 'Correlation Breakdown', type: 'correlation', pnlChange: -12.4, maxDD: 15.8, recovery: 22, status: 'failed', prob: 0.01 },
+    { name: '5-Sigma Fat Tail', type: 'fat_tail', pnlChange: -8.6, maxDD: 12.1, recovery: 18, status: 'passed', prob: 0.002 },
+    { name: '6-Sigma Black Swan', type: 'fat_tail', pnlChange: -15.2, maxDD: 22.4, recovery: 28, status: 'failed', prob: 0.0005 },
+    { name: 'Cascade Failure', type: 'cascade', pnlChange: -9.1, maxDD: 14.2, recovery: 20, status: 'passed', prob: 0.015 },
+  ],
+  reverseStress: {
+    maxLossPct: 18.7, maxLossConfidence: 0.85,
+    breachScenarios: ['Correlation Breakdown', '6-Sigma Black Swan'],
+    recoveryEstimateDays: 24, minimumBufferPct: 3.7,
+  },
+};
+
+// ================================================================
+// Phase 6C — Dynamic Risk Adjustment
+// ================================================================
+export const dynamicRisk = {
+  baseKelly: 0.50,
+  adjustment: {
+    volatilityMultiplier: 1.0, drawdownMultiplier: 0.92, consensusMultiplier: 0.85,
+    correlationMultiplier: 1.0, finalKelly: 0.039, riskScore: 3.4,
+    reason: 'Low model consensus (85%) | Drawdown stress (8%)',
+  },
+  volatility: {
+    vixLevel: 16.8, regime: 'normal', vol30d: 14.2, vol60d: 13.8,
+    trend: 'stable', volOfVol: 2.3,
+  },
+  correlations: { avgCorrelation: 0.48, status: 'healthy', spikeDetected: false, spikeMagnitude: 0.0 },
+  modelConsensus: { consensusStrength: 0.85, disagreementCount: 2, totalModels: 6 },
+  drawdown: { currentDrawdownPct: 2.1, stressLevel: 0.08, recoveryEstimateDays: 8 },
+  adjustmentHistory: Array.from({ length: 24 }, (_, i) => ({
+    hour: `${String(i).padStart(2, '0')}:00`,
+    kelly: +(0.035 + Math.random() * 0.015).toFixed(4),
+    riskScore: +(2.5 + Math.random() * 3.0).toFixed(1),
+  })),
+};
+
+// ================================================================
+// Phase 6C — Feature Drift Detection
+// ================================================================
+export const featureDrift = {
+  totalFeatures: 12,
+  driftAlerts: 2,
+  features: [
+    { name: 'rsi_14', driftScore: 0.12, status: 'stable', samples: 5000 },
+    { name: 'macd_signal', driftScore: 0.08, status: 'stable', samples: 5000 },
+    { name: 'volatility_20', driftScore: 0.62, status: 'warning', samples: 4800 },
+    { name: 'sma_dist_20', driftScore: 0.15, status: 'stable', samples: 5000 },
+    { name: 'wavelet_d1', driftScore: 0.82, status: 'critical', samples: 4500 },
+    { name: 'regime_prob', driftScore: 0.21, status: 'stable', samples: 5000 },
+    { name: 'corr_dxy_20', driftScore: 0.18, status: 'stable', samples: 4900 },
+    { name: 'parkinson_vol', driftScore: 0.09, status: 'stable', samples: 5000 },
+  ],
+  recentAlerts: [
+    { feature: 'wavelet_d1', severity: 'critical', score: 0.82, time: '14:22:05', recommendation: 'Consider model retraining' },
+    { feature: 'volatility_20', severity: 'warning', score: 0.62, time: '12:45:30', recommendation: 'Monitor distribution changes' },
+  ],
+};
+
+// ================================================================
+// Phase 6C — Logging & Observability
+// ================================================================
+export const observability = {
+  structuredLogs: { totalEntries: 24580, errorRate: 0.12, avgLatencyMs: 4.2 },
+  tracing: { enabled: true, serviceName: 'mini-medallion', totalSpans: 8924, avgSpanMs: 12.8 },
+  performance: {
+    operations: [
+      { name: 'signal_generation', count: 1420, avgMs: 15.4, p99Ms: 42.1 },
+      { name: 'trade_execution', count: 47, avgMs: 23.8, p99Ms: 89.3 },
+      { name: 'risk_calculation', count: 2840, avgMs: 8.7, p99Ms: 22.5 },
+      { name: 'health_check', count: 1248, avgMs: 1.2, p99Ms: 8.1 },
+    ],
+  },
+  metrics: {
+    counters: { trades_executed: 47, signals_generated: 1420, risk_checks: 2840 },
+    gauges: { portfolio_value: 103842.67, active_positions: 1, risk_score: 3.4 },
+  },
+};
+
+// ================================================================
+// Phase 7 — Team & Operations Management
+// ================================================================
+export const teamOperations = {
+  team: {
+    totalMembers: 6,
+    avgTenureDays: 180,
+    members: [
+      { id: 'TM-001', name: 'Dr. S. Patel', role: 'Quant Researcher', focus: 'Signal Discovery', status: 'active', expertise: ['HMM', 'Wavelets', 'TFT'] },
+      { id: 'TM-002', name: 'A. Chowdhury', role: 'MLOps Engineer', focus: 'Model Deployment', status: 'active', expertise: ['Docker', 'MLflow', 'CI/CD'] },
+      { id: 'TM-003', name: 'R. Kumar', role: 'Data Engineer', focus: 'Pipeline & Ingestion', status: 'active', expertise: ['QuestDB', 'Redis', 'Streaming'] },
+      { id: 'TM-004', name: 'M. Singh', role: 'Risk Manager', focus: 'Position Sizing', status: 'active', expertise: ['Kelly', 'VaR', 'Stress Testing'] },
+      { id: 'TM-005', name: 'K. Verma', role: 'Execution Engineer', focus: 'C++ Engine', status: 'active', expertise: ['OrderRouter', 'Latency', 'IBKR'] },
+      { id: 'TM-006', name: 'N. Arjun', role: 'Operations Lead', focus: 'System Oversight', status: 'active', expertise: ['Monitoring', 'Governance', 'Planning'] },
+    ],
+  },
+  operations: {
+    totalOperations: 14,
+    avgSuccessRate: 97.2,
+    byFrequency: { daily: 6, weekly: 4, monthly: 3, quarterly: 1 },
+    scheduled: [
+      { name: 'Model Performance Review', frequency: 'daily', responsible: 'Quant Researcher', duration: 30, successRate: 98.5, nextRun: '2026-05-15T08:00' },
+      { name: 'Data Quality Check', frequency: 'daily', responsible: 'Data Engineer', duration: 15, successRate: 99.2, nextRun: '2026-05-15T07:00' },
+      { name: 'Risk Limit Validation', frequency: 'daily', responsible: 'Risk Manager', duration: 20, successRate: 100, nextRun: '2026-05-15T07:30' },
+      { name: 'Infrastructure Health Scan', frequency: 'daily', responsible: 'MLOps Engineer', duration: 10, successRate: 99.8, nextRun: '2026-05-15T06:00' },
+      { name: 'Signal Catalog Update', frequency: 'weekly', responsible: 'Quant Researcher', duration: 60, successRate: 95.0, nextRun: '2026-05-19T10:00' },
+      { name: 'Backtest Regression Suite', frequency: 'weekly', responsible: 'MLOps Engineer', duration: 120, successRate: 92.0, nextRun: '2026-05-18T22:00' },
+      { name: 'Portfolio Stress Test', frequency: 'monthly', responsible: 'Risk Manager', duration: 90, successRate: 97.5, nextRun: '2026-06-01T08:00' },
+    ],
+  },
+  governance: {
+    totalChanges: 8,
+    pipeline: { proposed: 1, review: 1, backtest: 1, paper_trade: 2, staging: 0, production: 3, rejected: 0 },
+    recentChanges: [
+      { id: 'MCR-008', model: 'TFT-v2', proposedBy: 'S. Patel', status: 'paper_trade', sharpe: 2.45, approvals: 2, date: '2026-05-12' },
+      { id: 'MCR-007', model: 'HMM-regime-v3', proposedBy: 'S. Patel', status: 'paper_trade', sharpe: 2.12, approvals: 2, date: '2026-05-10' },
+      { id: 'MCR-006', model: 'Ensemble-stack-v2', proposedBy: 'A. Chowdhury', status: 'production', sharpe: 2.56, approvals: 3, date: '2026-05-05' },
+      { id: 'MCR-005', model: 'LSTM-bidir-v4', proposedBy: 'S. Patel', status: 'production', sharpe: 2.41, approvals: 3, date: '2026-04-28' },
+      { id: 'MCR-004', model: 'Genetic-opt-v2', proposedBy: 'A. Chowdhury', status: 'production', sharpe: 1.98, approvals: 3, date: '2026-04-20' },
+    ],
+  },
+  incidents: {
+    total: 5, unresolved: 1,
+    bySeverity: { low: 2, medium: 2, high: 1, critical: 0 },
+    recent: [
+      { id: 'INC-005', title: 'Redis cache miss spike', severity: 'medium', status: 'open', affected: ['Redis', 'Feature Pipeline'], time: '2026-05-14T10:20' },
+      { id: 'INC-004', title: 'QuestDB slow query', severity: 'low', status: 'resolved', affected: ['QuestDB'], time: '2026-05-13T14:15', resolution: 'Index optimization' },
+      { id: 'INC-003', title: 'Signal latency >100ms', severity: 'high', status: 'resolved', affected: ['Signal Engine', 'Network'], time: '2026-05-12T09:30', resolution: 'Network route fix' },
+      { id: 'INC-002', title: 'MLflow disk usage 85%', severity: 'medium', status: 'resolved', affected: ['MLflow', 'MinIO'], time: '2026-05-10T16:00', resolution: 'Artifact cleanup' },
+      { id: 'INC-001', title: 'Docker memory leak', severity: 'low', status: 'resolved', affected: ['Docker'], time: '2026-05-08T11:45', resolution: 'Container restart' },
+    ],
+  },
+  research: {
+    totalSignals: 18, activeSignals: 14, retiredSignals: 4,
+    totalSeminars: 12, avgDiscoverySharpe: 2.15,
+    upcomingSeminars: [
+      { topic: 'Attention-weighted regime transition', presenter: 'S. Patel', date: '2026-05-19' },
+      { topic: 'Cross-asset correlation alpha', presenter: 'R. Kumar', date: '2026-05-26' },
+    ],
+  },
+  performanceReports: {
+    daily: { trades: 8, winRate: 0.625, pnl: 412.30, sharpe: 1.92, maxDD: -0.8 },
+    weekly: { trades: 47, winRate: 0.58, pnl: 2918.45, sharpe: 1.85, maxDD: -2.1 },
+    monthly: { trades: 186, winRate: 0.55, pnl: 8245.60, sharpe: 1.78, maxDD: -4.2 },
+  },
 };

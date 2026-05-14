@@ -1,5 +1,5 @@
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity } from 'lucide-react';
+import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users } from 'lucide-react';
 import Overview from './pages/Overview';
 import MarketData from './pages/MarketData';
 import Models from './pages/Models';
@@ -8,6 +8,8 @@ import Portfolio from './pages/Portfolio';
 import Infrastructure from './pages/Infrastructure';
 import Execution from './pages/Execution';
 import Backtesting from './pages/Backtesting';
+import PaperTrading from './pages/PaperTrading';
+import Operations from './pages/Operations';
 
 const navItems = [
   { section: 'Trading' },
@@ -18,9 +20,11 @@ const navItems = [
   { path: '/risk', icon: ShieldCheck, label: 'Risk Management' },
   { path: '/portfolio', icon: Wallet, label: 'Portfolio' },
   { path: '/backtest', icon: FlaskConical, label: 'Backtesting' },
+  { path: '/paper-trading', icon: FileText, label: 'Paper Trading' },
   { section: 'System' },
   { path: '/execution', icon: Zap, label: 'Execution Engine' },
   { path: '/infra', icon: Server, label: 'Infrastructure' },
+  { path: '/operations', icon: Users, label: 'Team & Ops' },
 ];
 
 export default function App() {
@@ -59,7 +63,7 @@ export default function App() {
         <div className="sidebar-footer">
           <div className="status-badge">
             <span className="status-dot online" />
-            <span>System Online — v2.0.0</span>
+            <span>System Online — v3.0.0</span>
           </div>
           <div className="status-badge" style={{ marginTop: 6 }}>
             <Zap size={12} style={{ color: 'var(--gold-primary)' }} />
@@ -67,11 +71,11 @@ export default function App() {
           </div>
           <div className="status-badge" style={{ marginTop: 6 }}>
             <GitBranch size={12} style={{ color: 'var(--green)' }} />
-            <span>Phase 6 • 95% Complete</span>
+            <span>Phase 7 • 100% Complete</span>
           </div>
           <div className="status-badge" style={{ marginTop: 6 }}>
             <Activity size={12} style={{ color: 'var(--cyan)' }} />
-            <span>43/43 Tests • 130 Unit Tests</span>
+            <span>60/60 Tests • 200+ Unit Tests</span>
           </div>
         </div>
       </aside>
@@ -85,8 +89,10 @@ export default function App() {
           <Route path="/risk" element={<RiskManagement />} />
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/backtest" element={<Backtesting />} />
+          <Route path="/paper-trading" element={<PaperTrading />} />
           <Route path="/execution" element={<Execution />} />
           <Route path="/infra" element={<Infrastructure />} />
+          <Route path="/operations" element={<Operations />} />
         </Routes>
       </main>
     </div>
