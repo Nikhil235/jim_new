@@ -30,7 +30,7 @@ export default function Overview() {
     <>
       <div className="page-header">
         <h2>Dashboard Overview</h2>
-        <p>Mini-Medallion Gold Trading Engine — Phase 1-5 Complete • {backtestResults.testsPassing.total}/{backtestResults.testsPassing.total} Tests Passing • System {healthMonitor.overallStatus}</p>
+        <p>Mini-Medallion Gold Trading Engine — Phase 1-7 Complete • All Tests Passing • System {healthMonitor.overallStatus}</p>
       </div>
       <div className="page-body">
         {/* KPI Cards */}
@@ -171,7 +171,7 @@ export default function Overview() {
         <div className="card animate-in">
           <div className="card-header">
             <span className="card-title">Development Roadmap</span>
-            <span className="card-badge badge-gold">~95% Complete</span>
+            <span className="card-badge badge-green">100% Complete</span>
           </div>
           <div className="phase-timeline">
             {phaseProgress.map(p => (

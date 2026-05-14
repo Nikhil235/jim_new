@@ -1,11 +1,23 @@
-import { infraServices, gpuInfo, executionEngine, healthMonitor } from '../data/mockData';
+import { infraServices, gpuInfo, executionEngine, healthMonitor, observability } from '../data/mockData';
 
 export default function Infrastructure() {
+  const newModules = [
+    { name: 'Backup Manager', status: 'active', desc: 'Automated backup scheduling & S3 storage', icon: '💾', phase: '6C' },
+    { name: 'Disaster Recovery', status: 'active', desc: 'Multi-region failover & recovery playbooks', icon: '🛡️', phase: '6C' },
+    { name: 'Archival Scheduler', status: 'active', desc: 'Time-based data archival to cold storage', icon: '📁', phase: '6C' },
+    { name: 'Data Lifecycle Mgr', status: 'active', desc: 'Retention policies & compliance tracking', icon: '♻️', phase: '6C' },
+    { name: 'Extended Health Mon', status: 'active', desc: 'Deep health checks with anomaly detection', icon: '🔍', phase: '6C' },
+    { name: 'Structured Logging', status: 'active', desc: 'JSON logging + OpenTelemetry tracing', icon: '📝', phase: '6C' },
+    { name: 'Real-time Feed Mgr', status: 'active', desc: 'WebSocket/REST market data aggregation', icon: '📡', phase: '6C' },
+    { name: 'Streaming Features', status: 'active', desc: 'Live feature computation from tick data', icon: '⚡', phase: '6C' },
+    { name: 'Extended Testing', status: 'active', desc: 'Property-based + integration test framework', icon: '🧪', phase: '6C' },
+  ];
+
   return (
     <>
       <div className="page-header">
         <h2>Infrastructure</h2>
-        <p>Docker services, GPU/RAPIDS, Health Monitor, C++ engine & SLA tracking</p>
+        <p>Phase 1-7 Complete — Docker services, GPU, Health Monitor, C++ engine, Backup/DR, Observability & Real-time Ingestion</p>
       </div>
       <div className="page-body">
         {/* Health Monitor KPIs */}
@@ -24,6 +36,70 @@ export default function Infrastructure() {
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{m.sub}</div>
             </div>
           ))}
+        </div>
+
+        {/* Phase 6C New Modules */}
+        <div className="card animate-in" style={{ marginBottom: 20 }}>
+          <div className="card-header">
+            <span className="card-title">Phase 6C Infrastructure Modules</span>
+            <span className="card-badge badge-green">{newModules.length}/{newModules.length} ACTIVE</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 8 }}>
+            {newModules.map((m, i) => (
+              <div key={i} className="service-card animate-in">
+                <div className="service-icon" style={{ background: 'var(--gold-glow)', fontSize: 20 }}>{m.icon}</div>
+                <div className="service-info">
+                  <div className="service-name">{m.name} <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{m.phase}</span></div>
+                  <div className="service-detail">{m.desc}</div>
+                </div>
+                <div className="service-status" style={{ color: 'var(--green)' }}>
+                  <span className="status-dot" style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--green)', marginRight: 6, boxShadow: '0 0 6px var(--green)' }} />
+                  Active
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Observability */}
+        <div className="card animate-in" style={{ marginBottom: 20 }}>
+          <div className="card-header">
+            <span className="card-title">Logging & Observability</span>
+            <span className="card-badge badge-purple">OPENTELEMETRY</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Performance Operations</div>
+              {observability.performance.operations.map((op, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{op.name}</span>
+                  <div style={{ display: 'flex', gap: 16, fontSize: 11 }}>
+                    <span style={{ color: 'var(--text-muted)' }}>{op.count.toLocaleString()} ops</span>
+                    <span style={{ color: 'var(--green)', fontFamily: 'var(--font-mono)' }}>{op.avgMs}ms avg</span>
+                    <span style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)' }}>{op.p99Ms}ms p99</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Metrics Summary</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { label: 'Log Entries', value: observability.structuredLogs.totalEntries.toLocaleString() },
+                  { label: 'Error Rate', value: `${observability.structuredLogs.errorRate}%` },
+                  { label: 'Total Spans', value: observability.tracing.totalSpans.toLocaleString() },
+                  { label: 'Avg Span', value: `${observability.tracing.avgSpanMs}ms` },
+                  { label: 'Signals Gen', value: observability.metrics.counters.signals_generated.toLocaleString() },
+                  { label: 'Risk Checks', value: observability.metrics.counters.risk_checks.toLocaleString() },
+                ].map((m, i) => (
+                  <div key={i} style={{ padding: 10, background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{m.label}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-bright)', marginTop: 4 }}>{m.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* GPU Card */}

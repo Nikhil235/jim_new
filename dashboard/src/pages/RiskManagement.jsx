@@ -38,7 +38,7 @@ export default function RiskManagement() {
     <>
       <div className="page-header">
         <h2>Risk Management</h2>
-        <p>Phase 4 Complete — Circuit breakers, Dynamic Kelly, GPU VaR, Meta-Labeler & Position Manager • 58/58 tests passing</p>
+        <p>Phase 4-6C Complete — Circuit breakers, Dynamic Kelly, GPU VaR, Meta-Labeler, Stress Testing & Dynamic Risk Adjustment</p>
       </div>
       <div className="page-body">
         <div className="kpi-grid" style={{ marginBottom: 20 }}>
