@@ -53,23 +53,24 @@ export default function PaperTrading() {
   const handleStop = async () => { if(!confirm('Stop engine?')) return; try { await stopPaperTrading(); refresh(); } catch(e) { alert(e.message); } };
   const handleReset = async () => { try { await resetDailyCounters(); refresh(); } catch(e) { alert(e.message); } };
 
-  const pt = status ? null : mockPT;
-  const engineStatus = status?.status || pt?.status || 'NOT STARTED';
-  const isRunning = engineStatus === 'RUNNING';
-  const pf = status?.portfolio || pt?.portfolio || {};
-  const totalValue = pf.total_value ?? pf.totalValue ?? 100000;
-  const pnlTotal = pf.pnl_total ?? pf.pnlTotal ?? 0;
-  const dailyPnl = pf.pnl_daily ?? pf.dailyPnl ?? 0;
-  const returnPct = pf.return_pct ?? pf.returnPct ?? 0;
-  const winRate = perf?.win_rate ?? pf.winRate ?? 0;
-  const sharpe = perf?.sharpe_ratio ?? pf.sharpeRatio ?? 0;
-  const maxDD = perf?.max_drawdown ?? pf.maxDrawdown ?? 0;
-  const numTrades = perf?.num_trades ?? pf.numTrades ?? pf.num_trades ?? 0;
 
-  const modelSigs = signals?.models || (pt ? pt.modelSignals : {});
-  const equityData = eqHistory.length > 3 ? eqHistory : (pt?.equityCurve || []);
-  const dailyPnlData = pt?.dailyPnLHistory || [];
-  const tradeList = trades.length > 0 ? trades : (pt?.recentTrades || []);
+  const engineStatus = status?.status || 'NOT STARTED';
+  const isRunning = engineStatus === 'RUNNING';
+  const pf = status?.portfolio || {};
+  const totalValue = pf.total_value ?? 100000;
+  const pnlTotal = pf.pnl_total ?? 0;
+  const dailyPnl = pf.pnl_daily ?? 0;
+  const returnPct = pf.return_pct ?? 0;
+  const winRate = perf?.win_rate ?? 0;
+  const sharpe = perf?.sharpe_ratio ?? 0;
+  const maxDD = perf?.max_drawdown ?? 0;
+  const numTrades = perf?.num_trades ?? pf.num_trades ?? 0;
+
+  const modelSigs = signals?.models || {};
+  const equityData = eqHistory.length > 3 ? eqHistory : [];
+  const dailyPnlData = [];
+  const tradeList = Array.isArray(trades) && trades.length > 0 ? trades : [];
+
 
   return (<>
     <div className="page-header">

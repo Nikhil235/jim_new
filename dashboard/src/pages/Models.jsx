@@ -89,7 +89,7 @@ export default function Models() {
       confidence: d.confidence || 0,
       status: d.signal && d.signal !== 'HOLD' ? 'active' : 'idle',
     }))
-    : mockSignals;
+    : [];
 
   return (
     <>
