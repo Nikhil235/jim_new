@@ -1,124 +1,117 @@
-import { executionEngine } from '../data/mockData';
+import { useState, useEffect, useCallback } from 'react';
+import { Wifi, WifiOff } from 'lucide-react';
+import { fetchPaperTradingStatus, fetchPaperTradingTrades } from '../data/api';
 
 export default function Execution() {
-  const { cppEngine, recentOrders } = executionEngine;
+  const [live, setLive] = useState(false);
+  const [status, setStatus] = useState(null);
+  const [trades, setTrades] = useState([]);
 
-  return (
-    <>
-      <div className="page-header">
-        <h2>Execution Engine</h2>
-        <p>C++ low-latency order routing, IBKR integration & latency monitoring</p>
-      </div>
-      <div className="page-body">
-        {/* Connection Status */}
-        <div className="kpi-grid" style={{ marginBottom: 20 }}>
-          {[
-            { label: 'Status', value: executionEngine.status.toUpperCase(), sub: `Broker: ${executionEngine.broker.toUpperCase()}` },
-            { label: 'Mode', value: executionEngine.mode.toUpperCase(), sub: 'Port: 7497 (Paper)' },
-            { label: 'Order Type', value: executionEngine.orderType.toUpperCase(), sub: 'Never market orders' },
-            { label: 'Algorithm', value: executionEngine.algo.toUpperCase(), sub: `Max slip: ${executionEngine.maxSlippageBps} bps` },
-          ].map((m, i) => (
-            <div key={i} className="kpi-card animate-in">
-              <div className="kpi-label">{m.label}</div>
-              <div className="kpi-value" style={{ fontSize: 22 }}>{m.value}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{m.sub}</div>
-            </div>
-          ))}
-        </div>
+  const refresh = useCallback(async () => {
+    try {
+      const [s, t] = await Promise.all([fetchPaperTradingStatus(), fetchPaperTradingTrades(20)]);
+      setStatus(s); setTrades(Array.isArray(t) ? t : []); setLive(true);
+    } catch { setLive(false); }
+  }, []);
 
-        <div className="grid-2" style={{ marginBottom: 16 }}>
-          {/* C++ Engine Components */}
-          <div className="card animate-in">
-            <div className="card-header">
-              <span className="card-title">C++ Engine Components</span>
-              <span className="card-badge badge-green">{cppEngine.compiled ? 'COMPILED' : 'NOT BUILT'}</span>
-            </div>
-            {cppEngine.components.map((c, i) => (
-              <div key={i} style={{ padding: '14px 0', borderBottom: i < cppEngine.components.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-bright)' }}>{c.name}</span>
-                  <span className="card-badge badge-green" style={{ fontSize: 9 }}>{c.status.toUpperCase()}</span>
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.desc}</div>
-              </div>
-            ))}
-            <div style={{ marginTop: 12, padding: '12px 0', borderTop: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Build Info</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {[['Build System', 'CMake 3.20+'], ['Compiler', 'MSVC / GCC / Clang'], ['Target', 'order_router_demo'], ['Platform', 'Cross-platform']].map(([k, v], i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{k}</span>
-                    <span className="mono" style={{ fontSize: 11 }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+  useEffect(() => { refresh(); const t = setInterval(refresh, 5000); return () => clearInterval(t); }, [refresh]);
 
-          {/* Latency Monitoring */}
-          <div className="card animate-in">
-            <div className="card-header">
-              <span className="card-title">Latency Monitor</span>
-              <span className="card-badge badge-blue">REAL-TIME</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 8 }}>
-              {[
-                { label: 'P50', value: cppEngine.latency.p50, color: 'var(--green)' },
-                { label: 'P95', value: cppEngine.latency.p95, color: 'var(--orange)' },
-                { label: 'P99', value: cppEngine.latency.p99, color: 'var(--red)' },
-              ].map((l, i) => (
-                <div key={i} style={{ textAlign: 'center', padding: 16, background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)' }}>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>{l.label}</div>
-                  <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: l.color, marginTop: 4 }}>{l.value}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{cppEngine.latency.unit}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>IBKR Connection</div>
-              {[
-                ['Host', executionEngine.ibkr.host],
-                ['Port', executionEngine.ibkr.port],
-                ['Client ID', executionEngine.ibkr.clientId],
-                ['Max Latency', `${executionEngine.maxSlippageBps * 100} µs`],
-              ].map(([k, v], i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-color)' }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{k}</span>
-                  <span className="mono" style={{ fontSize: 12, color: 'var(--text-bright)' }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Orders */}
-        <div className="card animate-in">
-          <div className="card-header">
-            <span className="card-title">Recent Orders</span>
-            <span className="card-badge badge-gold">{recentOrders.length} orders</span>
-          </div>
-          <table className="data-table">
-            <thead>
-              <tr><th>ID</th><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Type</th><th>Price</th><th>Latency</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              {recentOrders.map(o => (
-                <tr key={o.id}>
-                  <td className="mono" style={{ fontSize: 11 }}>{o.id}</td>
-                  <td className="mono" style={{ fontSize: 12 }}>{o.time}</td>
-                  <td style={{ fontSize: 12 }}>{o.symbol}</td>
-                  <td><span style={{ color: o.side === 'BUY' ? 'var(--green)' : 'var(--red)', fontWeight: 600, fontSize: 12 }}>{o.side}</span></td>
-                  <td className="mono">{o.qty}</td>
-                  <td style={{ fontSize: 12 }}>{o.type}</td>
-                  <td className="mono">${o.price.toFixed(2)}</td>
-                  <td className="mono" style={{ color: o.latency < 20 ? 'var(--green)' : o.latency < 50 ? 'var(--orange)' : 'var(--red)' }}>{o.latency}µs</td>
-                  <td><span className={`card-badge ${o.status === 'filled' ? 'badge-green' : o.status === 'cancelled' ? 'badge-red' : 'badge-orange'}`}>{o.status}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
+  if (!live) return (
+    <><div className="page-header"><h2>Execution Engine</h2><p>⚠ Backend offline</p></div>
+    <div className="page-body"><div className="card" style={{padding:40,textAlign:'center',color:'var(--text-muted)'}}>
+      <WifiOff size={48} style={{margin:'0 auto 16px',opacity:0.3}}/><div style={{fontSize:16,fontWeight:600}}>No Connection</div>
+    </div></div></>
   );
+
+  const cfg = status?.config || {};
+  const pf = status?.portfolio || {};
+  const engineStatus = status?.status || 'NOT STARTED';
+  const isRunning = engineStatus === 'RUNNING';
+
+  return (<>
+    <div className="page-header">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div><h2>Execution Engine</h2><p>Live order execution via paper trading engine — {isRunning ? 'Engine Running' : 'Engine Stopped'}</p></div>
+        <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 12px',borderRadius:'var(--radius-sm)',fontSize:11,fontWeight:600,background:'var(--green-dim)',color:'var(--green)',border:'1px solid rgba(0,196,140,0.3)'}}>
+          <Wifi size={12}/> LIVE
+        </div>
+      </div>
+    </div>
+    <div className="page-body">
+      <div className="kpi-grid" style={{marginBottom:20}}>
+        {[
+          {label:'Status',value:engineStatus,sub:`Started: ${status?.started_at?new Date(status.started_at).toLocaleString():'—'}`},
+          {label:'Mode',value:'PAPER',sub:'Simulated execution'},
+          {label:'Symbol',value:cfg.symbol||'XAUUSD',sub:`Min conf: ${((cfg.min_confidence||0.6)*100).toFixed(0)}%`},
+          {label:'Max Slippage',value:`${((cfg.slippage_pct||0.3)).toFixed(1)}%`,sub:`Model: ${cfg.slippage_model||'spread'}`},
+        ].map((m,i)=>(<div key={i} className="kpi-card animate-in">
+          <div className="kpi-label">{m.label}</div><div className="kpi-value" style={{fontSize:22}}>{m.value}</div>
+          <div style={{fontSize:11,color:'var(--text-muted)',marginTop:4}}>{m.sub}</div>
+        </div>))}
+      </div>
+
+      <div className="grid-2" style={{marginBottom:16}}>
+        <div className="card animate-in">
+          <div className="card-header"><span className="card-title">Engine Configuration</span><span className={`card-badge ${isRunning?'badge-green':'badge-red'}`}>{isRunning?'RUNNING':'STOPPED'}</span></div>
+          {[
+            ['Initial Capital',`$${(cfg.initial_capital||100000).toLocaleString()}`],
+            ['Kelly Fraction',cfg.kelly_fraction||'—'],
+            ['Max Position %',`${((cfg.max_position_pct||0.1)*100).toFixed(0)}%`],
+            ['Max Daily Loss',`${((cfg.max_daily_loss_pct||0.02)*100).toFixed(1)}%`],
+            ['Max Drawdown',`${((cfg.max_drawdown_pct||0.15)*100).toFixed(0)}%`],
+            ['Commission',`$${(cfg.commission_per_trade||5.0).toFixed(2)}/trade`],
+            ['Slippage Model',cfg.slippage_model||'spread'],
+            ['Min Confidence',`${((cfg.min_confidence||0.6)*100).toFixed(0)}%`],
+          ].map(([k,v],i)=>(<div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid var(--border-color)'}}>
+            <span style={{fontSize:12,color:'var(--text-muted)'}}>{k}</span>
+            <span className="mono" style={{fontSize:12,color:'var(--text-bright)'}}>{v}</span>
+          </div>))}
+        </div>
+
+        <div className="card animate-in">
+          <div className="card-header"><span className="card-title">Portfolio State</span><span className="card-badge badge-gold">REAL-TIME</span></div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:16,marginTop:8}}>
+            {[
+              {label:'Total Value',value:`$${(pf.total_value||0).toLocaleString(undefined,{maximumFractionDigits:0})}`,color:'var(--gold-primary)'},
+              {label:'Cash',value:`$${(pf.cash||0).toLocaleString(undefined,{maximumFractionDigits:0})}`,color:'var(--green)'},
+              {label:'Position Value',value:`$${(pf.position_value||0).toLocaleString(undefined,{maximumFractionDigits:0})}`,color:'var(--blue)'},
+            ].map((l,i)=>(<div key={i} style={{textAlign:'center',padding:16,background:'var(--bg-secondary)',borderRadius:'var(--radius-sm)'}}>
+              <div style={{fontSize:10,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:1}}>{l.label}</div>
+              <div className="mono" style={{fontSize:20,fontWeight:700,color:l.color,marginTop:4}}>{l.value}</div>
+            </div>))}
+          </div>
+          <div style={{marginTop:16}}>
+            {[
+              ['Realized P&L',`$${(pf.pnl_realized||0).toFixed(2)}`],
+              ['Unrealized P&L',`$${(pf.pnl_unrealized||0).toFixed(2)}`],
+              ['Total P&L',`$${(pf.pnl_total||0).toFixed(2)}`],
+              ['Return',`${(pf.return_pct||0).toFixed(2)}%`],
+            ].map(([k,v],i)=>(<div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border-color)'}}>
+              <span style={{fontSize:12,color:'var(--text-muted)'}}>{k}</span>
+              <span className="mono" style={{fontSize:12,color:'var(--text-bright)'}}>{v}</span>
+            </div>))}
+          </div>
+        </div>
+      </div>
+
+      <div className="card animate-in">
+        <div className="card-header"><span className="card-title">Recent Orders</span><span className="card-badge badge-gold">{trades.length} orders</span></div>
+        <table className="data-table">
+          <thead><tr><th>ID</th><th>Time</th><th>Model</th><th>Side</th><th>Entry</th><th>Exit</th><th>P&L</th><th>Status</th></tr></thead>
+          <tbody>
+            {trades.map((t,i)=>(<tr key={i}>
+              <td className="mono" style={{fontSize:11}}>{(t.trade_id||'').toString().slice(0,10)}</td>
+              <td className="mono" style={{fontSize:12}}>{t.created_at?new Date(t.created_at).toLocaleTimeString():'—'}</td>
+              <td style={{fontSize:12}}>{t.model_name||'—'}</td>
+              <td><span style={{color:t.signal_type==='LONG'?'var(--green)':'var(--red)',fontWeight:600,fontSize:12}}>{t.signal_type||'—'}</span></td>
+              <td className="mono">${Number(t.entry_price||0).toFixed(2)}</td>
+              <td className="mono">{t.exit_price?`$${Number(t.exit_price).toFixed(2)}`:'—'}</td>
+              <td className="mono" style={{color:(t.pnl||0)>=0?'var(--green)':'var(--red)',fontWeight:600}}>{(t.pnl||0)>=0?'+':''}${(t.pnl||0).toFixed(2)}</td>
+              <td><span className={`card-badge ${t.status==='CLOSED'?'badge-green':'badge-blue'}`}>{t.status||'OPEN'}</span></td>
+            </tr>))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </>);
 }

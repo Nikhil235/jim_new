@@ -1,4 +1,6 @@
-import { Users, Calendar, GitPullRequest, AlertTriangle, BookOpen, BarChart3, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Users, Calendar, GitPullRequest, AlertTriangle, BookOpen, BarChart3, CheckCircle, Clock, XCircle, Wifi } from 'lucide-react';
+import { fetchPaperTradingPerformance, fetchHealth } from '../data/api';
 import { teamOperations } from '../data/mockData';
 
 const statusColor = (s) => s === 'production' ? 'var(--green)' : s === 'paper_trade' ? 'var(--gold-primary)' : s === 'review' ? 'var(--blue)' : s === 'backtest' ? 'var(--purple)' : 'var(--text-muted)';
@@ -7,7 +9,20 @@ const sevColor = (s) => s === 'critical' ? 'var(--red)' : s === 'high' ? 'var(--
 
 export default function Operations() {
   const ops = teamOperations;
-  const rpt = ops.performanceReports;
+  const [live, setLive] = useState(false);
+  const [perf, setPerf] = useState(null);
+
+  const refresh = useCallback(async () => {
+    try { const p = await fetchPaperTradingPerformance(); setPerf(p); setLive(true); } catch { setLive(false); }
+  }, []);
+
+  useEffect(() => { refresh(); const t = setInterval(refresh, 10000); return () => clearInterval(t); }, [refresh]);
+
+  const rpt = perf ? {
+    daily: { trades: perf.daily_trades || 0, winRate: perf.win_rate || 0, pnl: perf.pnl_daily || 0, sharpe: perf.sharpe_ratio || 0, maxDD: perf.max_drawdown || 0 },
+    weekly: { trades: perf.num_trades || 0, winRate: perf.win_rate || 0, pnl: perf.pnl_total || 0, sharpe: perf.sharpe_ratio || 0, maxDD: perf.max_drawdown || 0 },
+    monthly: { trades: perf.num_trades || 0, winRate: perf.win_rate || 0, pnl: perf.pnl_total || 0, sharpe: perf.sharpe_ratio || 0, maxDD: perf.max_drawdown || 0 },
+  } : ops.performanceReports;
 
   return (
     <>
@@ -35,7 +50,7 @@ export default function Operations() {
 
         {/* Performance Reports */}
         <div className="card animate-in" style={{ marginBottom: 20 }}>
-          <div className="card-header"><span className="card-title">Performance Reports</span><span className="card-badge badge-green">LIVE</span></div>
+          <div className="card-header"><span className="card-title">Performance Reports</span><span className={`card-badge ${live ? 'badge-green' : 'badge-orange'}`}>{live ? 'LIVE API' : 'STATIC'}</span></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
             {[['Daily', rpt.daily], ['Weekly', rpt.weekly], ['Monthly', rpt.monthly]].map(([period, d]) => (
               <div key={period} style={{ padding: 16, borderRadius: 'var(--radius-sm)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>

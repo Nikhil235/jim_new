@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Play, Pause, Square, DollarSign, TrendingUp, Activity, Target, ArrowUpRight, ArrowDownRight, Minus, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { startPaperTrading, stopPaperTrading, fetchPaperTradingStatus, fetchPaperTradingPerformance, fetchPaperTradingTrades, fetchLiveSignals, fetchRiskReport, resetDailyCounters, injectSignal } from '../data/api';
-import { paperTrading as mockPT, stressTestData, dynamicRisk, featureDrift } from '../data/mockData';
+
 
 const signalColor = (s) => s === 'LONG' ? 'var(--green)' : s === 'SHORT' ? 'var(--red)' : 'var(--text-muted)';
 const signalBg = (s) => s === 'LONG' ? 'var(--green-dim)' : s === 'SHORT' ? 'var(--red-dim)' : 'var(--bg-input)';

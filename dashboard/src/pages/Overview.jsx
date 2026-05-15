@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Target, Activity, Wifi, WifiOff } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { fetchHealth, fetchEnsemble, fetchRegime, fetchGoldPrice, fetchPaperTradingStatus, fetchPaperTradingPerformance, fetchLiveSignals } from '../data/api';
-import { portfolioKPIs, recentPrices, regimeData as mockRegime, signals as mockSignals, equityCurve as mockEquityCurve, riskMetrics, phaseProgress, healthMonitor } from '../data/mockData';
+import { phaseProgress } from '../data/mockData';
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;

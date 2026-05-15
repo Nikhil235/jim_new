@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, ComposedChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { Wifi, WifiOff, Radio, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { fetchLiveSignals, fetchInferenceStatus, fetchModels, fetchRegime } from '../data/api';
-import { regimeData, modelMetrics, featureImportance, featureConfig, waveletBands, signals as mockSignals } from '../data/mockData';
+import { regimeData, modelMetrics, featureImportance, featureConfig } from '../data/mockData';
 
 const TT = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
