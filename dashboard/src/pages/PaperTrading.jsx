@@ -95,8 +95,7 @@ export default function PaperTrading() {
     </div>
     <div className="page-body">
       {/* Engine Controls */}
-      {live && (
-        <div className="card animate-in" style={{marginBottom:16}}>
+      <div className="card animate-in" style={{marginBottom:16}}>
           <div className="card-header"><span className="card-title">Engine Controls</span><span className="card-badge badge-gold">LIVE API</span></div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:12}}>
             {[['Capital ($)',config.initial_capital,'initial_capital'],['Kelly Frac',config.kelly_fraction,'kelly_fraction'],['Max Pos %',config.max_position_pct,'max_position_pct'],
@@ -121,7 +120,6 @@ export default function PaperTrading() {
             </button>
           </div>
         </div>
-      )}
 
       {/* KPIs */}
       <div className="kpi-grid" style={{gridTemplateColumns:'repeat(5,1fr)'}}>
@@ -141,7 +139,7 @@ export default function PaperTrading() {
       {/* Equity + Daily PnL */}
       <div className="grid-2" style={{marginBottom:20}}>
         <div className="card animate-in">
-          <div className="card-header"><span className="card-title">Equity Curve</span><span className={`card-badge ${live?'badge-green':'badge-orange'}`}>{live?'LIVE':'MOCK'}</span></div>
+          <div className="card-header"><span className="card-title">Equity Curve</span><span className={`card-badge ${live?'badge-green':'badge-orange'}`}>{live?'LIVE':'WAITING'}</span></div>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={equityData}>
               <defs><linearGradient id="eqG2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f0b90b" stopOpacity={0.3}/><stop offset="100%" stopColor="#f0b90b" stopOpacity={0}/></linearGradient></defs>
