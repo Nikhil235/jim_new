@@ -15,12 +15,13 @@ Endpoints (10 total):
 - POST /paper-trading/signal         - Inject a trading signal
 - POST /paper-trading/config         - Update engine configuration
 - POST /paper-trading/reset-daily    - Reset daily P&L and counters
+- POST /paper-trading/reset-circuit-breakers - Hard reset all circuit breakers
 """
 
 from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from loguru import logger
 import asyncio
 import json
@@ -35,7 +36,9 @@ try:
         SignalType,
         TradeStatus,
     )
+    # pyrefly: ignore [missing-import]
     from src.paper_trading.risk_manager import RiskManager, RiskLimits
+    # pyrefly: ignore [missing-import]
     from src.paper_trading.live_inference import (
         LiveInferenceLoop,
         LIVE_MODEL_SIGNALS,
@@ -46,8 +49,17 @@ try:
 except ImportError:
     logger.warning("Paper trading modules not available")
     PaperTradingEngine = None
+    PaperTradingConfig = None
+    TradeExecution = None
+    ModelSignal = None
+    SignalType = None
+    TradeStatus = None
     RiskManager = None
+    RiskLimits = None
     LiveInferenceLoop = None
+    LIVE_MODEL_SIGNALS = None
+    CURRENT_GOLD_PRICE = None
+    LAST_PRICE_UPDATE = None
     PAPER_TRADING_AVAILABLE = False
 
 
@@ -71,9 +83,9 @@ class PaperTradingStatusResponse(BaseModel):
     started_at: Optional[str] = None
     current_time: str
     uptime_seconds: Optional[float] = None
-    portfolio: Dict
-    trading: Dict
-    models: Dict
+    portfolio: Dict[str, Any]
+    trading: Dict[str, Any]
+    models: Dict[str, Any]
 
 
 class PerformanceMetricsResponse(BaseModel):
@@ -187,7 +199,7 @@ router = APIRouter(
 # WEBSOCKET BROADCAST HELPER
 # ============================================================================
 
-async def broadcast_update(event_type: str, data: Dict):
+async def broadcast_update(event_type: str, data: Dict[str, Any]):
     """Broadcast update to all connected WebSocket clients."""
     message = json.dumps({"event": event_type, "data": data, "timestamp": datetime.now().isoformat()})
     disconnected = []
@@ -204,8 +216,8 @@ async def broadcast_update(event_type: str, data: Dict):
 # ROUTE HANDLERS
 # ============================================================================
 
-@router.post("/start", response_model=Dict)
-async def start_paper_trading(request: PaperTradingStartRequest) -> Dict:
+@router.post("/start", response_model=Dict[str, Any])
+async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, Any]:
     """
     Start paper trading engine.
     
@@ -214,7 +226,7 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict:
     """
     global _paper_trading_engine, _paper_trading_config, _risk_manager
     
-    if not PAPER_TRADING_AVAILABLE:
+    if not PAPER_TRADING_AVAILABLE or PaperTradingConfig is None or PaperTradingEngine is None or RiskLimits is None or RiskManager is None:
         raise HTTPException(status_code=500, detail="Paper trading module not available")
     
     if _paper_trading_engine is not None and _paper_trading_engine.status == "RUNNING":
@@ -353,8 +365,8 @@ async def get_performance_metrics() -> PerformanceMetricsResponse:
         raise HTTPException(status_code=500, detail=f"Failed to get metrics: {str(e)}")
 
 
-@router.post("/stop", response_model=Dict)
-async def stop_paper_trading() -> Dict:
+@router.post("/stop", response_model=Dict[str, Any])
+async def stop_paper_trading() -> Dict[str, Any]:
     """
     Stop paper trading and close all open positions.
     Returns final P&L summary and session statistics.
@@ -472,8 +484,8 @@ async def get_portfolio_snapshot() -> PortfolioSnapshotResponse:
         raise HTTPException(status_code=500, detail=f"Failed to get portfolio: {str(e)}")
 
 
-@router.get("/risk-report", response_model=Dict)
-async def get_risk_report() -> Dict:
+@router.get("/risk-report", response_model=Dict[str, Any])
+async def get_risk_report() -> Dict[str, Any]:
     """
     Get comprehensive risk report with current limits, violations,
     and exposure analysis.
@@ -510,8 +522,8 @@ async def get_risk_report() -> Dict:
         raise HTTPException(status_code=500, detail=f"Failed to get risk report: {str(e)}")
 
 
-@router.post("/signal", response_model=Dict)
-async def inject_signal(request: SignalInjectionRequest) -> Dict:
+@router.post("/signal", response_model=Dict[str, Any])
+async def inject_signal(request: SignalInjectionRequest) -> Dict[str, Any]:
     """
     Inject a trading signal from a model into the paper trading engine.
     The engine will evaluate the signal against risk limits and execute
@@ -519,7 +531,7 @@ async def inject_signal(request: SignalInjectionRequest) -> Dict:
     """
     global _paper_trading_engine
     
-    if _paper_trading_engine is None:
+    if _paper_trading_engine is None or SignalType is None or ModelSignal is None:
         raise HTTPException(status_code=404, detail="Paper trading engine not initialized")
     
     if _paper_trading_engine.status != "RUNNING":
@@ -558,7 +570,7 @@ async def inject_signal(request: SignalInjectionRequest) -> Dict:
         # Process signal through engine
         trade = _paper_trading_engine.process_signal(request.model_name, signal)
         
-        result = {
+        result: Dict[str, Any] = {
             "status": "success",
             "signal_processed": True,
             "model": request.model_name,
@@ -585,8 +597,8 @@ async def inject_signal(request: SignalInjectionRequest) -> Dict:
         raise HTTPException(status_code=500, detail=f"Failed to process signal: {str(e)}")
 
 
-@router.post("/config", response_model=Dict)
-async def update_config(request: ConfigUpdateRequest) -> Dict:
+@router.post("/config", response_model=Dict[str, Any])
+async def update_config(request: ConfigUpdateRequest) -> Dict[str, Any]:
     """
     Update paper trading configuration dynamically.
     Only provided fields are updated; others remain unchanged.
@@ -642,8 +654,8 @@ async def update_config(request: ConfigUpdateRequest) -> Dict:
         raise HTTPException(status_code=500, detail=f"Failed to update config: {str(e)}")
 
 
-@router.post("/reset-daily", response_model=Dict)
-async def reset_daily_counters() -> Dict:
+@router.post("/reset-daily", response_model=Dict[str, Any])
+async def reset_daily_counters() -> Dict[str, Any]:
     """
     Reset daily P&L counters and trade limits.
     Called automatically at market open or manually for testing.
@@ -662,7 +674,8 @@ async def reset_daily_counters() -> Dict:
         
         # Reset risk manager daily state
         if _risk_manager:
-            _risk_manager.update_daily_state(_paper_trading_engine.portfolio.current_equity)
+            current_equity = _paper_trading_engine._create_portfolio_snapshot().total_value
+            _risk_manager.update_daily_state(current_equity)
         
         logger.info(f"Daily counters reset. Previous daily P&L: ${previous_daily_pnl:.2f}")
         
@@ -677,12 +690,44 @@ async def reset_daily_counters() -> Dict:
         logger.error(f"Failed to reset daily counters: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to reset: {str(e)}")
 
+
+@router.post("/reset-circuit-breakers")
+async def reset_circuit_breakers() -> Dict[str, Any]:
+    """
+    Hard reset all circuit breakers (drawdown, consecutive losses, daily limits)
+    to allow the engine to resume trading after a halt.
+    """
+    global _paper_trading_engine, _risk_manager
+    
+    if _paper_trading_engine is None or _risk_manager is None:
+        raise HTTPException(status_code=404, detail="Paper trading engine not initialized")
+        
+    try:
+        current_equity = _paper_trading_engine._create_portfolio_snapshot().total_value
+        
+        # 1. Reset Risk Manager
+        _risk_manager.reset_circuit_breakers(current_equity)
+        
+        # 2. Reset Engine Daily P&L so Daily Loss CB clears
+        _paper_trading_engine.daily_pnl = 0.0
+        
+        logger.warning(f"CIRCUIT BREAKERS RESET BY USER! Equity baseline: ${current_equity:.2f}")
+        
+        return {
+            "status": "success",
+            "message": "Circuit breakers successfully reset. Trading can now resume.",
+            "equity_baseline": current_equity
+        }
+    except Exception as e:
+        logger.error(f"Failed to reset circuit breakers: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============================================================================
 # LIVE INFERENCE ENDPOINTS
 # ============================================================================
 
-@router.get("/live-signals", response_model=Dict)
-async def get_live_signals() -> Dict:
+@router.get("/live-signals", response_model=Dict[str, Any])
+async def get_live_signals() -> Dict[str, Any]:
     """
     Get the latest signal from every model, updated every 60 seconds by the
     live inference loop running in the background.
@@ -706,8 +751,8 @@ async def get_live_signals() -> Dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/inference-status", response_model=Dict)
-async def get_inference_status() -> Dict:
+@router.get("/inference-status", response_model=Dict[str, Any])
+async def get_inference_status() -> Dict[str, Any]:
     """
     Get live inference loop health status: running state, cadence, iteration count,
     last run time, and any errors.

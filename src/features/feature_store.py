@@ -54,12 +54,8 @@ class FeatureStore:
         if self._redis is not None:
             return self._redis
         try:
-            import redis
-            self._redis = redis.Redis(
-                host=self._redis_host, port=self._redis_port,
-                db=self._redis_db, password=self._redis_password,
-                decode_responses=True, socket_timeout=3,
-            )
+            from src.utils.redis_client import get_redis_client
+            self._redis = get_redis_client()
             self._redis.ping()
             logger.debug(f"Redis connected: {self._redis_host}:{self._redis_port}")
             return self._redis

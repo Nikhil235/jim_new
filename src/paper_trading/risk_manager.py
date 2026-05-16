@@ -167,6 +167,15 @@ class RiskManager:
         
         logger.info(f"Daily state updated: equity=${current_equity:.2f}, peak=${self.peak_equity:.2f}")
     
+    def reset_circuit_breakers(self, current_equity: float):
+        """
+        Hard reset all circuit breakers. Used when a user manually overrides a trading halt.
+        """
+        self.peak_equity = current_equity
+        self.daily_start_equity = current_equity
+        self.consecutive_losses = 0
+        logger.warning(f"Risk Manager Circuit Breakers RESET. New equity baseline: ${current_equity:.2f}")
+    
     def get_current_risk(self) -> Dict:
         """Get current risk metrics."""
         return {

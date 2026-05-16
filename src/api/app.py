@@ -289,8 +289,8 @@ async def health_check():
         
         redis_ok = True
         try:
-            import redis
-            r = redis.Redis(**CONFIG["databases"]["redis"])
+            from src.utils.redis_client import get_redis_client
+            r = get_redis_client()
             r.ping()
         except:
             redis_ok = False
@@ -685,16 +685,32 @@ async def get_gold_price(
         
         df.columns = [c.lower().replace(" ", "_") for c in df.columns]
         
+        # Add pattern detection for UI
+        from src.features.engine import FeatureEngine
+        engine = FeatureEngine(CONFIG)
+        df = engine._add_candlestick_features(df)
+        
         candles = []
         for ts, row in df.iterrows():
-            candles.append({
+            candle = {
                 "time": int(ts.timestamp() * 1000),
                 "open": round(float(row["open"]), 2),
                 "high": round(float(row["high"]), 2),
                 "low": round(float(row["low"]), 2),
                 "close": round(float(row["close"]), 2),
                 "volume": int(row.get("volume", 0)),
-            })
+            }
+            patterns = []
+            if pd.notna(row.get("cdl_doji")) and row.get("cdl_doji") > 0: patterns.append("Doji")
+            if pd.notna(row.get("cdl_hammer")) and row.get("cdl_hammer") > 0: patterns.append("Hammer")
+            if pd.notna(row.get("cdl_shooting_star")) and row.get("cdl_shooting_star") > 0: patterns.append("Shooting Star")
+            if pd.notna(row.get("cdl_engulfing")) and row.get("cdl_engulfing") > 0: patterns.append("Bullish Engulfing")
+            if pd.notna(row.get("cdl_engulfing")) and row.get("cdl_engulfing") < 0: patterns.append("Bearish Engulfing")
+            if pd.notna(row.get("cdl_marubozu")) and row.get("cdl_marubozu") > 0: patterns.append("Bullish Marubozu")
+            if pd.notna(row.get("cdl_marubozu")) and row.get("cdl_marubozu") < 0: patterns.append("Bearish Marubozu")
+            if patterns:
+                candle["pattern"] = ", ".join(patterns)
+            candles.append(candle)
         
         current = candles[-1]["close"] if candles else 0
         prev_close = candles[-2]["close"] if len(candles) > 1 else current

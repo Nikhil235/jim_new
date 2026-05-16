@@ -15,10 +15,10 @@ export default function Infrastructure() {
   useEffect(() => { refresh(); const t = setInterval(refresh, 5000); return () => clearInterval(t); }, [refresh]);
 
   const newModules = [
-    { name: 'Backup Manager', status: 'active', desc: 'Automated backup scheduling & S3 storage', icon: '💾', phase: '6C' },
+    { name: 'Backup Daemon', status: 'active', desc: 'Daily automated tar.gz backups with 30-day retention', icon: '💾', phase: '6C' },
+    { name: 'Data Imputation', status: 'active', desc: 'Gap filling & outlier correction for Gold/Macro feeds', icon: '✨', phase: '6C' },
     { name: 'Disaster Recovery', status: 'active', desc: 'Multi-region failover & recovery playbooks', icon: '🛡️', phase: '6C' },
-    { name: 'Archival Scheduler', status: 'active', desc: 'Time-based data archival to cold storage', icon: '📁', phase: '6C' },
-    { name: 'Data Lifecycle Mgr', status: 'active', desc: 'Retention policies & compliance tracking', icon: '♻️', phase: '6C' },
+    { name: 'Archival Scheduler', status: 'active', desc: '1-Year cold storage archival for tick data', icon: '📁', phase: '6C' },
     { name: 'Extended Health Mon', status: 'active', desc: 'Deep health checks with anomaly detection', icon: '🔍', phase: '6C' },
     { name: 'Structured Logging', status: 'active', desc: 'JSON logging + OpenTelemetry tracing', icon: '📝', phase: '6C' },
     { name: 'Real-time Feed Mgr', status: 'active', desc: 'WebSocket/REST market data aggregation', icon: '📡', phase: '6C' },
@@ -44,8 +44,8 @@ export default function Infrastructure() {
   // Build service status from health
   const services = [
     { name: 'API Server', status: 'online', icon: '🌐', bg: 'var(--green-dim)', detail: `Port ${h.port || 8000}`, uptime: `${h.uptime_percent?.toFixed(1) || '—'}%` },
-    { name: 'QuestDB', status: dbOk ? 'online' : 'offline', icon: '🗄️', bg: 'var(--blue-dim)', detail: 'Time-series DB', uptime: dbOk ? '99.9%' : '—' },
-    { name: 'Redis', status: redisOk ? 'online' : 'offline', icon: '⚡', bg: 'var(--red-dim)', detail: 'Feature Cache', uptime: redisOk ? '99.9%' : '—' },
+    { name: 'QuestDB', status: dbOk ? 'online' : 'offline', icon: '🗄️', bg: 'var(--blue-dim)', detail: 'Time-series DB (Auto-Healing)', uptime: dbOk ? '99.9%' : '—' },
+    { name: 'Redis', status: redisOk ? 'online' : 'offline', icon: '⚡', bg: 'var(--red-dim)', detail: 'Global Connection Pool (Auto-Healing)', uptime: redisOk ? '99.9%' : '—' },
     { name: 'Models', status: modelsLoaded ? 'online' : 'offline', icon: '🧠', bg: 'var(--purple-dim)', detail: `${h.loaded_model_count || 0} loaded`, uptime: modelsLoaded ? '✓' : '—' },
     { name: 'GPU', status: gpuAvail ? 'online' : 'offline', icon: '🎮', bg: 'var(--orange-dim)', detail: gpuNames[0] || 'Not available', uptime: gpuAvail ? `${gpuCount} GPU(s)` : 'CPU mode' },
     { name: 'Inference', status: inference?.running ? 'online' : 'offline', icon: '🔄', bg: 'var(--cyan)', detail: inference?.running ? `iter #${inference.iteration}` : 'Stopped', uptime: inference?.running ? `${inference.interval_seconds}s cycle` : '—' },

@@ -50,6 +50,7 @@ class QuestDBWriter:
         self.fallback_dir.mkdir(parents=True, exist_ok=True)
 
         self._connected = False
+        self._ilp_sock = None
 
     def is_available(self) -> bool:
         """Check if QuestDB is reachable."""
@@ -59,16 +60,34 @@ class QuestDBWriter:
         except OSError:
             return False
 
+    def _get_ilp_socket(self):
+        """Get or create persistent ILP socket."""
+        if self._ilp_sock is None:
+            self._ilp_sock = socket.create_connection((self.host, self.ilp_port), timeout=10.0)
+        return self._ilp_sock
+
     def _send_ilp(self, lines: List[str]) -> bool:
-        """Send ILP lines to QuestDB via TCP socket."""
-        try:
-            with socket.create_connection((self.host, self.ilp_port), timeout=10.0) as sock:
-                payload = "\n".join(lines) + "\n"
-                sock.sendall(payload.encode("utf-8"))
-            return True
-        except OSError as e:
-            logger.error(f"QuestDB ILP send failed: {e}")
-            return False
+        """Send ILP lines to QuestDB via TCP socket with automatic retry and connection pooling."""
+        payload = "\n".join(lines) + "\n"
+        data = payload.encode("utf-8")
+        
+        for attempt in range(3):
+            try:
+                sock = self._get_ilp_socket()
+                sock.sendall(data)
+                return True
+            except OSError as e:
+                logger.warning(f"QuestDB ILP send failed (attempt {attempt+1}/3): {e}")
+                if self._ilp_sock:
+                    try:
+                        self._ilp_sock.close()
+                    except Exception:
+                        pass
+                    self._ilp_sock = None
+                time.sleep(0.5 * (attempt + 1))
+                
+        logger.error("QuestDB ILP send completely failed after 3 attempts")
+        return False
 
     def _query_rest(self, sql: str) -> Optional[pd.DataFrame]:
         """Execute a SQL query via QuestDB REST API."""

@@ -217,7 +217,7 @@ class PaperTradingEngine:
             "status": "RUNNING",
             "started_at": self.started_at.isoformat(),
             "initial_capital": self.config.initial_capital,
-            "current_value": self.portfolio.current_equity,
+            "current_value": self._create_portfolio_snapshot().total_value,
         }
     
     def stop(self) -> Dict:
@@ -227,7 +227,12 @@ class PaperTradingEngine:
         
         # Close current position if open
         if self.current_position and self.current_position.status == TradeStatus.OPEN:
-            self._close_position(datetime.now(), self.portfolio.current_equity)
+            exit_price = self.current_position.entry_price
+            for sig in self.last_signals.values():
+                if sig.current_price > 0:
+                    exit_price = sig.current_price
+                    break
+            self._close_position(datetime.now(), exit_price)
         
         self.status = "STOPPED"
         self.stopped_at = datetime.now()
@@ -236,7 +241,7 @@ class PaperTradingEngine:
         return {
             "status": "STOPPED",
             "stopped_at": self.stopped_at.isoformat(),
-            "final_value": self.portfolio.current_equity,
+            "final_value": self._create_portfolio_snapshot().total_value,
             "total_pnl": self.get_total_pnl(),
             "total_trades": len(self.trades),
         }
@@ -265,8 +270,8 @@ class PaperTradingEngine:
             },
             "models": {
                 model: {
-                    "last_signal": self.last_signals.get(model).signal_type.value if model in self.last_signals else None,
-                    "confidence": self.last_signals.get(model).confidence if model in self.last_signals else 0.0,
+                    "last_signal": self.last_signals[model].signal_type.value if model in self.last_signals else None,
+                    "confidence": self.last_signals[model].confidence if model in self.last_signals else 0.0,
                     "signal_count": len(self.signal_history[model]),
                 } for model in self.config.signal_weights.keys()
             }
@@ -383,10 +388,10 @@ class PaperTradingEngine:
         # Update portfolio
         if signal.signal_type == SignalType.LONG:
             self.position_sizes["XAUUSD"] = size
+            self.portfolio.current_cash -= trade.position_value
         else:  # SHORT
             self.position_sizes["XAUUSD"] = -size
-        
-        self.portfolio.current_cash -= trade.position_value
+            self.portfolio.current_cash += trade.position_value
         
         # Track trade
         self.trades.append(trade)
@@ -397,7 +402,7 @@ class PaperTradingEngine:
         
         return trade
     
-    def _close_position(self, timestamp: datetime, exit_price: float) -> TradeExecution:
+    def _close_position(self, timestamp: datetime, exit_price: float) -> Optional[TradeExecution]:
         """Close current open position."""
         if not self.current_position or self.current_position.status != TradeStatus.OPEN:
             return None
@@ -420,7 +425,10 @@ class PaperTradingEngine:
         
         # Update portfolio
         self.position_sizes["XAUUSD"] = 0
-        self.portfolio.current_cash += trade.quantity * exit_price
+        if trade.signal_type == SignalType.LONG:
+            self.portfolio.current_cash += trade.quantity * exit_price - trade.commission - trade.slippage
+        else:
+            self.portfolio.current_cash -= trade.quantity * exit_price + trade.commission + trade.slippage
         self.daily_pnl += trade.pnl
         
         logger.info(f"Position closed: P&L ${trade.pnl:.2f} ({trade.pnl_pct:.2f}%)")
@@ -443,7 +451,7 @@ class PaperTradingEngine:
         position_fraction = max(position_fraction, 0.01)  # Minimum position
         
         # Convert to ounces (assuming current price around $2000/oz, could be parameterized)
-        position_value = self.portfolio.current_equity * position_fraction
+        position_value = self._create_portfolio_snapshot().total_value * position_fraction
         position_ounces = position_value / 2000.0  # Rough estimate
         
         return position_ounces
@@ -471,13 +479,15 @@ class PaperTradingEngine:
     
     def _check_risk_limits(self) -> bool:
         """Check if trading can continue based on risk limits."""
+        total_equity = self._create_portfolio_snapshot().total_value
+        
         # Check daily loss limit
-        if self.daily_pnl < -self.portfolio.current_equity * self.config.max_daily_loss_pct:
+        if self.daily_pnl < -total_equity * self.config.max_daily_loss_pct:
             logger.warning(f"Daily loss limit exceeded: ${self.daily_pnl:.2f}")
             return False
         
         # Check maximum drawdown
-        portfolio_return = (self.portfolio.current_equity - self.config.initial_capital) / self.config.initial_capital
+        portfolio_return = (total_equity - self.config.initial_capital) / self.config.initial_capital
         if portfolio_return < -self.config.max_drawdown_pct:
             logger.warning(f"Maximum drawdown exceeded: {portfolio_return*100:.2f}%")
             return False
@@ -496,7 +506,7 @@ class PaperTradingEngine:
         wins = len([t for t in closed_trades if t.pnl > 0])
         return wins / len(closed_trades)
     
-    def _create_portfolio_snapshot(self, current_price: float = None) -> PortfolioSnapshot:
+    def _create_portfolio_snapshot(self, current_price: Optional[float] = None) -> PortfolioSnapshot:
         """Create a point-in-time portfolio snapshot."""
         if current_price is None:
             current_price = self.current_position.entry_price if self.current_position else 2000.0

@@ -76,6 +76,7 @@ class FeatureEngine:
         features = self._add_microstructure_proxies(features)
         features = self._add_regime_features(features)
         features = self._add_event_proximity_features(features)
+        features = self._add_candlestick_features(features)
 
         # Cross-asset features (if macro data available)
         if macro:
@@ -414,6 +415,54 @@ class FeatureEngine:
              for idx in df.index],
             index=df.index
         )
+        return df
+
+    def _add_candlestick_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Classical Candlestick Pattern Recognition."""
+        if not all(col in df.columns for col in ["open", "high", "low", "close"]):
+            return df
+            
+        op = df["open"]
+        hi = df["high"]
+        lo = df["low"]
+        cl = df["close"]
+        
+        body = (cl - op).abs()
+        rng = (hi - lo).replace(0, np.nan)
+        upper_shadow = hi - np.maximum(op, cl)
+        lower_shadow = np.minimum(op, cl) - lo
+        
+        # 1. Doji (Body is very small compared to total range)
+        df["cdl_doji"] = (body <= 0.1 * rng).astype(float)
+        
+        # 2. Hammer & Hanging Man (Long lower shadow, small upper shadow, small body)
+        is_hammer_shape = (lower_shadow >= 2 * body) & (upper_shadow <= 0.1 * rng) & (body > 0)
+        sma10 = cl.rolling(10).mean()
+        is_downtrend = cl < sma10
+        is_uptrend = cl > sma10
+        
+        df["cdl_hammer"] = (is_hammer_shape & is_downtrend).astype(float)
+        df["cdl_hanging_man"] = (is_hammer_shape & is_uptrend).astype(float)
+        
+        # 3. Shooting Star & Inverted Hammer
+        is_inv_hammer_shape = (upper_shadow >= 2 * body) & (lower_shadow <= 0.1 * rng) & (body > 0)
+        df["cdl_shooting_star"] = (is_inv_hammer_shape & is_uptrend).astype(float)
+        df["cdl_inverted_hammer"] = (is_inv_hammer_shape & is_downtrend).astype(float)
+        
+        # 4. Engulfing
+        prev_op = op.shift(1)
+        prev_cl = cl.shift(1)
+        prev_body = body.shift(1)
+        
+        bullish_engulfing = (prev_cl < prev_op) & (cl > op) & (op <= prev_cl) & (cl >= prev_op) & (body > prev_body)
+        bearish_engulfing = (prev_cl > prev_op) & (cl < op) & (op >= prev_cl) & (cl <= prev_op) & (body > prev_body)
+        
+        df["cdl_engulfing"] = np.where(bullish_engulfing, 1.0, np.where(bearish_engulfing, -1.0, 0.0))
+        
+        # 5. Marubozu
+        is_marubozu = (upper_shadow <= 0.05 * rng) & (lower_shadow <= 0.05 * rng) & (body > 0.5 * rng)
+        df["cdl_marubozu"] = np.where(is_marubozu & (cl > op), 1.0, np.where(is_marubozu & (cl < op), -1.0, 0.0))
+        
         return df
 
     def _add_cross_asset_features(self, df: pd.DataFrame, macro: dict) -> pd.DataFrame:

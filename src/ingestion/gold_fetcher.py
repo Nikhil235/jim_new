@@ -103,12 +103,59 @@ class GoldDataFetcher:
         df["spread"] = df["high"] - df["low"]
         df["typical_price"] = (df["high"] + df["low"] + df["close"]) / 3
 
+        # Phase 6: Automatic Outlier Correction & Gap Imputation
+        df = self._clean_and_impute(df)
+
         logger.info(
             f"Fetched {len(df)} bars | "
             f"{df.index[0]} to {df.index[-1]} | "
             f"Symbol: {symbol}"
         )
 
+        return df
+
+    def _clean_and_impute(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Phase 6: Data Quality & Imputation Engine.
+        Automatically repairs missing data gaps and clips extreme outliers.
+        """
+        if df.empty:
+            return df
+            
+        initial_len = len(df)
+        
+        # 1. Impute small gaps (up to 3 consecutive periods) with forward fill
+        df = df.ffill(limit=3)
+        
+        # 2. Interpolate larger gaps linearly (up to 7 periods)
+        df = df.interpolate(method='linear', limit=7)
+        
+        # 3. Outlier Correction (Clip extreme price spikes > 4 rolling std deviations)
+        if len(df) > 30:
+            rolling_median = df["close"].rolling(window=20, min_periods=5).median()
+            rolling_std = df["close"].rolling(window=20, min_periods=5).std().bfill()
+            
+            # Identify extreme price spikes
+            price_outliers = (df["close"] > rolling_median + 4*rolling_std) | (df["close"] < rolling_median - 4*rolling_std)
+            if price_outliers.any():
+                logger.info(f"Corrected {price_outliers.sum()} extreme price outliers via median substitution")
+                # Fix OHLC prices
+                for col in ["open", "high", "low", "close"]:
+                    if col in df.columns:
+                        df.loc[price_outliers, col] = rolling_median[price_outliers]
+                
+                # Recalculate derived columns
+                df["returns"] = df["close"].pct_change()
+                df["log_returns"] = np.log(df["close"] / df["close"].shift(1))
+                df["spread"] = df["high"] - df["low"]
+                df["typical_price"] = (df["high"] + df["low"] + df["close"]) / 3
+        
+        # 4. Drop remaining NaNs (unrecoverable gaps at the start or > 10 periods)
+        df = df.dropna()
+        
+        if len(df) < initial_len:
+            logger.info(f"Dropped {initial_len - len(df)} unrecoverable bad data rows")
+            
         return df
 
     def fetch_multiple_symbols(

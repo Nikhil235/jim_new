@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Wifi, WifiOff } from 'lucide-react';
-import { fetchRiskReport, fetchPaperTradingStatus, fetchPaperTradingPerformance } from '../data/api';
+import { Wifi, WifiOff, AlertTriangle, RotateCcw } from 'lucide-react';
+import { fetchRiskReport, fetchPaperTradingStatus, fetchPaperTradingPerformance, resetCircuitBreakers } from '../data/api';
 
 const TT = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -33,6 +33,20 @@ export default function RiskManagement() {
   const [risk, setRisk] = useState(null);
   const [perf, setPerf] = useState(null);
   const [status, setStatus] = useState(null);
+  const [resetting, setResetting] = useState(false);
+
+  const handleReset = async () => {
+    if (!window.confirm("Are you sure you want to reset all circuit breakers? Trading will resume immediately.")) return;
+    setResetting(true);
+    try {
+      await resetCircuitBreakers();
+      await refresh();
+    } catch (e) {
+      alert("Failed to reset circuit breakers: " + e.message);
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const refresh = useCallback(async () => {
     try {
@@ -92,8 +106,23 @@ export default function RiskManagement() {
 
       <div className="grid-2" style={{marginBottom:16}}>
         <div className="card animate-in">
-          <div className="card-header"><span className="card-title">Circuit Breakers</span>
-            <span className={`card-badge ${violations.length===0?'badge-green':'badge-red'}`}>{violations.length===0?'ALL CLEAR':'ALERT'}</span>
+          <div className="card-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div>
+              <span className="card-title">Circuit Breakers</span>
+              <span className={`card-badge ${violations.length===0?'badge-green':'badge-red'}`} style={{marginLeft: 8}}>
+                {violations.length===0?'ALL CLEAR':'ALERT'}
+              </span>
+            </div>
+            {violations.length > 0 && (
+              <button 
+                onClick={handleReset} 
+                disabled={resetting}
+                className="btn btn-sm" 
+                style={{display:'flex', alignItems:'center', gap: 6, background: 'var(--red)', color: 'white', border: 'none', padding: '4px 10px'}}
+              >
+                <RotateCcw size={12} /> {resetting ? 'Resetting...' : 'Override Halt'}
+              </button>
+            )}
           </div>
           {cbData.map((cb,i)=><CircuitBreaker key={i} name={cb.name} status={cb.status} value={cb.value} limit={cb.limit} unit={cb.unit}/>)}
           {violations.length>0 && (

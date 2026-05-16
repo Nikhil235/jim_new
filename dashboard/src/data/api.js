@@ -40,7 +40,13 @@ async function apiFetch(path, options = {}) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || err.error || res.statusText);
+    let errMsg = err.detail || err.error || res.statusText;
+    if (Array.isArray(errMsg)) {
+      errMsg = errMsg.map(e => e.msg || JSON.stringify(e)).join(', ');
+    } else if (typeof errMsg === 'object') {
+      errMsg = JSON.stringify(errMsg);
+    }
+    throw new Error(errMsg);
   }
   return res.json();
 }
@@ -145,6 +151,10 @@ export async function updatePaperTradingConfig(config) {
 
 export async function resetDailyCounters() {
   return apiPost('/paper-trading/reset-daily', {});
+}
+
+export async function resetCircuitBreakers() {
+  return apiPost('/paper-trading/reset-circuit-breakers', {});
 }
 
 // ============================================================================

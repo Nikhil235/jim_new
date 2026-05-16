@@ -169,14 +169,9 @@ class HealthMonitor:
     def check_cache_health(self, cache_name: str = "redis") -> ServiceHealth:
         """Check cache (Redis) connection health."""
         try:
-            import redis
+            from src.utils.redis_client import get_redis_client
             
-            redis_config = self.config.get("database", {}).get("redis", {})
-            r = redis.Redis(
-                host=redis_config.get("host", "localhost"),
-                port=redis_config.get("port", 6379),
-                socket_connect_timeout=2
-            )
+            r = get_redis_client()
             
             start = time.perf_counter()
             r.ping()

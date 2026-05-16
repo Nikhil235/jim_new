@@ -1,12 +1,80 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, ComposedChart, Line } from 'recharts';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import { fetchGoldPrice, fetchFeatures } from '../data/api';
+import { fetchGoldPrice, fetchFeatures, fetchPaperTradingTrades } from '../data/api';
+
+const Candlestick = (props) => {
+  const { x, y, width, height, payload } = props;
+  if (!payload || payload.high === undefined) return null;
+  const { open, close, high, low, pattern } = payload;
+  const isGrowing = close >= open;
+  const color = isGrowing ? 'var(--green)' : 'var(--red)';
+  const ratio = height === 0 || high === low ? 0 : Math.abs(height / (high - low));
+  const yOpen = y + (high - open) * ratio;
+  const yClose = y + (high - close) * ratio;
+  const bodyTop = Math.min(yOpen, yClose);
+  const bodyHeight = Math.max(Math.abs(yOpen - yClose), 1);
+  
+  let icon = null;
+  if (pattern) {
+    if (pattern.includes('Doji')) icon = '⚖️';
+    else if (pattern.includes('Hammer')) icon = '🔨';
+    else if (pattern.includes('Shooting')) icon = '☄️';
+    else if (pattern.includes('Engulfing')) icon = isGrowing ? '📈' : '📉';
+    else if (pattern.includes('Marubozu')) icon = isGrowing ? '🟩' : '🟥';
+  }
+
+  const trades = payload.trades || [];
+
+  return (
+    <g stroke={color} fill={color} strokeWidth="1.5">
+      <line x1={x + width / 2} y1={y} x2={x + width / 2} y2={y + height} />
+      <rect x={x + width * 0.2} y={bodyTop} width={width * 0.6} height={bodyHeight} />
+      {icon && <text x={x + width / 2} y={y - 8} fontSize="12" textAnchor="middle">{icon}</text>}
+      {trades.map((t, idx) => {
+        const ty = high === low ? y : y + (high - t.entry_price) * ratio;
+        const tColor = t.signal_type === 'LONG' ? '#00e676' : '#ff1744';
+        return (
+          <g key={idx} 
+             onClick={() => { if(props.onTradeClick) props.onTradeClick(t); }}
+             style={{ cursor: 'pointer' }}
+             className="trade-marker">
+            <circle cx={x + width / 2} cy={ty} r="6" fill={tColor} stroke="var(--bg-card)" strokeWidth="1.5" />
+            <text x={x + width / 2 + 10} y={ty + 3} fontSize="10" fill={tColor} fontWeight="bold">{t.signal_type}</text>
+          </g>
+        );
+      })}
+    </g>
+  );
+};
 
 const TT = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
+  const p = payload[0]?.payload;
+  const isCandle = p && 'open' in p && 'close' in p && 'high' in p;
+  
   return (<div className="custom-tooltip"><div className="label">{label}</div>
-    {payload.map((p, i) => <div key={i} className="value" style={{ color: p.color }}>{p.name}: {p.value?.toLocaleString?.() ?? p.value}</div>)}
+    {isCandle && payload.some(x => x.name === 'Price') && (
+      <>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2px 8px', marginBottom:6, fontSize:11}}>
+          <div style={{color:'var(--text-bright)'}}>O: {p.open?.toFixed(2)}</div>
+          <div style={{color:'var(--green)'}}>H: {p.high?.toFixed(2)}</div>
+          <div style={{color:'var(--red)'}}>L: {p.low?.toFixed(2)}</div>
+          <div style={{color:'var(--text-bright)'}}>C: {p.close?.toFixed(2)}</div>
+        </div>
+        {p.pattern && <div style={{color:'var(--gold-primary)', fontSize:11, marginBottom:4, fontWeight:600}}>✨ {p.pattern}</div>}
+        {p.trades && p.trades.length > 0 && (
+          <div style={{marginTop: 4, paddingTop: 4, borderTop: '1px solid var(--border-color)'}}>
+            {p.trades.map((t, i) => (
+              <div key={i} style={{fontSize: 11, color: t.signal_type === 'LONG' ? 'var(--green)' : 'var(--red)', fontWeight: 600}}>
+                {t.signal_type} @ {t.entry_price.toFixed(2)} ({t.model_name})
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    )}
+    {payload.filter(x => x.name !== 'Price').map((p, i) => <div key={i} className="value" style={{ color: p.color }}>{p.name}: {p.value?.toLocaleString?.() ?? p.value}</div>)}
   </div>);
 };
 
@@ -14,14 +82,20 @@ export default function MarketData() {
   const [live, setLive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [goldData, setGoldData] = useState(null);
+  const [trades, setTrades] = useState([]);
   const [period, setPeriod] = useState('3mo');
   const [interval, setInterval_] = useState('1d');
+  const [selectedTrade, setSelectedTrade] = useState(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const data = await fetchGoldPrice(interval, period);
       setGoldData(data);
+      try {
+        const t = await fetchPaperTradingTrades(100);
+        setTrades(t || []);
+      } catch (err) { console.warn("Could not fetch trades", err); }
       setLive(true);
     } catch { setLive(false); }
     setLoading(false);
@@ -30,12 +104,22 @@ export default function MarketData() {
   useEffect(() => { refresh(); const t = setInterval(refresh, 30000); return () => clearInterval(t); }, [refresh]);
 
   const candles = goldData?.candles || [];
-  const chartData = candles.map(c => ({
-    date: new Date(c.time).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-    open: c.open, high: c.high, low: c.low, close: c.close,
-    volume: c.volume || 0,
-    sma20: c.close, // compute simple SMA inline
-  }));
+  const chartData = candles.map((c, i) => {
+    const nextTime = i < candles.length - 1 ? candles[i + 1].time : Date.now();
+    const cTrades = trades.filter(t => {
+      const time = new Date(t.entry_time).getTime();
+      return time >= c.time && time < nextTime;
+    });
+    return {
+      date: new Date(c.time).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      open: c.open, high: c.high, low: c.low, close: c.close,
+      range: [c.low, c.high],
+      volume: c.volume || 0,
+      sma20: c.close,
+      pattern: c.pattern || null,
+      trades: cTrades,
+    };
+  });
 
   // Compute RSI from closes
   const closes = chartData.map(d => d.close);
@@ -93,14 +177,45 @@ export default function MarketData() {
         <div className="card-header"><span className="card-title">Price Chart</span><span className="card-badge badge-gold">{period.toUpperCase()} / {interval}</span></div>
         <ResponsiveContainer width="100%" height={320}>
           <ComposedChart data={chartData}>
-            <defs><linearGradient id="pg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f0b90b" stopOpacity={0.2}/><stop offset="100%" stopColor="#f0b90b" stopOpacity={0}/></linearGradient></defs>
             <XAxis dataKey="date" tick={{fontSize:10,fill:'#6b7280'}} tickFormatter={v=>v} interval={Math.max(1,Math.floor(chartData.length/10))}/>
             <YAxis tick={{fontSize:10,fill:'#6b7280'}} domain={['auto','auto']}/>
             <Tooltip content={<TT/>}/>
-            <Area type="monotone" dataKey="close" stroke="#f0b90b" strokeWidth={2} fill="url(#pg2)" name="Close"/>
+            <Bar dataKey="range" shape={<Candlestick onTradeClick={setSelectedTrade} />} name="Price" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+
+      {selectedTrade && (
+        <div className="card animate-in" style={{marginBottom: 16, border: `1px solid ${selectedTrade.signal_type === 'LONG' ? 'rgba(0,230,118,0.3)' : 'rgba(255,23,68,0.3)'}`}}>
+          <div className="card-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span className="card-title">
+              <span style={{color: selectedTrade.signal_type === 'LONG' ? 'var(--green)' : 'var(--red)', marginRight: 8}}>
+                {selectedTrade.signal_type}
+              </span>
+              Trade Details
+            </span>
+            <button onClick={() => setSelectedTrade(null)} className="btn btn-sm" style={{background:'transparent', border:'1px solid var(--border-color)', color:'var(--text-muted)'}}>Close</button>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap: 16, padding: 16}}>
+            <div>
+              <div style={{fontSize: 11, color: 'var(--text-muted)'}}>Model</div>
+              <div className="mono" style={{fontWeight: 600}}>{selectedTrade.model_name}</div>
+            </div>
+            <div>
+              <div style={{fontSize: 11, color: 'var(--text-muted)'}}>Confidence</div>
+              <div className="mono" style={{fontWeight: 600}}>{(selectedTrade.confidence * 100).toFixed(1)}%</div>
+            </div>
+            <div>
+              <div style={{fontSize: 11, color: 'var(--text-muted)'}}>Entry Price</div>
+              <div className="mono" style={{fontWeight: 600}}>${selectedTrade.entry_price?.toFixed(2)}</div>
+            </div>
+            <div>
+              <div style={{fontSize: 11, color: 'var(--text-muted)'}}>Market Regime</div>
+              <div className="mono" style={{fontWeight: 600}}>{selectedTrade.regime}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid-2">
         <div className="card animate-in">

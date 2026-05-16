@@ -77,11 +77,53 @@ class MacroFetcher:
             return None
         df.columns = [c.lower().replace(" ", "_") for c in df.columns]
         df.index.name = "timestamp"
-        df["returns"] = df["close"].pct_change()
-        df["log_returns"] = np.log(df["close"] / df["close"].shift(1))
         for drop_col in ["dividends", "stock_splits", "capital_gains"]:
             if drop_col in df.columns:
                 df = df.drop(columns=[drop_col])
+                
+        # Phase 6: Automatic Outlier Correction & Gap Imputation
+        df = self._clean_and_impute(df)
+        
+        df["returns"] = df["close"].pct_change()
+        df["log_returns"] = np.log(df["close"] / df["close"].shift(1))
+        return df
+
+    def _clean_and_impute(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Phase 6: Data Quality & Imputation Engine.
+        Automatically repairs missing data gaps and clips extreme outliers.
+        """
+        if df.empty:
+            return df
+            
+        initial_len = len(df)
+        
+        # 1. Impute small gaps (up to 3 consecutive periods) with forward fill
+        df = df.ffill(limit=3)
+        
+        # 2. Interpolate larger gaps linearly (up to 7 periods)
+        df = df.interpolate(method='linear', limit=7)
+        
+        # 3. Outlier Correction (Clip extreme price spikes > 4 rolling std deviations)
+        if len(df) > 30 and "close" in df.columns:
+            rolling_median = df["close"].rolling(window=20, min_periods=5).median()
+            rolling_std = df["close"].rolling(window=20, min_periods=5).std().bfill()
+            
+            # Identify extreme price spikes
+            price_outliers = (df["close"] > rolling_median + 4*rolling_std) | (df["close"] < rolling_median - 4*rolling_std)
+            if price_outliers.any():
+                logger.info(f"Corrected {price_outliers.sum()} extreme macro outliers via median substitution")
+                # Fix OHLC prices
+                for col in ["open", "high", "low", "close"]:
+                    if col in df.columns:
+                        df.loc[price_outliers, col] = rolling_median[price_outliers]
+        
+        # 4. Drop remaining NaNs (unrecoverable gaps at the start or > 10 periods)
+        df = df.dropna()
+        
+        if len(df) < initial_len:
+            logger.debug(f"Dropped {initial_len - len(df)} unrecoverable bad data rows from macro feed")
+            
         return df
 
     def fetch_single_macro(self, name, period="10y", interval="1d") -> Optional[pd.DataFrame]:
@@ -131,7 +173,7 @@ class MacroFetcher:
         aligned = base_df.copy()
         
         # Ensure base_df is timezone-naive
-        if aligned.index.tz is not None:
+        if isinstance(aligned.index, pd.DatetimeIndex) and aligned.index.tz is not None:
             aligned.index = aligned.index.tz_localize(None)
             
         for name, data_obj in additional_data.items():
@@ -139,7 +181,7 @@ class MacroFetcher:
                 continue
                 
             df_to_merge = data_obj.copy()
-            if df_to_merge.index.tz is not None:
+            if isinstance(df_to_merge.index, pd.DatetimeIndex) and df_to_merge.index.tz is not None:
                 df_to_merge.index = df_to_merge.index.tz_localize(None)
                 
             if isinstance(df_to_merge, pd.Series):
@@ -278,6 +320,7 @@ class MacroFetcher:
             keywords = alt_cfg.get("google_trends_keywords", ["buy gold", "gold price", "safe haven"])
 
         try:
+            # pyrefly: ignore [missing-import]
             from pytrends.request import TrendReq
         except ImportError:
             logger.debug("pytrends not installed — skipping Google Trends (pip install pytrends)")
