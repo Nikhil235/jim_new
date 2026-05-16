@@ -81,6 +81,10 @@ export default function PaperTrading() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 12px',borderRadius:'var(--radius-sm)',fontSize:12,fontWeight:600,
+            background:'var(--gold-dim)',color:'var(--gold)', border:'1px solid rgba(240,185,11,0.3)'}}>
+            DXY: {signals?.macro?.dxy?.toFixed(2) || '---'} | US10Y: {signals?.macro?.us10y?.toFixed(2) || '---'}%
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 12px',borderRadius:'var(--radius-sm)',fontSize:12,fontWeight:600,
             background:'var(--blue-dim)',color:'var(--blue)', border:'1px solid rgba(59,130,246,0.3)'}}>
             <Activity size={12}/> REGIME: {modelSigs['hmm']?.regime || 'NORMAL'}
           </div>
@@ -100,7 +104,13 @@ export default function PaperTrading() {
     <div className="page-body">
       {/* Engine Controls */}
       <div className="card animate-in" style={{marginBottom:16}}>
-          <div className="card-header"><span className="card-title">Engine Controls</span><span className="card-badge badge-gold">LIVE API</span></div>
+          <div className="card-header">
+            <span className="card-title">Engine Controls</span>
+            <div style={{display: 'flex', gap: 8}}>
+                {signals?.macro?.rl_kelly && <span className="card-badge badge-green" style={{background:'rgba(0,196,140,0.1)', color:'var(--green)'}}>RL AGENT ACTIVE</span>}
+                <span className="card-badge badge-gold">LIVE API</span>
+            </div>
+          </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:12}}>
             {[['Capital ($)',config.initial_capital,'initial_capital'],['Kelly Frac',config.kelly_fraction,'kelly_fraction'],['Max Pos %',config.max_position_pct,'max_position_pct'],
               ['Max Daily Loss %',config.max_daily_loss_pct,'max_daily_loss_pct'],['Max DD %',config.max_drawdown_pct,'max_drawdown_pct'],['Min Confidence',config.min_confidence,'min_confidence']
@@ -112,7 +122,7 @@ export default function PaperTrading() {
               </div>
             ))}
           </div>
-          <div style={{display:'flex',gap:10}}>
+          <div style={{display:'flex',gap:10, marginBottom: 16}}>
             <button onClick={handleStart} disabled={starting||isRunning} style={{padding:'8px 20px',borderRadius:6,border:'none',background:isRunning?'var(--bg-input)':'var(--green)',color:isRunning?'var(--text-muted)':'#000',fontWeight:600,cursor:isRunning?'not-allowed':'pointer',fontSize:12}}>
               <Play size={12} style={{marginRight:4,verticalAlign:'middle'}}/> {starting?'Starting...':'Start Engine'}
             </button>
@@ -122,6 +132,14 @@ export default function PaperTrading() {
             <button onClick={handleReset} disabled={!isRunning} style={{padding:'8px 20px',borderRadius:6,border:'1px solid var(--border-color)',background:'var(--bg-secondary)',color:'var(--text-secondary)',fontWeight:600,cursor:isRunning?'pointer':'not-allowed',fontSize:12}}>
               <RefreshCw size={12} style={{marginRight:4,verticalAlign:'middle'}}/> Reset Daily
             </button>
+          </div>
+          <div style={{padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12}}>
+              <div><strong style={{color:'var(--gold)'}}>Phase 7 Active Modules:</strong></div>
+              <div style={{display: 'flex', gap: 20}}>
+                <div style={{color: 'var(--text-bright)'}}><span style={{color:'var(--green)'}}>RL Kelly Scale:</span> {(signals?.macro?.rl_kelly || 1.0).toFixed(2)}x</div>
+                <div style={{color: 'var(--text-bright)'}}><span style={{color:'var(--red)'}}>RL Trailing Stop:</span> {((signals?.macro?.rl_trailing || 0.015)*100).toFixed(2)}%</div>
+                <div style={{color: 'var(--text-bright)'}}><span style={{color:'var(--blue)'}}>FinBERT NLP:</span> {modelSigs['nlp']?.signal || 'WAITING'}</div>
+              </div>
           </div>
         </div>
 

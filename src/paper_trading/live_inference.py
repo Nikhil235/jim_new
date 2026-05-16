@@ -652,10 +652,22 @@ class LiveInferenceLoop:
 
         # 5. Broadcast model update via WebSocket
         if self.broadcast_fn:
+            from src.models.rl_execution_agent import get_rl_agent
+            rl_params = get_rl_agent().get_execution_parameters(regime, 0.02, ensemble_res["confidence"])
+            
+            dxy_val = float(df["dxy"].iloc[-1]) if df is not None and "dxy" in df.columns else 0.0
+            us10y_val = float(df["us10y"].iloc[-1]) if df is not None and "us10y" in df.columns else 0.0
+            
             broadcast_payload = {
                 "price": current_price,
                 "regime": regime,
                 "timestamp": now_iso,
+                "macro": {
+                    "dxy": dxy_val,
+                    "us10y": us10y_val,
+                    "rl_kelly": rl_params["kelly_multiplier"],
+                    "rl_trailing": rl_params["trailing_stop_pct"],
+                },
                 "models": {
                     m: {
                         "signal": v["signal"],
