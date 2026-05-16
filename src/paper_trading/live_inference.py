@@ -39,7 +39,7 @@ LIVE_MODEL_SIGNALS: Dict[str, Dict] = {
         "last_updated": None,
         "error": None,
     }
-    for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "ensemble"]
+    for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp", "ensemble"]
 }
 
 # Current gold price (updated on each fetch)

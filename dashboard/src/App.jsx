@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users } from 'lucide-react';
 import Overview from './pages/Overview';
@@ -10,6 +11,7 @@ import Execution from './pages/Execution';
 import Backtesting from './pages/Backtesting';
 import PaperTrading from './pages/PaperTrading';
 import Operations from './pages/Operations';
+import Login from './pages/Login';
 
 const navItems = [
   { section: 'Trading' },
@@ -29,6 +31,11 @@ const navItems = [
 
 export default function App() {
   const location = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  if (!isAuthenticated) {
+    return <Login onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="app-layout">

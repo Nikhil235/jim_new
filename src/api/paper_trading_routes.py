@@ -538,7 +538,7 @@ async def inject_signal(request: SignalInjectionRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=409, detail="Paper trading engine is not running")
     
     # Validate model name
-    valid_models = ["wavelet", "hmm", "lstm", "tft", "genetic", "ensemble"]
+    valid_models = ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp", "ensemble"]
     if request.model_name not in valid_models:
         raise HTTPException(
             status_code=400,
