@@ -87,6 +87,8 @@ class TradeExecution:
     status: TradeStatus = TradeStatus.PENDING
     regime: str = "NORMAL"
     confidence: float = 0.0
+    trailing_stop: Optional[float] = None
+    high_water_mark: Optional[float] = None
     
     def __repr__(self):
         return f"Trade({self.trade_id}) {self.model_name} {self.signal_type.value} @ {self.entry_price:.2f}"
@@ -326,7 +328,7 @@ class PaperTradingEngine:
     
     def update_price(self, price: float, timestamp: datetime) -> Dict:
         """
-        Update current price and calculate P&L.
+        Update current price, calculate P&L, and manage trailing stops.
         
         Args:
             price: Current price for XAUUSD
@@ -337,14 +339,44 @@ class PaperTradingEngine:
         """
         # Update position P&L if open
         if self.current_position and self.current_position.status == TradeStatus.OPEN:
+            trade = self.current_position
             pnl, pnl_pct = self._calculate_pnl(
-                self.current_position.signal_type,
-                self.current_position.entry_price,
+                trade.signal_type,
+                trade.entry_price,
                 price,
-                self.current_position.quantity
+                trade.quantity
             )
-            self.current_position.pnl = pnl
-            self.current_position.pnl_pct = pnl_pct
+            trade.pnl = pnl
+            trade.pnl_pct = pnl_pct
+            
+            # Volatility-Adjusted Trailing Stop Logic
+            if trade.high_water_mark is None:
+                trade.high_water_mark = price
+                
+            if trade.signal_type == SignalType.LONG:
+                if price > trade.high_water_mark:
+                    trade.high_water_mark = price
+            else: # SHORT
+                if price < trade.high_water_mark:
+                    trade.high_water_mark = price
+                    
+            # Determine trailing % based on regime
+            trailing_pct = 0.015  # Default 1.5%
+            if trade.regime in ("HIGH_VOLATILITY", "CRASH"):
+                trailing_pct = 0.025  # Wider stop in volatile markets
+            elif trade.regime in ("LOW_VOLATILITY", "TRENDING"):
+                trailing_pct = 0.010  # Tighter stop in stable markets
+                
+            if trade.signal_type == SignalType.LONG:
+                trade.trailing_stop = trade.high_water_mark * (1 - trailing_pct)
+                if price <= trade.trailing_stop:
+                    logger.info(f"Trailing stop hit for LONG trade {trade.trade_id} @ {price:.2f}")
+                    self._close_position(timestamp, price)
+            else: # SHORT
+                trade.trailing_stop = trade.high_water_mark * (1 + trailing_pct)
+                if price >= trade.trailing_stop:
+                    logger.info(f"Trailing stop hit for SHORT trade {trade.trade_id} @ {price:.2f}")
+                    self._close_position(timestamp, price)
         
         # Create snapshot
         snapshot = self._create_portfolio_snapshot(price)
@@ -364,8 +396,8 @@ class PaperTradingEngine:
     
     def _execute_trade(self, model_name: str, signal: ModelSignal) -> TradeExecution:
         """Execute a new trade."""
-        # Calculate position size using Kelly criterion
-        size = self._calculate_position_size(signal.confidence)
+        # Calculate position size using Dynamic Fractional Kelly
+        size = self._calculate_position_size(signal.confidence, signal.regime)
         
         # Create trade record
         trade = TradeExecution(
@@ -436,8 +468,8 @@ class PaperTradingEngine:
         self.current_position = None
         return trade
     
-    def _calculate_position_size(self, confidence: float) -> float:
-        """Calculate position size using Kelly criterion."""
+    def _calculate_position_size(self, confidence: float, regime: str = "NORMAL") -> float:
+        """Calculate position size using Dynamic Fractional Kelly criterion."""
         # Estimate win probability from confidence
         win_prob = (confidence + 1.0) / 2.0  # Scale 0.5-1.0 based on confidence
         
@@ -445,14 +477,22 @@ class PaperTradingEngine:
         # Simplified for gold: assume 1:1 payoff
         kelly_fraction = win_prob - (1 - win_prob)
         
-        # Apply Kelly fraction and config limit
-        position_fraction = kelly_fraction * self.config.kelly_fraction
+        # Dynamic Kelly Multiplier based on Regime
+        regime_multiplier = 1.0
+        if regime in ("HIGH_VOLATILITY", "CRASH"):
+            regime_multiplier = 0.5  # Protect capital in crazy markets
+        elif regime in ("LOW_VOLATILITY", "TRENDING"):
+            regime_multiplier = 1.2  # Press advantages in stable trends
+            
+        # Apply Kelly fraction, regime multiplier, and config limit
+        position_fraction = kelly_fraction * self.config.kelly_fraction * regime_multiplier
         position_fraction = min(position_fraction, self.config.max_position_pct)
         position_fraction = max(position_fraction, 0.01)  # Minimum position
         
-        # Convert to ounces (assuming current price around $2000/oz, could be parameterized)
-        position_value = self._create_portfolio_snapshot().total_value * position_fraction
-        position_ounces = position_value / 2000.0  # Rough estimate
+        # Convert to ounces
+        current_price = self.current_position.entry_price if self.current_position else 2000.0
+        position_value = self._create_portfolio_snapshot(current_price).total_value * position_fraction
+        position_ounces = position_value / current_price
         
         return position_ounces
     

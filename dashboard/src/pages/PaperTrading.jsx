@@ -81,6 +81,10 @@ export default function PaperTrading() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 12px',borderRadius:'var(--radius-sm)',fontSize:12,fontWeight:600,
+            background:'var(--blue-dim)',color:'var(--blue)', border:'1px solid rgba(59,130,246,0.3)'}}>
+            <Activity size={12}/> REGIME: {modelSigs['hmm']?.regime || 'NORMAL'}
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 12px',borderRadius:'var(--radius-sm)',fontSize:12,fontWeight:600,
             background:live?'var(--green-dim)':'var(--red-dim)',color:live?'var(--green)':'var(--red)',
             border:`1px solid ${live?'rgba(0,196,140,0.3)':'rgba(255,77,106,0.3)'}`}}>
             {live?<Wifi size={12}/>:<WifiOff size={12}/>} {live?'LIVE':'OFFLINE'}
@@ -191,13 +195,15 @@ export default function PaperTrading() {
         </div>
         <div className="card animate-in">
           <div className="card-header"><span className="card-title">Recent Trades</span><span className="card-badge badge-purple">{tradeList.length} TRADES</span></div>
-          <table className="data-table"><thead><tr><th>ID</th><th>Model</th><th>Signal</th><th>Entry</th><th>Exit</th><th>P&L</th><th>Status</th></tr></thead>
+          <table className="data-table"><thead><tr><th>ID</th><th>Model</th><th>Signal</th><th>Entry</th><th>Exit</th><th>HWM</th><th>Trail Stop</th><th>P&L</th><th>Status</th></tr></thead>
             <tbody>{tradeList.map((t,i)=>{
               const id = t.trade_id||t.tradeId||`#${i}`;
               const model = t.model_name||t.model||'—';
               const sig = t.signal_type||t.signal||'—';
               const entry = t.entry_price||t.entry||0;
               const exit = t.exit_price||t.exit||null;
+              const hwm = t.high_water_mark||null;
+              const trail = t.trailing_stop||null;
               const pnl = t.pnl||0;
               const st = t.status||'OPEN';
               return (<tr key={i}>
@@ -206,6 +212,8 @@ export default function PaperTrading() {
                 <td><span style={{color:signalColor(sig),fontWeight:600,fontSize:11}}>{sig}</span></td>
                 <td className="mono">${Number(entry).toFixed(2)}</td>
                 <td className="mono">{exit?`$${Number(exit).toFixed(2)}`:'—'}</td>
+                <td className="mono">{hwm?`$${Number(hwm).toFixed(2)}`:'—'}</td>
+                <td className="mono" style={{color:'var(--orange)'}}>{trail?`$${Number(trail).toFixed(2)}`:'—'}</td>
                 <td className="mono" style={{color:pnl>=0?'var(--green)':'var(--red)',fontWeight:600}}>{pnl>=0?'+':''}${Number(pnl).toFixed(2)}</td>
                 <td><span className={`card-badge ${st==='CLOSED'?'badge-green':'badge-blue'}`}>{st}</span></td>
               </tr>);

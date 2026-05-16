@@ -364,12 +364,13 @@ def run_genetic(df: pd.DataFrame) -> Dict:
         return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
 
 
-def run_ensemble(individual_signals: Dict[str, Dict]) -> Dict:
+def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL") -> Dict:
     """
     Ensemble meta-learner: weighted aggregation of all 5 individual models.
-    Weights from PaperTradingConfig signal_weights.
+    Dynamic weighting based on current market regime.
     """
     try:
+        # Base weights
         weights = {
             "wavelet": 0.15,
             "hmm": 0.15,
@@ -377,6 +378,22 @@ def run_ensemble(individual_signals: Dict[str, Dict]) -> Dict:
             "tft": 0.25,
             "genetic": 0.25,
         }
+        
+        # Regime-Conditioned Dynamic Weighting
+        if regime in ("HIGH_VOLATILITY", "CRASH"):
+            # Decrease trend-following, increase mean-reversion/wavelet
+            weights["wavelet"] = 0.35
+            weights["hmm"] = 0.25
+            weights["tft"] = 0.10
+            weights["lstm"] = 0.10
+            weights["genetic"] = 0.20
+        elif regime in ("LOW_VOLATILITY", "TRENDING"):
+            # Increase deep learning / trend models
+            weights["tft"] = 0.35
+            weights["lstm"] = 0.30
+            weights["genetic"] = 0.15
+            weights["wavelet"] = 0.10
+            weights["hmm"] = 0.10
 
         signal_scores = {"LONG": 0.0, "SHORT": 0.0, "HOLD": 0.0}
         total_weight = 0.0
@@ -449,6 +466,7 @@ class LiveInferenceLoop:
         self.iteration = 0
         self.last_run: Optional[datetime] = None
         self.last_error: Optional[str] = None
+        self.consecutive_failures = 0
 
     def stop(self):
         """Signal the loop to stop."""
@@ -492,7 +510,17 @@ class LiveInferenceLoop:
 
         if df is None or df.empty or len(df) < 35:
             logger.warning("Skipping inference cycle: insufficient gold data")
+            self.consecutive_failures += 1
+            if self.consecutive_failures >= 3 and self.engine and self.engine.status == "RUNNING":
+                logger.critical("Data feed down! Triggering GRACEFUL DEGRADATION -> HALTING TRADING!")
+                # Liquidate open positions
+                if self.engine.current_position:
+                    self.engine._close_position(datetime.now(), CURRENT_GOLD_PRICE)
+                self.engine.stop()
             return
+
+        # Reset failures on success
+        self.consecutive_failures = 0
 
         # Update current price
         CURRENT_GOLD_PRICE = float(df["close"].iloc[-1])
@@ -518,14 +546,18 @@ class LiveInferenceLoop:
             "genetic": genetic_res,
         }
 
-        # Run ensemble synchronously (fast, just aggregation)
-        ensemble_res = run_ensemble(individual)
+        # 3. Get Regime for Meta-Labeling
+        regime = hmm_res.get("regime", "NORMAL")
+        now_iso = datetime.now().isoformat()
+        
+        # Run ensemble synchronously with dynamic regime weights
+        ensemble_res = run_ensemble(individual, regime)
 
         all_results = {**individual, "ensemble": ensemble_res}
 
-        # 3. Update LIVE_MODEL_SIGNALS registry
-        regime = hmm_res.get("regime", "NORMAL")
-        now_iso = datetime.now().isoformat()
+        all_results = {**individual, "ensemble": ensemble_res}
+
+        # 4. Update LIVE_MODEL_SIGNALS registry
 
         for model, res in all_results.items():
             LIVE_MODEL_SIGNALS[model].update({

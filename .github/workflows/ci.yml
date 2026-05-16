@@ -1,0 +1,33 @@
+name: Strict CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  type-check-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-merged.txt
+        pip install pytest pyright
+        
+    - name: Strict Type Checking (Pyright)
+      run: |
+        pyright src/
+        
+    - name: Run Unit Tests
+      run: |
+        pytest tests/ -v
