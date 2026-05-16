@@ -21,6 +21,7 @@ from enum import Enum
 import asyncio
 import numpy as np
 from loguru import logger
+from src.models.rl_execution_agent import get_rl_agent
 
 # Phase 5 backtester infrastructure
 from src.backtesting.execution import ExecutionSimulator, ExecutionConfig, SlippageModel
@@ -363,13 +364,14 @@ class PaperTradingEngine:
                     
             trade.high_water_mark = hwm
                     
-            # Determine trailing % based on regime
-            trailing_pct = 0.015  # Default 1.5%
-            if trade.regime in ("HIGH_VOLATILITY", "CRASH"):
-                trailing_pct = 0.025  # Wider stop in volatile markets
-            elif trade.regime in ("LOW_VOLATILITY", "TRENDING"):
-                trailing_pct = 0.010  # Tighter stop in stable markets
-                
+            # Determine trailing % using RL Execution Agent
+            rl_params = get_rl_agent().get_execution_parameters(
+                regime=trade.regime, 
+                volatility=0.02, # Approx daily volatility 
+                confidence=trade.confidence
+            )
+            trailing_pct = rl_params["trailing_stop_pct"]
+            
             if trade.signal_type == SignalType.LONG:
                 trade.trailing_stop = hwm * (1 - trailing_pct)
                 if price <= trade.trailing_stop:
@@ -480,12 +482,13 @@ class PaperTradingEngine:
         # Simplified for gold: assume 1:1 payoff
         kelly_fraction = win_prob - (1 - win_prob)
         
-        # Dynamic Kelly Multiplier based on Regime
-        regime_multiplier = 1.0
-        if regime in ("HIGH_VOLATILITY", "CRASH"):
-            regime_multiplier = 0.5  # Protect capital in crazy markets
-        elif regime in ("LOW_VOLATILITY", "TRENDING"):
-            regime_multiplier = 1.2  # Press advantages in stable trends
+        # Dynamic Kelly Multiplier from RL Execution Agent
+        rl_params = get_rl_agent().get_execution_parameters(
+            regime=regime,
+            volatility=0.02,
+            confidence=confidence
+        )
+        regime_multiplier = rl_params["kelly_multiplier"]
             
         # Apply Kelly fraction, regime multiplier, and config limit
         position_fraction = kelly_fraction * self.config.kelly_fraction * regime_multiplier

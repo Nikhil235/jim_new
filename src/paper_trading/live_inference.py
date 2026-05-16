@@ -53,28 +53,38 @@ LAST_PRICE_UPDATE: Optional[datetime] = None
 
 def fetch_live_gold_data(period: str = "5d", interval: str = "15m") -> Optional[pd.DataFrame]:
     """
-    Fetch latest gold futures OHLCV data via yfinance.
-    Returns DataFrame with columns: open, high, low, close, volume, returns
+    Fetch latest gold futures OHLCV data AND macro indicators (DXY, US10Y) via yfinance.
+    Returns DataFrame with columns: open, high, low, close, volume, returns, dxy, us10y, dxy_returns, us10y_returns
     """
     try:
         import yfinance as yf
-        ticker = yf.Ticker("GC=F")
-        df = ticker.history(period=period, interval=interval)
+        # Group download is faster and aligns timestamps perfectly
+        tickers = "GC=F DX-Y.NYB ^TNX"
+        df_all = yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False)
 
-        if df.empty:
-            logger.warning("yfinance returned empty dataframe for GC=F")
+        if df_all.empty:
+            logger.warning("yfinance returned empty dataframe")
             return None
 
-        # Normalize columns
+        # Extract Gold
+        df = df_all["GC=F"].copy()
         df.columns = [c.lower() for c in df.columns]
         df = df[["open", "high", "low", "close", "volume"]].copy()
+        
+        # Extract DXY and US10Y closes (Forward fill to handle slightly misaligned ticks)
+        df["dxy"] = df_all["DX-Y.NYB"]["Close"].ffill()
+        df["us10y"] = df_all["^TNX"]["Close"].ffill()
+        
         df.dropna(inplace=True)
 
         # Add returns
         df["returns"] = df["close"].pct_change()
+        df["dxy_returns"] = df["dxy"].pct_change()
+        df["us10y_returns"] = df["us10y"].pct_change()
+        
         df.dropna(inplace=True)
 
-        logger.debug(f"Gold data fetched: {len(df)} bars, latest close: ${df['close'].iloc[-1]:.2f}")
+        logger.debug(f"Data fetched: {len(df)} bars. Gold: ${df['close'].iloc[-1]:.2f}, DXY: {df['dxy'].iloc[-1]:.2f}, US10Y: {df['us10y'].iloc[-1]:.2f}%")
         return df
 
     except Exception as e:
@@ -89,7 +99,6 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "15m") -> Optional[
 def run_wavelet(df: pd.DataFrame) -> Dict:
     """Wavelet denoiser signal: trend direction from denoised price series."""
     try:
-        from src.models.wavelet_denoiser import WaveletDenoiser
         prices = df["close"].values
 
         # Need at least 32 samples (2^5 for 5-level decomposition)
@@ -186,8 +195,18 @@ def run_lstm(df: pd.DataFrame) -> Dict:
         ema_slow = pd.Series(closes).ewm(span=21).mean().iloc[-1]
         macd = ema_fast - ema_slow
 
+        # Macro Leading Indicators (DXY and US10Y)
+        macro_adjustment = 0.0
+        if "dxy_returns" in df.columns and "us10y_returns" in df.columns:
+            # Gold is inversely correlated to both DXY and Treasury Yields
+            dxy_momentum = df["dxy_returns"].iloc[-3:].sum() * 100
+            yield_momentum = df["us10y_returns"].iloc[-3:].sum() * 100
+            
+            # If DXY spikes OR Yields spike -> Strong Bearish pressure for Gold
+            macro_adjustment = (dxy_momentum + yield_momentum) * -0.3 
+            
         # Combine signals
-        score = np.sign(ew_return) * 0.4 + np.sign(macd) * 0.4 + np.sign(accel) * 0.2
+        score = np.sign(ew_return) * 0.4 + np.sign(macd) * 0.3 + np.sign(accel) * 0.1 + macro_adjustment
         confidence = min(abs(score) * 0.8 + 0.3, 0.92)
 
         if score > 0.3:
@@ -200,7 +219,7 @@ def run_lstm(df: pd.DataFrame) -> Dict:
         return {
             "signal": signal,
             "confidence": round(float(confidence), 3),
-            "reasoning": f"LSTM-proxy: EW_return={ew_return:.5f}, MACD={macd:.2f}, score={score:.2f}",
+            "reasoning": f"LSTM-proxy: MACD={macd:.2f}, MacroDrag={macro_adjustment:.2f}, score={score:.2f}",
         }
 
     except Exception as e:
@@ -246,6 +265,19 @@ def run_tft(df: pd.DataFrame) -> Dict:
         combined = short_signal * 0.3 + long_signal * 0.4 + trend_signal * 0.3
         # Contrarian adjustment from BB position
         combined -= bb_pos * 0.15
+        
+        # TFT Macro Attention: Yield & DXY Curve Inversion
+        macro_reasoning = ""
+        if "dxy_returns" in df.columns and "us10y_returns" in df.columns:
+            dxy_roc = df["dxy_returns"].iloc[-5:].mean() * 1000
+            yield_roc = df["us10y_returns"].iloc[-5:].mean() * 1000
+            
+            if dxy_roc > 1.5 or yield_roc > 1.5:
+                combined -= 0.4 # Severe bearish override
+                macro_reasoning = f" (MACRO FEAR: DXY/US10Y Spiking)"
+            elif dxy_roc < -1.5 or yield_roc < -1.5:
+                combined += 0.4 # Severe bullish override
+                macro_reasoning = f" (MACRO GREED: DXY/US10Y Dropping)"
 
         confidence = min(abs(combined) * 0.9 + 0.25, 0.94)
 
@@ -259,7 +291,7 @@ def run_tft(df: pd.DataFrame) -> Dict:
         return {
             "signal": signal,
             "confidence": round(float(confidence), 3),
-            "reasoning": f"TFT-proxy: RSI14={rsi_14:.1f}, RSI7={rsi_7:.1f}, BB_pos={bb_pos:.2f}, score={combined:.3f}",
+            "reasoning": f"TFT-proxy: RSI14={rsi_14:.1f}, RSI7={rsi_7:.1f}, BB_pos={bb_pos:.2f}, score={combined:.3f}{macro_reasoning}",
         }
 
     except Exception as e:
@@ -372,26 +404,29 @@ def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL") ->
     try:
         # Base weights
         weights = {
-            "wavelet": 0.15,
-            "hmm": 0.15,
-            "lstm": 0.20,
-            "tft": 0.25,
-            "genetic": 0.25,
+            "wavelet": 0.10,
+            "hmm": 0.10,
+            "lstm": 0.15,
+            "tft": 0.20,
+            "genetic": 0.20,
+            "nlp": 0.25, # NLP gets high weight for macro edge
         }
         
         # Regime-Conditioned Dynamic Weighting
         if regime in ("HIGH_VOLATILITY", "CRASH"):
-            # Decrease trend-following, increase mean-reversion/wavelet
-            weights["wavelet"] = 0.35
-            weights["hmm"] = 0.25
-            weights["tft"] = 0.10
-            weights["lstm"] = 0.10
-            weights["genetic"] = 0.20
+            # Decrease trend-following, increase mean-reversion and NLP
+            weights["wavelet"] = 0.25
+            weights["hmm"] = 0.20
+            weights["tft"] = 0.05
+            weights["lstm"] = 0.05
+            weights["genetic"] = 0.15
+            weights["nlp"] = 0.30
         elif regime in ("LOW_VOLATILITY", "TRENDING"):
             # Increase deep learning / trend models
-            weights["tft"] = 0.35
-            weights["lstm"] = 0.30
+            weights["tft"] = 0.25
+            weights["lstm"] = 0.25
             weights["genetic"] = 0.15
+            weights["nlp"] = 0.15
             weights["wavelet"] = 0.10
             weights["hmm"] = 0.10
 
@@ -537,6 +572,7 @@ class LiveInferenceLoop:
         lstm_res = await loop.run_in_executor(None, run_lstm, df)
         tft_res = await loop.run_in_executor(None, run_tft, df)
         genetic_res = await loop.run_in_executor(None, run_genetic, df)
+        nlp_res = await loop.run_in_executor(None, run_nlp_sentiment, df)
 
         individual = {
             "wavelet": wavelet_res,
@@ -544,6 +580,7 @@ class LiveInferenceLoop:
             "lstm": lstm_res,
             "tft": tft_res,
             "genetic": genetic_res,
+            "nlp": nlp_res,
         }
 
         # 3. Get Regime for Meta-Labeling
