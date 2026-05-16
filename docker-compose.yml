@@ -8,6 +8,22 @@
 
 services:
 
+  # --- Python FastAPI Backend (Trading Engine) ---
+  api:
+    build: .
+    container_name: medallion-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - questdb
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://medallion-redis:6379
+      - QUESTDB_HOST=medallion-questdb
+
   # --- Time-Series Database (Tick Data) ---
   questdb:
     image: questdb/questdb:7.4.0

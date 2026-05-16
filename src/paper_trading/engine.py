@@ -350,15 +350,18 @@ class PaperTradingEngine:
             trade.pnl_pct = pnl_pct
             
             # Volatility-Adjusted Trailing Stop Logic
-            if trade.high_water_mark is None:
-                trade.high_water_mark = price
+            hwm = trade.high_water_mark
+            if hwm is None:
+                hwm = price
                 
             if trade.signal_type == SignalType.LONG:
-                if price > trade.high_water_mark:
-                    trade.high_water_mark = price
+                if price > hwm:
+                    hwm = price
             else: # SHORT
-                if price < trade.high_water_mark:
-                    trade.high_water_mark = price
+                if price < hwm:
+                    hwm = price
+                    
+            trade.high_water_mark = hwm
                     
             # Determine trailing % based on regime
             trailing_pct = 0.015  # Default 1.5%
@@ -368,12 +371,12 @@ class PaperTradingEngine:
                 trailing_pct = 0.010  # Tighter stop in stable markets
                 
             if trade.signal_type == SignalType.LONG:
-                trade.trailing_stop = trade.high_water_mark * (1 - trailing_pct)
+                trade.trailing_stop = hwm * (1 - trailing_pct)
                 if price <= trade.trailing_stop:
                     logger.info(f"Trailing stop hit for LONG trade {trade.trade_id} @ {price:.2f}")
                     self._close_position(timestamp, price)
             else: # SHORT
-                trade.trailing_stop = trade.high_water_mark * (1 + trailing_pct)
+                trade.trailing_stop = hwm * (1 + trailing_pct)
                 if price >= trade.trailing_stop:
                     logger.info(f"Trailing stop hit for SHORT trade {trade.trade_id} @ {price:.2f}")
                     self._close_position(timestamp, price)
