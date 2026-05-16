@@ -22,7 +22,7 @@ from typing import Optional, Dict, Callable, Any
 import numpy as np
 import pandas as pd
 from loguru import logger
-
+from src.models.nlp_sentiment import run_nlp_sentiment
 
 # ============================================================================
 # MODEL SIGNAL REGISTRY (shared state, updated by inference loop)
@@ -105,11 +105,17 @@ def run_wavelet(df: pd.DataFrame) -> Dict:
         if len(prices) < 32:
             return {"signal": "HOLD", "confidence": 0.0, "reasoning": "Insufficient data"}
 
-        denoiser = WaveletDenoiser(wavelet="db4", levels=5)
-        result = denoiser.denoise(prices)
-
-        trend = result["trend_signal"]
-        confidence = float(np.clip(result["confidence"], 0, 1))
+        try:
+            import pywt
+            coeffs = pywt.wavedec(prices, "db4", level=5)
+            # Zero out detail coefficients to denoise
+            coeffs[1:] = [np.zeros_like(v) for v in coeffs[1:]]
+            trend = pywt.waverec(coeffs, "db4")
+            confidence = 0.75
+        except ImportError:
+            # Proxy if pywt is unavailable
+            trend = pd.Series(prices).rolling(window=10).mean().bfill().values
+            confidence = 0.5
 
         # Signal: compare last 3 denoised values to determine trend
         if len(trend) >= 3:
@@ -446,7 +452,7 @@ def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL") ->
                 signal_scores[k] /= total_weight
 
         # Pick best signal
-        best = max(signal_scores, key=signal_scores.get)
+        best = max(signal_scores, key=lambda k: signal_scores[k])
         best_score = signal_scores[best]
 
         # Apply threshold: need at least 0.25 weighted confidence to act
@@ -628,7 +634,7 @@ class LiveInferenceLoop:
                             current_price=current_price,
                             timestamp=datetime.now(),
                             reasoning=res.get("reasoning", ""),
-                            regime=res.get("regime", regime),
+                            regime=str(res.get("regime", regime)),
                         )
                         self.engine.process_signal(model_name, sig)
                     else:

@@ -249,9 +249,9 @@ class GoldDataFetcher:
             if parquet_file.exists():
                 existing = pd.read_parquet(parquet_file)
                 if not existing.empty:
-                    last_timestamp = existing.index[-1]
-                    if hasattr(last_timestamp, 'to_pydatetime'):
-                        last_timestamp = last_timestamp.to_pydatetime()
+                    last_idx = existing.index[-1]
+                    # Ensure strict conversion to native Python datetime
+                    last_timestamp = pd.to_datetime(last_idx).to_pydatetime()
 
         if last_timestamp is not None:
             start = (last_timestamp - timedelta(days=1)).strftime("%Y-%m-%d")
