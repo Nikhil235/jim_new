@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@clerk/react": "^6.6.6",
     "@react-oauth/google": "^0.13.5",
     "react-is": "^19.2.6"
   }

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
+import { useUser, useClerk, AuthenticateWithRedirectCallback } from '@clerk/react';
 import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users } from 'lucide-react';
 import Overview from './pages/Overview';
 import MarketData from './pages/MarketData';
@@ -11,11 +11,13 @@ import Execution from './pages/Execution';
 import Backtesting from './pages/Backtesting';
 import PaperTrading from './pages/PaperTrading';
 import Operations from './pages/Operations';
-import Login from './pages/Login';
+import SignIn from './pages/auth/SignIn';
+import SignUp from './pages/auth/SignUp';
+import ForgotPassword from './pages/auth/ForgotPassword';
 
 const navItems = [
   { section: 'Trading' },
-  { path: '/', icon: LayoutDashboard, label: 'Overview' },
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { path: '/market', icon: BarChart3, label: 'Market Data' },
   { path: '/models', icon: BrainCircuit, label: 'Models & Signals' },
   { section: 'Management' },
@@ -31,10 +33,38 @@ const navItems = [
 
 export default function App() {
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
 
-  if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />;
+  // Show a premium glassmorphic loading screen during Clerk initialization
+  if (!isLoaded) {
+    return (
+      <div className="login-container">
+        <div className="orb orb-1"></div>
+        <div className="orb orb-2"></div>
+        <div className="orb orb-3"></div>
+        <div className="login-glass-card animate-in flex flex-col items-center justify-center py-16 max-w-md w-full rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-2xl relative z-10">
+          <Activity className="spin-icon animate-spin text-gold-primary mb-4" size={32} />
+          <p className="text-xs text-gold-primary tracking-widest uppercase font-semibold">Initializing Secure Auth Link...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Protect dashboard routes: Redirect to sign-in if unauthenticated
+  if (!isSignedIn) {
+    return (
+      <Routes>
+        <Route path="/sign-in" element={<SignIn />} />
+        <Route path="/sign-up" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route 
+          path="/sso-callback" 
+          element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl="/dashboard" signInForceRedirectUrl="/dashboard" />} 
+        />
+        <Route path="*" element={<Navigate to="/sign-in" replace />} />
+      </Routes>
+    );
   }
 
   return (
@@ -58,7 +88,7 @@ export default function App() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                end={item.path === '/'}
+                end={item.path === '/dashboard'}
               >
                 <item.icon size={18} />
                 {item.label}
@@ -68,6 +98,29 @@ export default function App() {
         </nav>
 
         <div className="sidebar-footer">
+          {/* User Profile & Sign Out Controls */}
+          <div className="pb-4 mb-4 border-b border-white/5">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gold-glow border border-gold-border flex items-center justify-center text-gold-primary font-bold text-sm">
+                  {user?.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase() || 'O'}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs text-text-primary font-medium truncate">
+                    {user?.primaryEmailAddress?.emailAddress}
+                  </span>
+                  <span className="text-[10px] text-text-muted">Terminal Operator</span>
+                </div>
+              </div>
+              <button
+                onClick={() => signOut()}
+                className="w-full py-2 px-3 mt-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 hover:text-red-300 font-semibold text-xs rounded-md transition-all cursor-pointer text-center"
+              >
+                Disconnect Link
+              </button>
+            </div>
+          </div>
+
           <div className="status-badge">
             <span className="status-dot online" />
             <span>System Online — v3.0.0</span>
@@ -90,7 +143,8 @@ export default function App() {
       {/* Main Content */}
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Overview />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Overview />} />
           <Route path="/market" element={<MarketData />} />
           <Route path="/models" element={<Models />} />
           <Route path="/risk" element={<RiskManagement />} />
@@ -100,8 +154,11 @@ export default function App() {
           <Route path="/execution" element={<Execution />} />
           <Route path="/infra" element={<Infrastructure />} />
           <Route path="/operations" element={<Operations />} />
+          {/* Fallback to main dashboard for authenticated users */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
     </div>
   );
 }
+

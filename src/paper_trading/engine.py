@@ -137,9 +137,10 @@ class PaperTradingConfig:
     signal_weights: Dict[str, float] = field(default_factory=lambda: {
         "wavelet": 0.15,
         "hmm": 0.15,
-        "lstm": 0.20,
-        "tft": 0.20,
+        "lstm": 0.15,
+        "tft": 0.15,
         "genetic": 0.15,
+        "nlp": 0.10,
         "ensemble": 0.15,
     })
     
@@ -195,7 +196,7 @@ class PaperTradingEngine:
         # Model signals
         self.last_signals: Dict[str, ModelSignal] = {}
         self.signal_history: Dict[str, List[ModelSignal]] = {
-            model: [] for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "ensemble"]
+            model: [] for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp", "ensemble"]
         }
         
         # Monitoring (Phase 6)

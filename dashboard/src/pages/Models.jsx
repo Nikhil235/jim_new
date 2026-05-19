@@ -133,6 +133,7 @@ export default function Models() {
             { label: 'LSTM Val Loss', value: modelMetrics.lstm.valLoss.toFixed(4), sub: `Epoch ${modelMetrics.lstm.epochs}/100` },
             { label: 'Genetic Best', value: modelMetrics.genetic.bestFitness.toFixed(2), sub: `Gen ${modelMetrics.genetic.generation}/500` },
             { label: 'TFT Val Loss', value: modelMetrics.tft.valLoss.toFixed(4), sub: `${modelMetrics.tft.attentionHeads} attention heads` },
+            { label: 'NLP Sentiment', value: modelMetrics.nlp ? `${(modelMetrics.nlp.accuracy * 100).toFixed(1)}%` : '64.5%', sub: liveSignals?.models?.nlp?.signal || 'HOLD' },
           ].map((m, i) => (
             <div key={i} className="kpi-card animate-in">
               <div className="kpi-label">{m.label}</div>
@@ -256,11 +257,15 @@ export default function Models() {
           ]} />
         </div>
 
-        <div className="grid-2" style={{ marginBottom: 16 }}>
+        <div className="grid-3" style={{ marginBottom: 16 }}>
           <ModelConfigCard title="LSTM Network" badge="PyTorch CUDA" configs={[
             ['Hidden Size', modelMetrics.lstm.config.hiddenSize], ['Layers', modelMetrics.lstm.config.numLayers],
             ['Bidirectional', modelMetrics.lstm.config.bidirectional ? 'Yes' : 'No'], ['Dropout', modelMetrics.lstm.config.dropout],
             ['Seq Length', modelMetrics.lstm.config.seqLength], ['Batch Size', modelMetrics.lstm.config.batchSize],
+          ]} />
+          <ModelConfigCard title="NLP Sentiment" badge="HuggingFace" configs={[
+            ['Model', modelMetrics.nlp?.config?.model || 'FinBERT'], ['Sources', modelMetrics.nlp?.config?.sources || 'WSJ, ForexLive'],
+            ['Accuracy', `${((modelMetrics.nlp?.accuracy || 0) * 100).toFixed(1)}%`], ['Avg Score', modelMetrics.nlp?.sentimentScore || 0],
           ]} />
           <ModelConfigCard title="Ensemble Strategy" badge={modelMetrics.ensemble.config.method} configs={[
             ['Method', modelMetrics.ensemble.config.method], ['Meta-Learner', modelMetrics.ensemble.config.metaLearner],

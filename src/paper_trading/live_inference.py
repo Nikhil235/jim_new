@@ -402,75 +402,86 @@ def run_genetic(df: pd.DataFrame) -> Dict:
         return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
 
 
-def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL") -> Dict:
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.exceptions import NotFittedError
+
+# The Machine Learning Meta-Learner
+# In production, this model is periodically fitted on historical backtest data.
+_meta_learner = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+
+def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", macro_data: Optional[Dict] = None) -> Dict:
     """
-    Ensemble meta-learner: weighted aggregation of all 5 individual models.
-    Dynamic weighting based on current market regime.
+    Advanced ML Ensemble Meta-Learner: 
+    Feeds the confidence of all models + macro data into a Random Forest to let AI decide the optimal combination.
+    Gracefully falls back to regime-conditioned dynamic weighting if the ML model is not yet trained.
     """
     try:
-        # Base weights
-        weights = {
-            "wavelet": 0.10,
-            "hmm": 0.10,
-            "lstm": 0.15,
-            "tft": 0.20,
-            "genetic": 0.20,
-            "nlp": 0.25, # NLP gets high weight for macro edge
-        }
-        
-        # Regime-Conditioned Dynamic Weighting
-        if regime in ("HIGH_VOLATILITY", "CRASH"):
-            # Decrease trend-following, increase mean-reversion and NLP
-            weights["wavelet"] = 0.25
-            weights["hmm"] = 0.20
-            weights["tft"] = 0.05
-            weights["lstm"] = 0.05
-            weights["genetic"] = 0.15
-            weights["nlp"] = 0.30
-        elif regime in ("LOW_VOLATILITY", "TRENDING"):
-            # Increase deep learning / trend models
-            weights["tft"] = 0.25
-            weights["lstm"] = 0.25
-            weights["genetic"] = 0.15
-            weights["nlp"] = 0.15
-            weights["wavelet"] = 0.10
-            weights["hmm"] = 0.10
-
-        signal_scores = {"LONG": 0.0, "SHORT": 0.0, "HOLD": 0.0}
-        total_weight = 0.0
-
-        for model, w in weights.items():
+        # 1. Prepare feature vector for the ML model
+        features = []
+        for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp"]:
             sig = individual_signals.get(model, {})
-            s = sig.get("signal", "HOLD")
-            c = float(sig.get("confidence", 0.0))
-            signal_scores[s] += w * c
-            total_weight += w
-
-        # Normalize
-        if total_weight > 0:
-            for k in signal_scores:
-                signal_scores[k] /= total_weight
-
-        # Pick best signal
-        best = max(signal_scores, key=lambda k: signal_scores[k])
-        best_score = signal_scores[best]
-
-        # Apply threshold: need at least 0.25 weighted confidence to act
-        if best_score < 0.25 or best == "HOLD":
-            final_signal = "HOLD"
+            direction = 1 if sig.get("signal") == "LONG" else (-1 if sig.get("signal") == "SHORT" else 0)
+            features.append(direction * float(sig.get("confidence", 0.0)))
+            
+        features.append(1 if regime == "GROWTH" else (-1 if regime in ["CRISIS", "HIGH_VOLATILITY"] else 0))
+        
+        if macro_data:
+            features.append(macro_data.get("dxy_momentum", 0.0))
+            features.append(macro_data.get("yield_momentum", 0.0))
         else:
-            final_signal = best
+            features.extend([0.0, 0.0])
+            
+        # 2. Attempt ML Prediction
+        try:
+            X = np.array(features).reshape(1, -1)
+            # Predict probabilities: [Prob SHORT, Prob HOLD, Prob LONG]
+            probs = _meta_learner.predict_proba(X)[0]
+            
+            # Extract ML signal
+            if probs[2] > 0.55:
+                return {"signal": "LONG", "confidence": round(probs[2], 3), "reasoning": f"ML Meta-Learner (LONG: {probs[2]:.0%})"}
+            elif probs[0] > 0.55:
+                return {"signal": "SHORT", "confidence": round(probs[0], 3), "reasoning": f"ML Meta-Learner (SHORT: {probs[0]:.0%})"}
+            else:
+                return {"signal": "HOLD", "confidence": round(probs[1], 3), "reasoning": f"ML Meta-Learner (HOLD: {probs[1]:.0%})"}
+                
+        except NotFittedError:
+            # 3. Graceful Fallback: Regime-Conditioned Dynamic Weighting
+            weights = {
+                "wavelet": 0.10, "hmm": 0.10, "lstm": 0.15, 
+                "tft": 0.20, "genetic": 0.20, "nlp": 0.25
+            }
+            
+            if regime in ("HIGH_VOLATILITY", "CRASH", "CRISIS"):
+                weights.update({"wavelet": 0.25, "hmm": 0.20, "tft": 0.05, "lstm": 0.05, "genetic": 0.15, "nlp": 0.30})
+            elif regime in ("LOW_VOLATILITY", "TRENDING", "GROWTH"):
+                weights.update({"wavelet": 0.10, "hmm": 0.10, "tft": 0.25, "lstm": 0.25, "genetic": 0.15, "nlp": 0.15})
 
-        confidence = min(best_score * 1.2, 0.95)  # Slight boost for ensemble
+            signal_scores = {"LONG": 0.0, "SHORT": 0.0, "HOLD": 0.0}
+            total_weight = sum(weights.values())
 
-        longs = sum(1 for m in weights if individual_signals.get(m, {}).get("signal") == "LONG")
-        shorts = sum(1 for m in weights if individual_signals.get(m, {}).get("signal") == "SHORT")
+            for model, w in weights.items():
+                sig = individual_signals.get(model, {})
+                s = sig.get("signal", "HOLD")
+                c = float(sig.get("confidence", 0.0))
+                signal_scores[s] += w * c
 
-        return {
-            "signal": final_signal,
-            "confidence": round(float(confidence), 3),
-            "reasoning": f"Ensemble ({longs}L/{shorts}S/{len(weights)-longs-shorts}H): scores={signal_scores}",
-        }
+            for k in signal_scores: signal_scores[k] /= total_weight
+
+            best = max(signal_scores, key=lambda k: signal_scores[k])
+            best_score = signal_scores[best]
+
+            final_signal = "HOLD" if best_score < 0.25 or best == "HOLD" else best
+            confidence = min(best_score * 1.2, 0.95)
+
+            longs = sum(1 for m in weights if individual_signals.get(m, {}).get("signal") == "LONG")
+            shorts = sum(1 for m in weights if individual_signals.get(m, {}).get("signal") == "SHORT")
+
+            return {
+                "signal": final_signal,
+                "confidence": round(float(confidence), 3),
+                "reasoning": f"Heuristic Fallback ({longs}L/{shorts}S/{len(weights)-longs-shorts}H): scores={signal_scores}",
+            }
 
     except Exception as e:
         logger.warning(f"Ensemble error: {e}")
@@ -592,9 +603,14 @@ class LiveInferenceLoop:
         # 3. Get Regime for Meta-Labeling
         regime = hmm_res.get("regime", "NORMAL")
         now_iso = datetime.now().isoformat()
+        # Build macro data for the ML ensemble
+        macro_data = {
+            "dxy_momentum": float(df["dxy_returns"].iloc[-3:].sum() * 100) if "dxy_returns" in df.columns else 0.0,
+            "yield_momentum": float(df["us10y_returns"].iloc[-3:].sum() * 100) if "us10y_returns" in df.columns else 0.0,
+        }
         
         # Run ensemble synchronously with dynamic regime weights
-        ensemble_res = run_ensemble(individual, regime)
+        ensemble_res = run_ensemble(individual, regime, macro_data)
 
         all_results = {**individual, "ensemble": ensemble_res}
 

@@ -124,14 +124,16 @@ export const modelMetrics = {
     config: { nRegimes: 3, covarianceType: 'full', nIter: 1000, retrainFrequency: 'daily' } },
   wavelet: { noiseRemoved: 34.2, bands: 5, snrImprovement: 8.4, family: 'db4',
     config: { family: 'db4', levels: 5, denoiseRemoveLevels: [1, 2] } },
-  ensemble: { sharpe: 2.34, winRate: 0.542, profitFactor: 1.67, avgReturn: 0.12,
-    config: { method: 'stacking', metaLearner: 'xgboost' } },
+  ensemble: { sharpe: 2.54, winRate: 0.572, profitFactor: 1.81, avgReturn: 0.15,
+    config: { method: 'stacking', metaLearner: 'random_forest' } },
   lstm: { valLoss: 0.0023, epochs: 87, lr: 0.001, hiddenSize: 128,
     config: { hiddenSize: 128, numLayers: 3, bidirectional: true, dropout: 0.2, seqLength: 100, batchSize: 256, epochs: 100 } },
   genetic: { bestFitness: 2.87, generation: 412,
     config: { populationSize: 1000, generations: 500, crossoverProb: 0.7, mutationProb: 0.1, fitness: 'sharpe_adjusted', tournamentSize: 5 } },
   tft: { valLoss: 0.0019, epochs: 65, attentionHeads: 4,
     config: { hiddenSize: 64, attentionHeads: 4, dropout: 0.1, quantiles: [0.1, 0.5, 0.9] } },
+  nlp: { accuracy: 0.645, sentimentScore: 0.78, lastTrained: 'live',
+    config: { model: 'FinBERT', sources: 'WSJ, ForexLive, CNBC' } },
 };
 
 export const signals = [
