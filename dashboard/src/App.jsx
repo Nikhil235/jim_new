@@ -1,5 +1,6 @@
-import { Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { useUser, useClerk, AuthenticateWithRedirectCallback } from '@clerk/react';
+import { useEffect } from 'react';
 import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users } from 'lucide-react';
 import Overview from './pages/Overview';
 import MarketData from './pages/MarketData';
@@ -31,10 +32,26 @@ const navItems = [
   { path: '/operations', icon: Users, label: 'Team & Ops' },
 ];
 
+function SsoCallbackRoute() {
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'App.jsx:SsoCallbackRoute',message:'SSO callback route mounted',data:{uses:'AuthenticateWithRedirectCallback'},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+  }, []);
+  return (
+    <AuthenticateWithRedirectCallback signUpForceRedirectUrl="/dashboard" signInForceRedirectUrl="/dashboard" />
+  );
+}
+
 export default function App() {
-  const location = useLocation();
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
+
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'App.jsx:auth-state',message:'Clerk auth snapshot',data:{isLoaded,isSignedIn,path:window.location.pathname},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+  }, [isLoaded, isSignedIn]);
 
   // Show a premium glassmorphic loading screen during Clerk initialization
   if (!isLoaded) {
@@ -58,10 +75,7 @@ export default function App() {
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route 
-          path="/sso-callback" 
-          element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl="/dashboard" signInForceRedirectUrl="/dashboard" />} 
-        />
+        <Route path="/sso-callback" element={<SsoCallbackRoute />} />
         <Route path="*" element={<Navigate to="/sign-in" replace />} />
       </Routes>
     );

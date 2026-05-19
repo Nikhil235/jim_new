@@ -59,6 +59,12 @@ function MainApp() {
 
   const isPlaceholder = !clerkKey || clerkKey === 'pk_test_Y2xlcmsuYWNjb3VudHMuZGV2JA' || clerkKey.trim() === '';
 
+  // #region agent log
+  if (typeof window !== 'undefined') {
+    fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'main.jsx:MainApp',message:'Clerk key gate',data:{isPlaceholder,hasEnvKey:!!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,hasStoredKey:!!localStorage.getItem('VITE_CLERK_PUBLISHABLE_KEY')},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
+  }
+  // #endregion
+
   const handleSaveKey = (e) => {
     e.preventDefault();
     if (!inputKey.startsWith('pk_')) {

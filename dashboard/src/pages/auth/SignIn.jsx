@@ -17,13 +17,22 @@ export default function SignIn() {
     if (!isLoaded || !signIn) return;
     setIsLoading(true);
     setError('');
+    // #region agent log
+    fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'SignIn.jsx:handleGoogleSignIn:entry',message:'Google SSO start',data:{isLoaded,hasSignIn:!!signIn,hasSso:typeof signIn?.sso},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     try {
-      await signIn.sso({
+      const result = await signIn.sso({
         strategy: 'oauth_google',
         redirectUrl: '/sso-callback',
         redirectUrlComplete: '/dashboard',
       });
+      // #region agent log
+      fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'SignIn.jsx:handleGoogleSignIn:success',message:'Google SSO returned',data:{resultType:typeof result,resultKeys:result&&typeof result==='object'?Object.keys(result):null},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
     } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'SignIn.jsx:handleGoogleSignIn:error',message:'Google SSO threw',data:{errMsg:err?.message,clerkCode:err?.errors?.[0]?.code,clerkMsg:err?.errors?.[0]?.message},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       console.error(err);
       setError(err.errors?.[0]?.message || 'Failed to initialize Google OAuth');
       setIsLoading(false);
