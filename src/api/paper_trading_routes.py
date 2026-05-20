@@ -776,6 +776,44 @@ async def get_inference_status() -> Dict[str, Any]:
     }
 
 
+@router.get("/model-weights", response_model=Dict[str, Any])
+async def get_model_weights() -> Dict[str, Any]:
+    """
+    Get current dynamic model weights per regime.
+
+    Returns the regime-conditional, performance-adaptive weights for each model,
+    along with per-model stats (win rate, rolling Sharpe, trade count) and
+    whether performance adaptation is active.
+
+    This endpoint powers the Dynamic Weights visualisation in the dashboard.
+    """
+    try:
+        from src.paper_trading.dynamic_weights import (
+            get_weight_adjuster, REGIME_BASE_WEIGHTS,
+        )
+
+        adjuster = get_weight_adjuster()
+
+        # If engine is running, use its regime; otherwise default to NORMAL
+        current_regime = "NORMAL"
+        if _paper_trading_engine and hasattr(_paper_trading_engine, 'weight_adjuster'):
+            current_regime = _paper_trading_engine.weight_adjuster.current_regime or "NORMAL"
+
+        summary = adjuster.get_weight_summary()
+
+        return {
+            "status": "ok",
+            "regime": current_regime,
+            "weights": summary["weights"],
+            "model_stats": summary["model_stats"],
+            "adaptation_active": summary["adaptation_active"],
+            "regime_base_weights": REGIME_BASE_WEIGHTS,
+        }
+    except Exception as e:
+        logger.error(f"Failed to get model weights: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============================================================================
 # WEBSOCKET ENDPOINT
 # ============================================================================

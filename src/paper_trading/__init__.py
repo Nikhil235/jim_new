@@ -10,6 +10,12 @@ from .engine import (
     TradeStatus,
 )
 
+from .dynamic_weights import (
+    DynamicWeightAdjuster,
+    get_weight_adjuster,
+    REGIME_BASE_WEIGHTS,
+)
+
 __all__ = [
     "PaperTradingEngine",
     "PaperTradingConfig",
@@ -18,4 +24,7 @@ __all__ = [
     "PortfolioSnapshot",
     "SignalType",
     "TradeStatus",
+    "DynamicWeightAdjuster",
+    "get_weight_adjuster",
+    "REGIME_BASE_WEIGHTS",
 ]

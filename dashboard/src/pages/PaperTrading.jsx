@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Play, Pause, Square, DollarSign, TrendingUp, Activity, Target, ArrowUpRight, ArrowDownRight, Minus, Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import { startPaperTrading, stopPaperTrading, fetchPaperTradingStatus, fetchPaperTradingPerformance, fetchPaperTradingTrades, fetchLiveSignals, fetchRiskReport, resetDailyCounters } from '../data/api';
+import { Play, Pause, Square, DollarSign, TrendingUp, Activity, Target, ArrowUpRight, ArrowDownRight, Minus, Wifi, WifiOff, RefreshCw, Zap } from 'lucide-react';
+import { startPaperTrading, stopPaperTrading, fetchPaperTradingStatus, fetchPaperTradingPerformance, fetchPaperTradingTrades, fetchLiveSignals, fetchRiskReport, resetDailyCounters, fetchModelWeights } from '../data/api';
 
 
 const signalColor = (s) => s === 'LONG' ? 'var(--green)' : s === 'SHORT' ? 'var(--red)' : 'var(--text-muted)';
@@ -24,6 +24,7 @@ export default function PaperTrading() {
   const [eqHistory, setEqHistory] = useState([]);
   const [starting, setStarting] = useState(false);
   const [config, setConfig] = useState({ initial_capital:100000, kelly_fraction:0.25, max_position_pct:0.10, max_daily_loss_pct:0.02, max_drawdown_pct:0.15, min_confidence:0.60 });
+  const [weights, setWeights] = useState(null);
 
   const refreshRef = useRef(null);
   refreshRef.current = async () => {
@@ -41,6 +42,7 @@ export default function PaperTrading() {
     try { setTrades(await fetchPaperTradingTrades(20)); } catch { /* offline */ }
     try { setSignals(await fetchLiveSignals()); } catch { /* offline */ }
     try { setRisk(await fetchRiskReport()); } catch { /* offline */ }
+    try { setWeights(await fetchModelWeights()); } catch { /* offline */ }
   };
 
   useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 5000); return () => clearInterval(t); }, []);
@@ -133,12 +135,13 @@ export default function PaperTrading() {
               <RefreshCw size={12} style={{marginRight:4,verticalAlign:'middle'}}/> Reset Daily
             </button>
           </div>
-          <div style={{padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12}}>
+          <div style={{padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, flexWrap:'wrap', gap:8}}>
               <div><strong style={{color:'var(--gold)'}}>Phase 7 Active Modules:</strong></div>
-              <div style={{display: 'flex', gap: 20}}>
+              <div style={{display: 'flex', gap: 20, flexWrap:'wrap'}}>
                 <div style={{color: 'var(--text-bright)'}}><span style={{color:'var(--green)'}}>RL Kelly Scale:</span> {(signals?.macro?.rl_kelly || 1.0).toFixed(2)}x</div>
                 <div style={{color: 'var(--text-bright)'}}><span style={{color:'var(--red)'}}>RL Trailing Stop:</span> {((signals?.macro?.rl_trailing || 0.015)*100).toFixed(2)}%</div>
                 <div style={{color: 'var(--text-bright)'}}><span style={{color:'var(--blue)'}}>FinBERT NLP:</span> {modelSigs['nlp']?.signal || 'WAITING'}</div>
+                <div style={{color: 'var(--text-bright)'}}><Zap size={12} style={{verticalAlign:'middle',marginRight:2,color:'var(--gold)'}}/><span style={{color:'var(--gold)'}}>Dynamic Weights:</span> {weights?.adaptation_active ? 'ADAPTIVE' : 'BASE'}</div>
               </div>
           </div>
         </div>
@@ -189,11 +192,19 @@ export default function PaperTrading() {
       {/* Model Signals + Trade History */}
       <div className="grid-2" style={{marginBottom:20}}>
         <div className="card animate-in">
-          <div className="card-header"><span className="card-title">Model Signal Status</span><span className="card-badge badge-gold">6 MODELS</span></div>
+          <div className="card-header"><span className="card-title">Model Signal Status</span>
+            <div style={{display:'flex',gap:8}}>
+              <span className="card-badge badge-gold">7 MODELS</span>
+              {weights && <span className={`card-badge ${weights.adaptation_active?'badge-green':'badge-orange'}`} style={{fontSize:10}}>
+                <Zap size={10} style={{marginRight:3}}/>{weights.adaptation_active?'ADAPTIVE WEIGHTS':'BASE WEIGHTS'}
+              </span>}
+            </div>
+          </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
             {Object.entries(modelSigs).map(([model,sig])=>{
               const s = sig.signal || sig.lastSignal || 'HOLD';
               const c = sig.confidence ?? 0;
+              const w = weights?.weights?.[model];
               return (<div key={model} style={{padding:14,borderRadius:'var(--radius-sm)',background:'var(--bg-secondary)',border:'1px solid var(--border-color)'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
                   <span style={{fontSize:13,fontWeight:600,color:'var(--text-bright)',textTransform:'capitalize'}}>{model}</span>
@@ -203,6 +214,7 @@ export default function PaperTrading() {
                 </div>
                 <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--text-muted)'}}>
                   <span>Conf: <span style={{color:c>=0.7?'var(--green)':c>=0.6?'var(--orange)':'var(--red)',fontWeight:600,fontFamily:'var(--font-mono)'}}>{(c*100).toFixed(0)}%</span></span>
+                  {w != null && <span>Weight: <span style={{color:'var(--gold)',fontWeight:600,fontFamily:'var(--font-mono)'}}>{(w*100).toFixed(0)}%</span></span>}
                   <span>{sig.signalCount||sig.regime||'—'}</span>
                 </div>
                 <div style={{marginTop:6}}><div className="progress-bar"><div className="progress-fill" style={{width:`${c*100}%`,background:c>=0.7?'var(--green)':c>=0.6?'var(--orange)':'var(--red)'}}/></div></div>

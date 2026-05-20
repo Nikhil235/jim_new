@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
-import { Wifi, WifiOff, Radio, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
-import { fetchLiveSignals, fetchInferenceStatus, fetchRegime } from '../data/api';
+import { Wifi, WifiOff, Radio, ArrowUpRight, ArrowDownRight, Minus, Zap } from 'lucide-react';
+import { fetchLiveSignals, fetchInferenceStatus, fetchRegime, fetchModelWeights } from '../data/api';
 import { regimeData, modelMetrics, featureImportance, featureConfig } from '../data/mockData';
 
 const TT = ({ active, payload, label }) => {
@@ -38,11 +38,155 @@ const modelColors = { wavelet: '#3b82f6', hmm: '#a855f7', lstm: '#06b6d4', tft: 
 const signalColor = (s) => s === 'LONG' ? 'var(--green)' : s === 'SHORT' ? 'var(--red)' : 'var(--text-muted)';
 const signalBg = (s) => s === 'LONG' ? 'var(--green-dim)' : s === 'SHORT' ? 'var(--red-dim)' : 'var(--bg-input)';
 
+// Static fallback weights (mirrors dynamic_weights.py REGIME_BASE_WEIGHTS)
+const FALLBACK_REGIME_WEIGHTS = {
+  GROWTH:  { wavelet:0.08, hmm:0.05, lstm:0.22, tft:0.22, genetic:0.10, nlp:0.08, ensemble:0.25 },
+  NORMAL:  { wavelet:0.12, hmm:0.12, lstm:0.14, tft:0.14, genetic:0.12, nlp:0.08, ensemble:0.28 },
+  CRISIS:  { wavelet:0.10, hmm:0.25, lstm:0.05, tft:0.05, genetic:0.08, nlp:0.12, ensemble:0.35 },
+};
+const REGIMES = ['GROWTH', 'NORMAL', 'CRISIS'];
+const regimeColors = { GROWTH: '#00c48c', NORMAL: '#ff9f43', CRISIS: '#ff4d6a' };
+
+function weightColor(w) {
+  if (w >= 0.25) return 'rgba(240,185,11,0.9)';
+  if (w >= 0.15) return 'rgba(240,185,11,0.55)';
+  if (w >= 0.10) return 'rgba(168,85,247,0.5)';
+  return 'rgba(107,114,128,0.4)';
+}
+
+function DynamicWeightsCard({ modelWeights, modelColors, modelIcons }) {
+  const regimeBaseWeights = modelWeights?.regime_base_weights || FALLBACK_REGIME_WEIGHTS;
+  const currentRegime = modelWeights?.regime || 'NORMAL';
+  const liveWeights = modelWeights?.weights || null;
+  const modelStats = modelWeights?.model_stats || {};
+  const adaptationActive = modelWeights?.adaptation_active || false;
+  const modelNames = Object.keys(FALLBACK_REGIME_WEIGHTS.NORMAL);
+
+  return (
+    <div className="card animate-in" style={{ marginBottom: 16 }}>
+      <div className="card-header">
+        <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Zap size={16} style={{ color: 'var(--gold-primary)' }} /> Dynamic Model Weights
+        </span>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <span className={`card-badge ${adaptationActive ? 'badge-green' : 'badge-orange'}`}>
+            {adaptationActive ? '● ADAPTIVE' : '○ BASE WEIGHTS'}
+          </span>
+          <span className="card-badge" style={{
+            background: `${regimeColors[currentRegime]}20`,
+            color: regimeColors[currentRegime],
+            border: `1px solid ${regimeColors[currentRegime]}40`,
+          }}>
+            REGIME: {currentRegime}
+          </span>
+        </div>
+      </div>
+
+      {/* Description */}
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 14, lineHeight: 1.5 }}>
+        Real-world regime-conditional weighting: each model receives different signal weight based on market regime.
+        {adaptationActive ? ' Weights are further adapted by rolling Sharpe ratio.' : ' Weights will adapt after ≥10 trades.'}
+      </div>
+
+      {/* Heatmap Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: `100px repeat(${REGIMES.length}, 1fr)`, gap: 0 }}>
+        {/* Header row */}
+        <div style={{ padding: '6px 0', fontSize: 10, color: 'var(--text-muted)', fontWeight: 700 }}>MODEL</div>
+        {REGIMES.map(r => (
+          <div key={r} style={{
+            padding: '6px 8px', textAlign: 'center', fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+            color: r === currentRegime ? regimeColors[r] : 'var(--text-muted)',
+            borderBottom: r === currentRegime ? `2px solid ${regimeColors[r]}` : '2px solid transparent',
+          }}>{r}</div>
+        ))}
+
+        {/* Model rows */}
+        {modelNames.map(model => (
+          <React.Fragment key={model}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0',
+              borderTop: '1px solid var(--border-color)',
+            }}>
+              <span style={{ fontSize: 13 }}>{modelIcons[model]}</span>
+              <span style={{
+                fontSize: 11, fontWeight: 600, color: 'var(--text-bright)',
+                textTransform: 'capitalize',
+              }}>{model}</span>
+            </div>
+            {REGIMES.map(regime => {
+              const w = regime === currentRegime && liveWeights
+                ? (liveWeights[model] || 0)
+                : (regimeBaseWeights[regime]?.[model] || 0);
+              const isActive = regime === currentRegime;
+              const pct = (w * 100).toFixed(0);
+              return (
+                <div key={regime} style={{
+                  padding: '8px', borderTop: '1px solid var(--border-color)',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: isActive ? 'rgba(240,185,11,0.04)' : 'transparent',
+                }}>
+                  <div style={{
+                    flex: 1, height: 18, borderRadius: 4, background: 'var(--bg-input)',
+                    overflow: 'hidden', position: 'relative',
+                  }}>
+                    <div style={{
+                      height: '100%', width: `${Math.min(w * 280, 100)}%`,
+                      background: isActive ? weightColor(w) : 'rgba(107,114,128,0.25)',
+                      borderRadius: 4, transition: 'width 0.5s ease',
+                    }} />
+                  </div>
+                  <span style={{
+                    fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: isActive ? 700 : 400,
+                    color: isActive ? 'var(--text-bright)' : 'var(--text-muted)',
+                    minWidth: 32, textAlign: 'right',
+                  }}>{pct}%</span>
+                </div>
+              );
+            })}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Model Stats Footer */}
+      {Object.keys(modelStats).length > 0 && (
+        <div style={{ marginTop: 14, borderTop: '1px solid var(--border-color)', paddingTop: 10 }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+            Model Performance (Rolling)
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+            {modelNames.map(model => {
+              const stats = modelStats[model] || {};
+              return (
+                <div key={model} style={{
+                  padding: '8px 10px', borderRadius: 6,
+                  background: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: modelColors[model], marginBottom: 4, textTransform: 'capitalize' }}>
+                    {modelIcons[model]} {model}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
+                    <span>Win: <span style={{ color: 'var(--text-bright)', fontFamily: 'var(--font-mono)' }}>{((stats.win_rate || 0) * 100).toFixed(0)}%</span></span>
+                    <span>Sharpe: <span style={{ color: (stats.rolling_sharpe || 0) > 1 ? 'var(--green)' : 'var(--text-bright)', fontFamily: 'var(--font-mono)' }}>{(stats.rolling_sharpe || 0).toFixed(2)}</span></span>
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                    Trades: <span className="mono">{stats.trade_count || 0}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Models() {
   const [live, setLive] = useState(false);
   const [liveSignals, setLiveSignals] = useState(null);
   const [inferenceStatus, setInferenceStatus] = useState(null);
   const [liveRegime, setLiveRegime] = useState(null);
+  const [modelWeights, setModelWeights] = useState(null);
 
   const refreshRef = useRef(null);
   refreshRef.current = async () => {
@@ -57,6 +201,7 @@ export default function Models() {
     } catch { /* offline */ }
 
     try { setLiveRegime(await fetchRegime()); } catch { /* offline */ }
+    try { setModelWeights(await fetchModelWeights()); } catch { /* offline */ }
   };
 
   useEffect(() => {
@@ -239,6 +384,9 @@ export default function Models() {
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Dynamic Model Weights Heatmap */}
+        <DynamicWeightsCard modelWeights={modelWeights} modelColors={modelColors} modelIcons={modelIcons} />
 
         {/* Model Architecture Configs */}
         <div className="grid-3" style={{ marginBottom: 16 }}>

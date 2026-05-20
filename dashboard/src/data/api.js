@@ -157,6 +157,10 @@ export async function resetCircuitBreakers() {
   return apiPost('/paper-trading/reset-circuit-breakers', {});
 }
 
+export async function fetchModelWeights() {
+  return apiFetch('/paper-trading/model-weights');
+}
+
 // ============================================================================
 // WEBSOCKET
 // ============================================================================

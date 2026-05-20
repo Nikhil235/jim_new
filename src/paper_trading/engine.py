@@ -22,6 +22,9 @@ import asyncio
 import numpy as np
 from loguru import logger
 from src.models.rl_execution_agent import get_rl_agent
+from src.paper_trading.dynamic_weights import (
+    get_weight_adjuster, DynamicWeightAdjuster, REGIME_BASE_WEIGHTS
+)
 
 # Phase 5 backtester infrastructure
 from src.backtesting.execution import ExecutionSimulator, ExecutionConfig, SlippageModel
@@ -134,15 +137,19 @@ class PaperTradingConfig:
     
     # Signal configuration
     min_confidence: float = 0.6            # Min confidence to trade
+    # Dynamic weights: regime-conditional base weights (adapted at runtime)
+    # These are starting weights per regime; the DynamicWeightAdjuster
+    # further adapts them based on each model's rolling Sharpe ratio.
     signal_weights: Dict[str, float] = field(default_factory=lambda: {
-        "wavelet": 0.15,
-        "hmm": 0.15,
-        "lstm": 0.15,
-        "tft": 0.15,
-        "genetic": 0.15,
-        "nlp": 0.10,
-        "ensemble": 0.15,
+        "wavelet": 0.12,   # Denoising — best in noisy/normal markets
+        "hmm":     0.12,   # Regime detection — critical during transitions
+        "lstm":    0.14,   # Temporal patterns — strong in trending markets
+        "tft":     0.14,   # Multi-horizon forecasting — versatile
+        "genetic": 0.12,   # Evolved rules — adaptive to any pattern
+        "nlp":     0.08,   # Sentiment — supplementary signal
+        "ensemble": 0.28,  # Meta-learner — highest allocation (aggregator)
     })
+    use_dynamic_weights: bool = True       # Enable regime-adaptive weighting
     
     # Trading hours
     trading_enabled: bool = True
@@ -199,11 +206,17 @@ class PaperTradingEngine:
             model: [] for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp", "ensemble"]
         }
         
+        # Dynamic weight adjuster (real-world regime-adaptive weighting)
+        self.weight_adjuster: DynamicWeightAdjuster = get_weight_adjuster()
+        
         # Monitoring (Phase 6)
         self.health_monitor: Optional[HealthMonitor] = None
         self.performance_monitor: Optional[ModelPerformanceMonitor] = None
         
-        logger.info(f"Paper Trading Engine initialized with ${self.config.initial_capital:,.0f} capital")
+        logger.info(
+            f"Paper Trading Engine initialized with ${self.config.initial_capital:,.0f} capital | "
+            f"Dynamic weights: {'ON' if self.config.use_dynamic_weights else 'OFF'}"
+        )
     
     def start(self) -> Dict:
         """Start paper trading."""
@@ -285,6 +298,11 @@ class PaperTradingEngine:
         """
         Process a new signal from a model.
         
+        Uses dynamic regime-conditional weighting to adjust signal confidence:
+        - Each model's raw confidence is scaled by its current dynamic weight
+        - Weights are higher for models suited to the current regime
+        - Weights adapt over time based on each model's rolling Sharpe
+        
         Args:
             model_name: Name of the model generating the signal
             signal: ModelSignal with entry price and confidence
@@ -299,9 +317,40 @@ class PaperTradingEngine:
         self.last_signals[model_name] = signal
         self.signal_history[model_name].append(signal)
         
-        # Check confidence threshold
-        if signal.confidence < self.config.min_confidence:
-            logger.debug(f"{model_name} signal below confidence threshold: {signal.confidence}")
+        # --- Dynamic Weight Adjustment ---
+        # Get current dynamic weights based on regime + recent performance
+        if self.config.use_dynamic_weights:
+            current_signals_map = {
+                name: sig.signal_type.value
+                for name, sig in self.last_signals.items()
+            }
+            dynamic_weights = self.weight_adjuster.get_weights(
+                regime=signal.regime,
+                current_signals=current_signals_map,
+            )
+            model_weight = dynamic_weights.get(model_name, 0.10)
+            
+            # Scale confidence by model's dynamic weight relative to average
+            # A model with 2× average weight gets a confidence boost
+            avg_weight = 1.0 / len(dynamic_weights) if dynamic_weights else 0.14
+            weight_multiplier = model_weight / avg_weight
+            adjusted_confidence = signal.confidence * weight_multiplier
+            adjusted_confidence = min(adjusted_confidence, 1.0)  # Cap at 1.0
+            
+            logger.debug(
+                f"{model_name} | regime={signal.regime} | "
+                f"raw_conf={signal.confidence:.2f} | weight={model_weight:.3f} | "
+                f"adj_conf={adjusted_confidence:.2f}"
+            )
+        else:
+            adjusted_confidence = signal.confidence
+        
+        # Check confidence threshold (using adjusted confidence)
+        if adjusted_confidence < self.config.min_confidence:
+            logger.debug(
+                f"{model_name} signal below threshold after weight adjustment: "
+                f"{adjusted_confidence:.2f} < {self.config.min_confidence}"
+            )
             return None
         
         # Check risk limits
@@ -320,9 +369,9 @@ class PaperTradingEngine:
                 logger.debug("Position already open, skipping new signal")
                 return None
         
-        # Execute trade
+        # Execute trade (pass adjusted confidence for position sizing)
         if signal.signal_type in (SignalType.LONG, SignalType.SHORT):
-            return self._execute_trade(model_name, signal)
+            return self._execute_trade(model_name, signal, adjusted_confidence)
         elif signal.signal_type == SignalType.CLOSE:
             return self._close_position(signal.timestamp, signal.current_price)
         
@@ -400,10 +449,14 @@ class PaperTradingEngine:
     # PRIVATE METHODS
     # ========================================================================
     
-    def _execute_trade(self, model_name: str, signal: ModelSignal) -> TradeExecution:
-        """Execute a new trade."""
+    def _execute_trade(self, model_name: str, signal: ModelSignal,
+                       adjusted_confidence: Optional[float] = None) -> TradeExecution:
+        """Execute a new trade with dynamic weight-adjusted confidence."""
+        # Use adjusted confidence for position sizing (falls back to raw)
+        effective_confidence = adjusted_confidence or signal.confidence
+        
         # Calculate position size using Dynamic Fractional Kelly
-        size = self._calculate_position_size(signal.confidence, signal.regime)
+        size = self._calculate_position_size(effective_confidence, signal.regime)
         
         # Create trade record
         trade = TradeExecution(
@@ -414,7 +467,7 @@ class PaperTradingEngine:
             position_value=size * signal.entry_price,
             status=TradeStatus.OPEN,
             regime=signal.regime,
-            confidence=signal.confidence,
+            confidence=effective_confidence,
         )
         
         # Apply commission
@@ -436,12 +489,25 @@ class PaperTradingEngine:
         self.daily_trades.append(trade)
         self.current_position = trade
         
-        logger.info(f"Trade executed: {trade.model_name} {trade.signal_type.value} {size:.2f} oz @ {signal.entry_price:.2f}")
+        # Log with weight context
+        if self.config.use_dynamic_weights:
+            weights = self.weight_adjuster.get_weights(signal.regime)
+            w = weights.get(model_name, 0)
+            logger.info(
+                f"Trade executed: {model_name} {trade.signal_type.value} "
+                f"{size:.2f} oz @ {signal.entry_price:.2f} | "
+                f"regime={signal.regime} weight={w:.1%} adj_conf={effective_confidence:.2f}"
+            )
+        else:
+            logger.info(
+                f"Trade executed: {model_name} {trade.signal_type.value} "
+                f"{size:.2f} oz @ {signal.entry_price:.2f}"
+            )
         
         return trade
     
     def _close_position(self, timestamp: datetime, exit_price: float) -> Optional[TradeExecution]:
-        """Close current open position."""
+        """Close current open position and feed result back to weight adjuster."""
         if not self.current_position or self.current_position.status != TradeStatus.OPEN:
             return None
         
@@ -468,6 +534,16 @@ class PaperTradingEngine:
         else:
             self.portfolio.current_cash -= trade.quantity * exit_price + trade.commission + trade.slippage
         self.daily_pnl += trade.pnl
+        
+        # --- Feed trade result back to Dynamic Weight Adjuster ---
+        # This enables performance-adaptive weighting: models that
+        # perform well recently get higher future weights.
+        if self.config.use_dynamic_weights:
+            self.weight_adjuster.record_trade_result(
+                model_name=trade.model_name,
+                pnl=trade.pnl,
+                return_pct=trade.pnl_pct,
+            )
         
         logger.info(f"Position closed: P&L ${trade.pnl:.2f} ({trade.pnl_pct:.2f}%)")
         
