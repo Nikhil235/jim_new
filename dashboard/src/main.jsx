@@ -42,6 +42,17 @@ class ErrorBoundary extends React.Component {
             >
               Reset Config Key
             </button>
+            <button
+              onClick={() => {
+                localStorage.setItem('AUTH_BYPASS', 'true');
+                localStorage.removeItem('VITE_CLERK_PUBLISHABLE_KEY');
+                window.location.reload();
+              }}
+              className="login-button"
+              style={{ marginTop: '10px', background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)', color: '#a855f7' }}
+            >
+              Enter Dev Mode (Skip Auth)
+            </button>
           </div>
         </div>
       );
@@ -58,6 +69,19 @@ function MainApp() {
   const [error, setError] = useState('');
 
   const isPlaceholder = !clerkKey || clerkKey === 'pk_test_Y2xlcmsuYWNjb3VudHMuZGV2JA' || clerkKey.trim() === '';
+
+  // Dev mode bypass — skip Clerk entirely
+  const hasBypass = localStorage.getItem('AUTH_BYPASS') === 'true';
+  if (hasBypass) {
+    return (
+      <BrowserRouter>
+        <App onClearKey={() => {
+          localStorage.removeItem('AUTH_BYPASS');
+          window.location.reload();
+        }} hasCustomKey={false} />
+      </BrowserRouter>
+    );
+  }
 
   const handleSaveKey = (e) => {
     e.preventDefault();
@@ -128,6 +152,18 @@ function MainApp() {
 
             <button type="submit" className="login-button">
               <Save size={18} /> Apply Publishable Key
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.setItem('AUTH_BYPASS', 'true');
+                window.location.reload();
+              }}
+              className="login-button"
+              style={{ marginTop: '10px', background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)', color: '#a855f7' }}
+            >
+              Enter Dev Mode (Skip Auth)
             </button>
           </form>
         </div>

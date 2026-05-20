@@ -37,39 +37,8 @@ function SsoCallbackRoute() {
   );
 }
 
-export default function App({ onClearKey, hasCustomKey }) {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const { signOut } = useClerk();
-  const hasBypass = localStorage.getItem('AUTH_BYPASS') === 'true';
-
-  // Show a premium glassmorphic loading screen during Clerk initialization
-  if (!isLoaded) {
-    return (
-      <div className="login-container">
-        <div className="orb orb-1"></div>
-        <div className="orb orb-2"></div>
-        <div className="orb orb-3"></div>
-        <div className="login-glass-card animate-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '64px', paddingBottom: '64px' }}>
-          <Activity className="spin-icon" size={32} style={{ color: 'var(--gold-primary)', marginBottom: '16px' }} />
-          <p style={{ fontSize: '11px', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 600 }}>Initializing Secure Auth Link...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Protect dashboard routes: Redirect to sign-in if unauthenticated
-  if (!isSignedIn && !hasBypass) {
-    return (
-      <Routes>
-        <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/sign-up" element={<SignUp />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/sso-callback" element={<SsoCallbackRoute />} />
-        <Route path="*" element={<Navigate to="/sign-in" replace />} />
-      </Routes>
-    );
-  }
-
+/* ── Shared sidebar + routes layout ── */
+function DashboardShell({ user, onSignOut, onClearKey, hasCustomKey }) {
   return (
     <div className="app-layout">
       {/* Sidebar */}
@@ -122,11 +91,7 @@ export default function App({ onClearKey, hasCustomKey }) {
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
-                  onClick={() => {
-                    localStorage.removeItem('AUTH_BYPASS');
-                    signOut();
-                    window.location.href = '/sign-in';
-                  }}
+                  onClick={onSignOut}
                   style={{
                     flex: 1, padding: '8px 12px', marginTop: '4px',
                     background: 'rgba(255,77,106,0.1)', border: '1px solid rgba(255,77,106,0.2)',
@@ -196,3 +161,72 @@ export default function App({ onClearKey, hasCustomKey }) {
     </div>
   );
 }
+
+/* ── Authenticated App (uses Clerk hooks) ── */
+function AuthenticatedApp({ onClearKey, hasCustomKey }) {
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
+
+  // Show a premium glassmorphic loading screen during Clerk initialization
+  if (!isLoaded) {
+    return (
+      <div className="login-container">
+        <div className="orb orb-1"></div>
+        <div className="orb orb-2"></div>
+        <div className="orb orb-3"></div>
+        <div className="login-glass-card animate-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '64px', paddingBottom: '64px' }}>
+          <Activity className="spin-icon" size={32} style={{ color: 'var(--gold-primary)', marginBottom: '16px' }} />
+          <p style={{ fontSize: '11px', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 600 }}>Initializing Secure Auth Link...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Protect dashboard routes: Redirect to sign-in if unauthenticated
+  if (!isSignedIn) {
+    return (
+      <Routes>
+        <Route path="/sign-in" element={<SignIn />} />
+        <Route path="/sign-up" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/sso-callback" element={<SsoCallbackRoute />} />
+        <Route path="*" element={<Navigate to="/sign-in" replace />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <DashboardShell
+      user={user}
+      onSignOut={() => {
+        localStorage.removeItem('AUTH_BYPASS');
+        signOut();
+        window.location.href = '/sign-in';
+      }}
+      onClearKey={onClearKey}
+      hasCustomKey={hasCustomKey}
+    />
+  );
+}
+
+/* ── Main export: routes to bypass or authenticated app ── */
+export default function App({ onClearKey, hasCustomKey }) {
+  const hasBypass = localStorage.getItem('AUTH_BYPASS') === 'true';
+
+  if (hasBypass) {
+    return (
+      <DashboardShell
+        user={null}
+        onSignOut={() => {
+          localStorage.removeItem('AUTH_BYPASS');
+          window.location.href = '/';
+        }}
+        onClearKey={onClearKey}
+        hasCustomKey={hasCustomKey}
+      />
+    );
+  }
+
+  return <AuthenticatedApp onClearKey={onClearKey} hasCustomKey={hasCustomKey} />;
+}
+

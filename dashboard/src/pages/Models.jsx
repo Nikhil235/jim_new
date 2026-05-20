@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { Wifi, WifiOff, Radio, ArrowUpRight, ArrowDownRight, Minus, Zap } from 'lucide-react';
 import { fetchLiveSignals, fetchInferenceStatus, fetchRegime, fetchModelWeights } from '../data/api';
@@ -14,21 +14,36 @@ const TT = ({ active, payload, label }) => {
   );
 };
 
-function ModelConfigCard({ title, badge, configs }) {
+function ModelConfigCard({ title, badge, configs, architecture, capabilities, statusColor }) {
   return (
     <div className="card animate-in">
       <div className="card-header">
         <span className="card-title">{title}</span>
         <span className="card-badge badge-purple">{badge}</span>
       </div>
+      {architecture && (
+        <div style={{ fontSize: 10, color: 'var(--gold-primary)', padding: '6px 10px', marginBottom: 8, background: 'rgba(240,185,11,0.06)', borderRadius: 6, fontFamily: 'var(--font-mono)', letterSpacing: 0.3, lineHeight: 1.5 }}>
+          {architecture}
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         {configs.map(([k, v], i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid var(--border-color)' }}>
             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{k}</span>
-            <span className="mono" style={{ fontSize: 11, color: 'var(--text-bright)' }}>{v}</span>
+            <span className="mono" style={{ fontSize: 11, color: 'var(--text-bright)' }}>{typeof v === 'boolean' ? (v ? '✓' : '✗') : String(v)}</span>
           </div>
         ))}
       </div>
+      {capabilities && capabilities.length > 0 && (
+        <div style={{ marginTop: 10, borderTop: '1px solid var(--border-color)', paddingTop: 8 }}>
+          <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Capabilities</div>
+          {capabilities.slice(0, 4).map((c, i) => (
+            <div key={i} style={{ fontSize: 10, color: 'var(--text-secondary)', padding: '2px 0', display: 'flex', gap: 4 }}>
+              <span style={{ color: 'var(--green)', fontSize: 8 }}>●</span> {c}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -241,7 +256,7 @@ export default function Models() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2>Models & Signals</h2>
-            <p>Phase 3 Complete — HMM, Wavelet, Genetic, LSTM, TFT & Ensemble • {live ? 'Live Inference Active' : 'Offline (Static Data)'}</p>
+            <p>Production-Grade — 7 Models (Wavelet, HMM, LSTM, TFT, Genetic, NLP, Ensemble) • {live ? 'Live Inference Active' : 'Offline (Static Data)'}</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {inferenceRunning && (
@@ -271,13 +286,13 @@ export default function Models() {
         {/* Model Stats */}
         <div className="kpi-grid" style={{ marginBottom: 20 }}>
           {[
-            { label: 'HMM Accuracy', value: `${(modelMetrics.hmm.accuracy * 100).toFixed(1)}%`, sub: liveRegime ? `Regime: ${liveRegime.regime}` : `${modelMetrics.hmm.regimeChanges} regime changes` },
-            { label: 'Wavelet SNR', value: `+${modelMetrics.wavelet.snrImprovement} dB`, sub: `${modelMetrics.wavelet.noiseRemoved}% noise removed` },
-            { label: 'Ensemble Sharpe', value: modelMetrics.ensemble.sharpe.toFixed(2), sub: `Win: ${(modelMetrics.ensemble.winRate * 100).toFixed(1)}%` },
-            { label: 'LSTM Val Loss', value: modelMetrics.lstm.valLoss.toFixed(4), sub: `Epoch ${modelMetrics.lstm.epochs}/100` },
-            { label: 'Genetic Best', value: modelMetrics.genetic.bestFitness.toFixed(2), sub: `Gen ${modelMetrics.genetic.generation}/500` },
-            { label: 'TFT Val Loss', value: modelMetrics.tft.valLoss.toFixed(4), sub: `${modelMetrics.tft.attentionHeads} attention heads` },
-            { label: 'NLP Sentiment', value: modelMetrics.nlp ? `${(modelMetrics.nlp.accuracy * 100).toFixed(1)}%` : '64.5%', sub: liveSignals?.models?.nlp?.signal || 'HOLD' },
+            { label: 'HMM Regime', value: `${(modelMetrics.hmm.accuracy * 100).toFixed(1)}%`, sub: liveRegime ? `Regime: ${liveRegime.regime}` : `3 regimes • ${modelMetrics.hmm.config.covarianceType} cov` },
+            { label: 'Wavelet SNR', value: `+${modelMetrics.wavelet.snrDb} dB`, sub: `${modelMetrics.wavelet.noiseRemoved}% noise • ${modelMetrics.wavelet.config.thresholdMethod}` },
+            { label: 'Ensemble Sharpe', value: modelMetrics.ensemble.sharpe.toFixed(2), sub: `${modelMetrics.ensemble.config.metaLearner} • PF ${modelMetrics.ensemble.profitFactor}` },
+            { label: 'LSTM Temporal', value: modelMetrics.lstm.valLoss.toFixed(4), sub: `BiLSTM ${modelMetrics.lstm.config.hiddenSize}×${modelMetrics.lstm.config.numLayers} • 15 features` },
+            { label: 'Genetic Fitness', value: modelMetrics.genetic.bestFitness.toFixed(2), sub: `${modelMetrics.genetic.config.nRulesPerChromosome} rules • ${modelMetrics.genetic.config.populationSize} pop` },
+            { label: 'TFT Forecaster', value: modelMetrics.tft.valLoss.toFixed(4), sub: `${modelMetrics.tft.config.attentionHeads}h attn • ${modelMetrics.tft.config.forecastHorizons.length} horizons` },
+            { label: 'NLP FinBERT', value: `${(modelMetrics.nlp.accuracy * 100).toFixed(1)}%`, sub: liveSignals?.models?.nlp?.signal || `${modelMetrics.nlp.config.sources.length} RSS feeds` },
           ].map((m, i) => (
             <div key={i} className="kpi-card animate-in">
               <div className="kpi-label">{m.label}</div>
@@ -388,35 +403,60 @@ export default function Models() {
         {/* Dynamic Model Weights Heatmap */}
         <DynamicWeightsCard modelWeights={modelWeights} modelColors={modelColors} modelIcons={modelIcons} />
 
-        {/* Model Architecture Configs */}
+        {/* Model Architecture Configs — Row 1: Signal Processing */}
         <div className="grid-3" style={{ marginBottom: 16 }}>
-          <ModelConfigCard title="HMM Regime Detector" badge="hmm_regime.py" configs={[
+          <ModelConfigCard title="🌊 Wavelet Denoiser" badge="wavelet.py" architecture={modelMetrics.wavelet.architecture} capabilities={modelMetrics.wavelet.capabilities} configs={[
+            ['Wavelet Family', modelMetrics.wavelet.config.family], ['Decomposition Levels', modelMetrics.wavelet.config.levels],
+            ['Threshold Method', modelMetrics.wavelet.config.thresholdMethod], ['Threshold Mode', modelMetrics.wavelet.config.thresholdMode],
+            ['Remove Levels', modelMetrics.wavelet.config.denoiseRemoveLevels.join(', ')], ['Min Samples', modelMetrics.wavelet.config.minSamples],
+            ['SNR Improvement', `+${modelMetrics.wavelet.snrDb} dB`], ['Noise Removed', `${modelMetrics.wavelet.noiseRemoved}%`],
+            ['Retrain', modelMetrics.wavelet.config.retrainFrequency],
+          ]} />
+          <ModelConfigCard title="📊 HMM Regime Detector" badge="hmm_regime.py" architecture={modelMetrics.hmm.architecture} capabilities={modelMetrics.hmm.capabilities} configs={[
             ['Regimes', modelMetrics.hmm.config.nRegimes], ['Covariance', modelMetrics.hmm.config.covarianceType],
-            ['Iterations', modelMetrics.hmm.config.nIter.toLocaleString()], ['Retrain', modelMetrics.hmm.config.retrainFrequency],
+            ['EM Iterations', modelMetrics.hmm.config.nIter.toLocaleString()], ['Min Duration', `${modelMetrics.hmm.config.minRegimeDuration} bars`],
+            ['Persistence Wt', modelMetrics.hmm.config.regimePersistenceWeight], ['Vol Windows', modelMetrics.hmm.config.volWindows.join(', ')],
+            ['Accuracy', `${(modelMetrics.hmm.accuracy * 100).toFixed(1)}%`], ['Retrain', modelMetrics.hmm.config.retrainFrequency],
           ]} />
-          <ModelConfigCard title="Genetic Algorithm" badge="DEAP" configs={[
-            ['Population', modelMetrics.genetic.config.populationSize.toLocaleString()], ['Generations', modelMetrics.genetic.config.generations],
+          <ModelConfigCard title="🧬 Genetic Algorithm" badge="genetic_algorithm.py" architecture={modelMetrics.genetic.architecture} capabilities={modelMetrics.genetic.capabilities} configs={[
+            ['Population', modelMetrics.genetic.config.populationSize], ['Generations', modelMetrics.genetic.config.generations],
             ['Crossover', modelMetrics.genetic.config.crossoverProb], ['Mutation', modelMetrics.genetic.config.mutationProb],
-          ]} />
-          <ModelConfigCard title="TFT Network" badge="Multi-Head Attn" configs={[
-            ['Hidden Size', modelMetrics.tft.config.hiddenSize], ['Attn Heads', modelMetrics.tft.config.attentionHeads],
-            ['Dropout', modelMetrics.tft.config.dropout], ['Quantiles', modelMetrics.tft.config.quantiles.join(', ')],
+            ['Tournament Size', modelMetrics.genetic.config.tournamentSize], ['Elite %', `${(modelMetrics.genetic.config.elitePct * 100)}%`],
+            ['Rules/Chromosome', modelMetrics.genetic.config.nRulesPerChromosome], ['Best Fitness', modelMetrics.genetic.bestFitness],
           ]} />
         </div>
 
+        {/* Row 2: Deep Learning */}
         <div className="grid-3" style={{ marginBottom: 16 }}>
-          <ModelConfigCard title="LSTM Network" badge="PyTorch CUDA" configs={[
+          <ModelConfigCard title="🧠 LSTM Temporal" badge="PyTorch BiLSTM" architecture={modelMetrics.lstm.architecture} capabilities={modelMetrics.lstm.capabilities} configs={[
             ['Hidden Size', modelMetrics.lstm.config.hiddenSize], ['Layers', modelMetrics.lstm.config.numLayers],
-            ['Bidirectional', modelMetrics.lstm.config.bidirectional ? 'Yes' : 'No'], ['Dropout', modelMetrics.lstm.config.dropout],
+            ['Bidirectional', modelMetrics.lstm.config.bidirectional], ['Dropout', modelMetrics.lstm.config.dropout],
             ['Seq Length', modelMetrics.lstm.config.seqLength], ['Batch Size', modelMetrics.lstm.config.batchSize],
+            ['Patience', modelMetrics.lstm.config.patience], ['Grad Clip', modelMetrics.lstm.config.gradClip],
+            ['Input Features', 15], ['Parameters', (modelMetrics.lstm.parameters || 0).toLocaleString()],
           ]} />
-          <ModelConfigCard title="NLP Sentiment" badge="HuggingFace" configs={[
-            ['Model', modelMetrics.nlp?.config?.model || 'FinBERT'], ['Sources', modelMetrics.nlp?.config?.sources || 'WSJ, ForexLive'],
-            ['Accuracy', `${((modelMetrics.nlp?.accuracy || 0) * 100).toFixed(1)}%`], ['Avg Score', modelMetrics.nlp?.sentimentScore || 0],
+          <ModelConfigCard title="⚡ TFT Forecaster" badge="Transformer" architecture={modelMetrics.tft.architecture} capabilities={modelMetrics.tft.capabilities} configs={[
+            ['d_model', modelMetrics.tft.config.dModel], ['Attention Heads', modelMetrics.tft.config.attentionHeads],
+            ['Layers', modelMetrics.tft.config.nLayers], ['Dropout', modelMetrics.tft.config.dropout],
+            ['Seq Length', modelMetrics.tft.config.seqLength], ['Horizons', modelMetrics.tft.config.forecastHorizons.join(', ')],
+            ['Quantiles', modelMetrics.tft.config.quantiles.join(', ')], ['Retrain', modelMetrics.tft.config.retrainFrequency],
           ]} />
-          <ModelConfigCard title="Ensemble Strategy" badge={modelMetrics.ensemble.config.method} configs={[
+          <ModelConfigCard title="📰 NLP Sentiment" badge="FinBERT" architecture={modelMetrics.nlp.architecture} capabilities={modelMetrics.nlp.capabilities} configs={[
+            ['Model', modelMetrics.nlp.config.model], ['Device', modelMetrics.nlp.config.device === -1 ? 'CPU' : 'GPU'],
+            ['Max Headlines', modelMetrics.nlp.config.maxHeadlines], ['Scan Interval', modelMetrics.nlp.config.scanInterval],
+            ['Sources', modelMetrics.nlp.config.sources.join(', ')], ['Min Relevance', modelMetrics.nlp.config.minRelevanceScore],
+            ['Accuracy', `${((modelMetrics.nlp.accuracy) * 100).toFixed(1)}%`], ['Momentum Window', modelMetrics.nlp.config.sentimentMomentumWindow],
+          ]} />
+        </div>
+
+        {/* Ensemble Meta-Learner — Full Width */}
+        <div style={{ marginBottom: 16 }}>
+          <ModelConfigCard title="🎯 Ensemble Stacking Meta-Learner" badge="XGBoost" architecture={modelMetrics.ensemble.architecture} capabilities={modelMetrics.ensemble.capabilities} configs={[
             ['Method', modelMetrics.ensemble.config.method], ['Meta-Learner', modelMetrics.ensemble.config.metaLearner],
-            ['Sharpe', modelMetrics.ensemble.sharpe], ['Profit Factor', modelMetrics.ensemble.profitFactor],
+            ['Trees', modelMetrics.ensemble.config.nEstimators], ['Max Depth', modelMetrics.ensemble.config.maxDepth],
+            ['Disagree Penalty', modelMetrics.ensemble.config.disagreementPenalty], ['Min Confidence', modelMetrics.ensemble.config.confidenceThreshold],
+            ['EWMA α', modelMetrics.ensemble.config.ewmaAlpha], ['Sharpe', modelMetrics.ensemble.sharpe],
+            ['Win Rate', `${(modelMetrics.ensemble.winRate * 100).toFixed(1)}%`], ['Profit Factor', modelMetrics.ensemble.profitFactor],
           ]} />
         </div>
 
