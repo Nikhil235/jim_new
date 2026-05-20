@@ -35,34 +35,31 @@ from loguru import logger
 
 REGIME_BASE_WEIGHTS: Dict[str, Dict[str, float]] = {
     "GROWTH": {
-        # Growth/trending markets: momentum models shine, regime models less useful
-        "wavelet":  0.08,   # Denoising less critical in clean trends
-        "hmm":      0.05,   # Regime detection adds little in stable growth
-        "lstm":     0.22,   # Momentum/sequence models excel in trends
-        "tft":      0.22,   # Multi-horizon forecasting works well here
-        "genetic":  0.10,   # Evolved rules capture trending patterns
-        "nlp":      0.08,   # Sentiment confirms trend direction
-        "ensemble": 0.25,   # Meta-learner aggregates with high confidence
+        "wavelet":  0.25,   
+        "hmm":      0.15,   
+        "lstm":     0.10,   
+        "tft":      0.0,   
+        "genetic":  0.0,   
+        "nlp":      0.0,   
+        "ensemble": 0.50,   
     },
     "NORMAL": {
-        # Normal/range-bound: balanced allocation, slight edge to mean-reversion
-        "wavelet":  0.12,   # Denoising helps extract weak signals
-        "hmm":      0.12,   # Regime monitoring for transition detection
-        "lstm":     0.14,   # Temporal patterns still present
-        "tft":      0.14,   # Multi-step forecasting moderately useful
-        "genetic":  0.12,   # Evolved rules adapt to range patterns
-        "nlp":      0.08,   # Baseline sentiment monitoring
-        "ensemble": 0.28,   # Meta-learner is most valuable in ambiguity
+        "wavelet":  0.35,   
+        "hmm":      0.25,   
+        "lstm":     0.10,   
+        "tft":      0.0,   
+        "genetic":  0.0,   
+        "nlp":      0.0,   
+        "ensemble": 0.30,   
     },
     "CRISIS": {
-        # Crisis/high-vol: regime models dominate, momentum models fail
-        "wavelet":  0.10,   # Noise filtering critical in chaos
-        "hmm":      0.25,   # Regime detection is KING in crisis transitions
-        "lstm":     0.05,   # Momentum models fail during regime breaks
-        "tft":      0.05,   # Multi-horizon forecasting breaks down
-        "genetic":  0.08,   # Some evolved rules capture crash patterns
-        "nlp":      0.12,   # Sentiment/fear indicators very predictive
-        "ensemble": 0.35,   # Meta-learner with crisis override is essential
+        "wavelet":  0.15,   
+        "hmm":      0.45,   
+        "lstm":     0.0,   
+        "tft":      0.0,   
+        "genetic":  0.0,   
+        "nlp":      0.0,   
+        "ensemble": 0.40,   
     },
 }
 
@@ -130,7 +127,7 @@ class DynamicWeightAdjuster:
     DISAGREEMENT_PENALTY: float = 0.85      # 15% penalty when model is lone dissenter
 
     # Weight bounds (prevent any model from being zeroed out or dominating)
-    MIN_WEIGHT: float = 0.03               # Floor: 3% minimum per model
+    MIN_WEIGHT: float = 0.00               # Floor: 0% allows models to be disabled
     MAX_WEIGHT: float = 0.40               # Cap: 40% maximum per model
 
     def __init__(self):

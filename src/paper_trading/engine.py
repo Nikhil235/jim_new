@@ -141,13 +141,13 @@ class PaperTradingConfig:
     # These are starting weights per regime; the DynamicWeightAdjuster
     # further adapts them based on each model's rolling Sharpe ratio.
     signal_weights: Dict[str, float] = field(default_factory=lambda: {
-        "wavelet": 0.12,   # Denoising — best in noisy/normal markets
-        "hmm":     0.12,   # Regime detection — critical during transitions
-        "lstm":    0.14,   # Temporal patterns — strong in trending markets
-        "tft":     0.14,   # Multi-horizon forecasting — versatile
-        "genetic": 0.12,   # Evolved rules — adaptive to any pattern
-        "nlp":     0.08,   # Sentiment — supplementary signal
-        "ensemble": 0.28,  # Meta-learner — highest allocation (aggregator)
+        "wavelet": 0.30,   # Denoising — best in noisy/normal markets
+        "hmm":     0.30,   # Regime detection — critical during transitions
+        "lstm":    0.05,   # Reduced complexity
+        "tft":     0.05,   # Reduced complexity
+        "genetic": 0.0,    # Disabled
+        "nlp":     0.0,    # Disabled
+        "ensemble": 0.30,  # Meta-learner
     })
     use_dynamic_weights: bool = True       # Enable regime-adaptive weighting
     

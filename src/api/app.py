@@ -176,23 +176,24 @@ async def shutdown():
 # UTILITY FUNCTIONS
 # ============================================================================
 
-def get_or_fetch_gold_data(days: int = 100) -> Optional[pd.DataFrame]:
-    """Fetch gold data from QuestDB or cache."""
+def get_or_fetch_gold_data(days: int = 100, interval: str = "1h") -> Optional[pd.DataFrame]:
+    """Fetch gold data from QuestDB or cache (now supporting intraday)."""
     try:
         from src.ingestion.gold_fetcher import GoldDataFetcher
         fetcher = GoldDataFetcher(CONFIG)
         
-        # Try to load from QuestDB
+        # yfinance limits: 1h data is max 730 days (~2 years). 1d is max.
+        fetch_period = "730d" if interval in ["1h", "90m"] else ("60d" if interval in ["5m", "15m", "30m"] else "10y")
         try:
-            df = fetcher.fetch_historical(period=f"{days}d", interval="1d")
+            df = fetcher.fetch_historical(period=fetch_period, interval=interval)
             if not df.empty:
-                return df
+                # Slice to requested days
+                cutoff = df.index[-1] - pd.Timedelta(days=days)
+                return df[df.index >= cutoff]
         except Exception as e:
-            logger.warning(f"Failed to fetch from QuestDB: {e}")
-        
-        # Fallback to yfinance
-        df = fetcher.fetch_historical(period=f"{days}d", interval="1d")
-        return df if not df.empty else None
+            logger.warning(f"Failed to fetch historical {interval} data: {e}")
+            
+        return None
     
     except Exception as e:
         logger.error(f"Gold data fetch failed: {e}")
@@ -525,16 +526,11 @@ async def get_data_quality():
 @app.post("/backtest/{strategy}", response_model=BacktestResponse)
 async def backtest(strategy: str, request: BacktestRequest):
     """
-    Backtest a strategy.
-    
-    Path Parameters:
-        strategy: Strategy name (e.g., "hmm_ensemble", "wavelet_mean_reversion")
-    
-    Request Body:
-        BacktestRequest with dates, capital, sizing params
+    Backtest a strategy using the real engine with transaction costs,
+    walk-forward validation, and regime-specific analysis.
     """
     try:
-        logger.info(f"Backtest requested: {strategy} | {request.start_date} to {request.end_date}")
+        logger.info(f"Real Backtest requested: {strategy} | {request.start_date} to {request.end_date}")
         
         # Validate dates
         start = pd.Timestamp(request.start_date)
@@ -543,75 +539,165 @@ async def backtest(strategy: str, request: BacktestRequest):
         if start >= end:
             raise HTTPException(status_code=400, detail="start_date must be before end_date")
         
-        if (end - start).days < 30:
-            raise HTTPException(status_code=400, detail="Backtest period must be at least 30 days")
-        
         # Fetch data
-        days = (end - start).days + 30  # Add buffer
+        days = (end - start).days + 30  # Add buffer for indicators
         gold_df = get_or_fetch_gold_data(days=days)
         
         if gold_df is None or gold_df.empty:
             raise HTTPException(status_code=503, detail="Historical data unavailable")
         
-        # Filter to date range
-        gold_df = gold_df[start:end]
+        # We need a bit of data before start for regime detection / features
+        extended_start = start - timedelta(days=60)
+        gold_df = gold_df[extended_start:end]
         
-        if gold_df.empty:
-            raise HTTPException(status_code=404, detail="No data in specified date range")
+        if gold_df.empty or len(gold_df[start:end]) < 10:
+            raise HTTPException(status_code=404, detail="Not enough data in specified date range")
+            
+        # Detect regimes for the entire dataframe to use in MarketEvents
+        from src.models.hmm_regime import RegimeDetector
+        detector = RegimeDetector()
+        detector.train(gold_df)
+        regimes, _ = detector.predict(gold_df)
         
-        # Simulate backtest (placeholder)
-        num_trades = np.random.randint(50, 200)
-        winning_trades = int(num_trades * 0.55)
-        losing_trades = num_trades - winning_trades
+        from src.backtesting.events import MarketEvent
+        from src.backtesting.strategy_runner import StrategyRunner
+        from src.backtesting.model_strategies import create_strategy
         
-        total_profit = 15000
-        total_loss = -5000
-        
-        equity_curve = (
-            np.linspace(request.initial_capital, request.initial_capital + total_profit, len(gold_df))
-            + np.random.randn(len(gold_df)) * 500
+        try:
+            # Map frontend strategy names to model names
+            model_map = {
+                "hmm_ensemble": "hmm",
+                "wavelet_mean_reversion": "wavelet",
+                "lstm_temporal": "lstm",
+                "tft_forecaster": "tft",
+                "genetic_algo": "genetic",
+                "nlp_sentiment": "nlp",
+                "meta_learner": "ensemble"
+            }
+            # Fallback to strategy string if not mapped
+            model_name = model_map.get(strategy, strategy.split('_')[0])
+            strategy_fn = create_strategy(model_name)
+        except Exception as e:
+            logger.warning(f"Strategy {strategy} not found, falling back to Wavelet: {e}")
+            strategy_fn = create_strategy("wavelet")
+            
+        # Build MarketEvents (using actual data, incorporating regime)
+        market_events = []
+        for i, (ts, row) in enumerate(gold_df.iterrows()):
+            if ts < start: continue
+            
+            # Simple fallback for bid/ask spread (adds transaction costs via slippage)
+            spread = row.get("close", 0) * 0.0005 # 5 bps spread
+            
+            regime_id = int(regimes[i]) if i < len(regimes) else 0
+            regime_name = detector.REGIME_NAMES.get(regime_id, "NORMAL")
+            
+            me = MarketEvent(
+                event_type=None,
+                timestamp=ts,
+                symbol="GC=F",
+                open_price=row.get("open", row["close"]),
+                high_price=row.get("high", row["close"]),
+                low_price=row.get("low", row["close"]),
+                close_price=row["close"],
+                volume=row.get("volume", 0),
+                bid_price=row["close"] - spread/2,
+                ask_price=row["close"] + spread/2,
+                bid_volume=1000,
+                ask_volume=1000,
+                regime=regime_name
+            )
+            market_events.append(me)
+
+        # 1. Run main Backtest (Full period)
+        runner = StrategyRunner(initial_capital=request.initial_capital)
+        result = runner.run_backtest(
+            strategy_name=strategy,
+            strategy_fn=strategy_fn,
+            market_data=market_events,
+            model_name=model_name
         )
-        equity_curve = np.maximum(equity_curve, request.initial_capital * 0.85)
         
-        drawdown = (np.maximum.accumulate(equity_curve) - equity_curve) / np.maximum.accumulate(equity_curve)
+        # 2. Walk-Forward Validation (Split 70% In-Sample, 30% Out-Of-Sample)
+        split_idx = int(len(market_events) * 0.7)
+        is_events = market_events[:split_idx]
+        oos_events = market_events[split_idx:]
         
-        metrics = {
-            "total_return": float((equity_curve[-1] - request.initial_capital) / request.initial_capital) * 100,
-            "annual_return": float((equity_curve[-1] - request.initial_capital) / request.initial_capital / ((end - start).days / 365)) * 100,
-            "sharpe_ratio": float(np.random.rand() * 2),
-            "max_drawdown": float(drawdown.max()) * 100,
-            "win_rate": float(winning_trades / num_trades) * 100,
-            "profit_factor": float(total_profit / abs(total_loss)) if total_loss != 0 else 0,
-            "num_trades": num_trades,
-            "num_winning_trades": winning_trades,
-            "num_losing_trades": losing_trades,
-            "avg_win": float(total_profit / winning_trades) if winning_trades > 0 else 0,
-            "avg_loss": float(total_loss / losing_trades) if losing_trades > 0 else 0,
-            "best_trade": 2500.0,
-            "worst_trade": -1800.0,
-            "calmar_ratio": 1.25,
+        is_result = runner.run_backtest(strategy, strategy_fn, is_events) if len(is_events) > 10 else result
+        oos_result = runner.run_backtest(strategy, strategy_fn, oos_events) if len(oos_events) > 10 else result
+        
+        # 3. Regime-Specific Drawdown Analysis
+        regime_drawdowns = {"GROWTH": [], "NORMAL": [], "CRISIS": []}
+        eq_curve = result.equity_curve
+        drawdown_curve = (np.maximum.accumulate(eq_curve) - eq_curve) / np.maximum.accumulate(eq_curve)
+        
+        # Align drawdown curve with events (eq_curve has N+1 elements, index 0 is initial capital)
+        for i, event in enumerate(market_events):
+            if i+1 < len(drawdown_curve):
+                regime = getattr(event, 'regime', 'NORMAL')
+                if regime in regime_drawdowns:
+                    regime_drawdowns[regime].append(drawdown_curve[i+1])
+                    
+        regime_max_dd = {
+            r: float(np.max(dds)) * 100 if dds else 0.0 
+            for r, dds in regime_drawdowns.items()
         }
+        
+        # Prepare response metrics
+        perf = result.metrics.to_dict()
+        metrics = {
+            "total_return": perf.get("total_return", 0) * 100,
+            "annual_return": perf.get("annual_return", 0) * 100,
+            "sharpe_ratio": perf.get("sharpe_ratio", 0),
+            "max_drawdown": perf.get("max_drawdown", 0) * 100,
+            "win_rate": perf.get("win_rate", 0) * 100,
+            "profit_factor": perf.get("profit_factor", 0),
+            "num_trades": perf.get("total_trades", 0),
+            "num_winning_trades": perf.get("winning_trades", 0),
+            "num_losing_trades": perf.get("losing_trades", 0),
+            "avg_win": perf.get("avg_win", 0),
+            "avg_loss": perf.get("avg_loss", 0),
+            "best_trade": max([t.get("net_pnl", 0) for t in result.trades]) if result.trades else 0,
+            "worst_trade": min([t.get("net_pnl", 0) for t in result.trades]) if result.trades else 0,
+            "calmar_ratio": perf.get("calmar_ratio", 0),
+            
+            # Additional analysis (Walk-forward & Regime)
+            "is_return": is_result.metrics.total_return * 100,
+            "oos_return": oos_result.metrics.total_return * 100,
+            "oos_degradation": (is_result.metrics.sharpe_ratio - oos_result.metrics.sharpe_ratio),
+            "regime_drawdowns": regime_max_dd,
+            "transaction_costs": sum([t.get("commission", 0) + t.get("slippage", 0) for t in result.trades])
+        }
+        
+        # Prepare trades for frontend
+        formatted_trades = []
+        for t in result.trades:
+            entry_time = t.get("entry_time") or start
+            exit_time = t.get("exit_time") or entry_time + timedelta(days=1)
+            formatted_trades.append({
+                "entry_date": entry_time.isoformat(),
+                "exit_date": exit_time.isoformat(),
+                "pnl": t.get("net_pnl", 0),
+                "direction": t.get("direction", "LONG").name if hasattr(t.get("direction"), "name") else str(t.get("direction", "LONG")),
+                "size": t.get("size", 0)
+            })
+        
+        # Keep only top 100 trades to not overload the payload
+        formatted_trades = sorted(formatted_trades, key=lambda x: x["entry_date"], reverse=True)[:100]
         
         return BacktestResponse(
             strategy=strategy,
             period=f"{request.start_date} to {request.end_date}",
             metrics=metrics,
-            equity_curve=equity_curve.tolist(),
-            drawdown_curve=drawdown.tolist(),
-            trades=[
-                {
-                    "entry_date": (start + timedelta(days=i)).isoformat(),
-                    "exit_date": (start + timedelta(days=i+5)).isoformat(),
-                    "pnl": float(np.random.randn() * 1000),
-                }
-                for i in range(min(10, num_trades))
-            ],
+            equity_curve=result.equity_curve,
+            drawdown_curve=drawdown_curve.tolist(),
+            trades=formatted_trades,
         )
     
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid request: {str(e)}")
     except Exception as e:
-        logger.error(f"Backtest failed: {e}")
+        logger.error(f"Backtest failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -70,30 +70,90 @@ features:
 
 # --- Models ---
 models:
+  # Signal weights for paper trading (must sum to ~1.0)
+  signal_weights:
+    wavelet: 0.15
+    hmm: 0.15
+    lstm: 0.15
+    tft: 0.15
+    genetic: 0.15
+    nlp: 0.10
+    ensemble: 0.15
+
+  wavelet:
+    family: "db4"                # Daubechies-4 (optimal for financial series)
+    levels: 5                    # 5 levels = tick → weekly decomposition
+    threshold_method: "bayesshrink"  # bayesshrink | visushrink | sure
+    threshold_mode: "soft"       # soft (shrinkage) | hard (zeroing)
+    denoise_remove_levels: [1, 2]  # Zero out highest-frequency noise
+    trend_slope_window: 5        # Bars for trend slope calculation
+    energy_window: 20            # Window for energy ratio computation
+    min_samples: 64              # Minimum samples for decomposition
+    retrain_frequency: "hourly"
+
   hmm:
-    n_regimes: 3
-    covariance_type: "diag"
-    n_iter: 1000
+    n_regimes: 3                 # Growth(0) / Normal(1) / Crisis(2)
+    covariance_type: "diag"      # diag (stable) | full (flexible)
+    n_iter: 1000                 # Maximum EM iterations
+    min_regime_duration: 5       # Anti-whipsaw: min bars before regime change
+    regime_persistence_weight: 0.3  # Weight for regime persistence scoring
+    vol_windows: [10, 20, 50]    # Volatility computation windows
     retrain_frequency: "daily"
-  genetic:
-    population_size: 1000
-    generations: 500
-    crossover_prob: 0.7
-    mutation_prob: 0.1
-    fitness: "sharpe_adjusted"
-    tournament_size: 5
+
   lstm:
-    hidden_size: 128
-    num_layers: 3
-    bidirectional: true
-    dropout: 0.2
-    sequence_length: 100
-    batch_size: 256
-    learning_rate: 0.001
-    epochs: 100
+    hidden_size: 128             # LSTM hidden dimension
+    num_layers: 3                # Stacked LSTM layers
+    bidirectional: true          # Bidirectional processing
+    dropout: 0.2                 # Dropout rate
+    sequence_length: 100         # Input sequence length (timesteps)
+    batch_size: 256              # Training batch size
+    learning_rate: 0.001         # Initial learning rate
+    epochs: 100                  # Maximum training epochs
+    patience: 10                 # Early stopping patience
+    grad_clip: 1.0               # Gradient clipping max norm
+    retrain_frequency: "weekly"
+
+  tft:
+    d_model: 64                  # Embedding dimension
+    n_heads: 4                   # Multi-head attention heads
+    n_layers: 2                  # Encoder/decoder layers
+    dropout: 0.1                 # Dropout rate
+    sequence_length: 60          # Input sequence length
+    learning_rate: 0.0005        # Learning rate
+    epochs: 80                   # Maximum epochs
+    patience: 8                  # Early stopping patience
+    batch_size: 128              # Batch size
+    forecast_horizons: [1, 5, 10, 20]  # Multi-horizon (bars ahead)
+    quantiles: [0.1, 0.25, 0.5, 0.75, 0.9]  # Quantile outputs
+    retrain_frequency: "weekly"
+
+  genetic:
+    population_size: 200         # Chromosome population
+    generations: 100             # Evolution generations
+    crossover_prob: 0.7          # Crossover probability
+    mutation_prob: 0.1           # Base mutation probability
+    fitness: "sharpe_adjusted"   # Fitness function
+    tournament_size: 5           # Tournament selection size
+    elite_pct: 0.1               # Elitism percentage
+    n_rules_per_chromosome: 8    # Trading rules per strategy
+    retrain_frequency: "daily"
+
+  nlp:
+    model: "ProsusAI/finbert"    # FinBERT model for financial sentiment
+    device: -1                   # -1=CPU, 0=GPU
+    max_headlines: 15            # Max headlines per scan
+    sentiment_momentum_window: 10  # Rolling sentiment window
+    min_relevance_score: 1.0     # Minimum keyword relevance
+    scan_interval_seconds: 300   # News scan interval (5 min)
+
   ensemble:
-    method: "stacking"       # stacking | voting
-    meta_learner: "xgboost"
+    method: "stacking"           # stacking | voting
+    meta_learner: "xgboost"      # xgboost | random_forest
+    n_estimators: 100            # Trees in meta-learner
+    max_depth: 5                 # Max tree depth
+    disagreement_penalty: 0.3    # Confidence penalty for model disagreement
+    confidence_threshold: 0.25   # Min confidence for non-HOLD signal
+    ewma_alpha: 0.1              # EWMA decay for accuracy tracking
 
 # --- Risk Management ---
 risk:
