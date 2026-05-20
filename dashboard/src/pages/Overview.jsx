@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Target, Activity, Wifi, WifiOff } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { fetchHealth, fetchRegime, fetchGoldPrice, fetchPaperTradingStatus, fetchPaperTradingPerformance, fetchLiveSignals } from '../data/api';
@@ -21,8 +21,9 @@ export default function Overview() {
   const [goldData, setGoldData] = useState(null);
   const [eqHistory, setEqHistory] = useState([]);
 
-  const refresh = useCallback(async () => {
-    try { const h = await fetchHealth(); setHealth(h); setLive(true); } catch { setLive(false); }
+  const refreshRef = useRef(null);
+  refreshRef.current = async () => {
+    try { const h = await fetchHealth(); setHealth(h); setLive(true); } catch { /* offline */ }
     try {
       const s = await fetchPaperTradingStatus(); setPtStatus(s);
       if (s?.portfolio?.total_value) {
@@ -31,14 +32,14 @@ export default function Overview() {
           return n.length > 200 ? n.slice(-200) : n;
         });
       }
-    } catch {}
-    try { setPtPerf(await fetchPaperTradingPerformance()); } catch {}
-    try { setRegime(await fetchRegime()); } catch {}
-    try { setLiveSignals(await fetchLiveSignals()); } catch {}
-    try { setGoldData(await fetchGoldPrice('1d', '3mo')); } catch {}
-  }, []);
+    } catch { /* offline */ }
+    try { setPtPerf(await fetchPaperTradingPerformance()); } catch { /* offline */ }
+    try { setRegime(await fetchRegime()); } catch { /* offline */ }
+    try { setLiveSignals(await fetchLiveSignals()); } catch { /* offline */ }
+    try { setGoldData(await fetchGoldPrice('1d', '3mo')); } catch { /* offline */ }
+  };
 
-  useEffect(() => { refresh(); const t = setInterval(refresh, 5000); return () => clearInterval(t); }, [refresh]);
+  useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 5000); return () => clearInterval(t); }, []);
 
   const pv = ptStatus?.portfolio;
   const kpis = [

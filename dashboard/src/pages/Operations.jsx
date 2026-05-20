@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Users, Calendar, GitPullRequest, AlertTriangle, BookOpen, BarChart3, CheckCircle, Clock, XCircle, Wifi } from 'lucide-react';
-import { fetchPaperTradingPerformance, fetchHealth } from '../data/api';
+import { useState, useEffect, useRef } from 'react';
+import { Users, Calendar, GitPullRequest, AlertTriangle, BookOpen, CheckCircle } from 'lucide-react';
+import { fetchPaperTradingPerformance } from '../data/api';
 import { teamOperations } from '../data/mockData';
 
 const statusColor = (s) => s === 'production' ? 'var(--green)' : s === 'paper_trade' ? 'var(--gold-primary)' : s === 'review' ? 'var(--blue)' : s === 'backtest' ? 'var(--purple)' : 'var(--text-muted)';
@@ -12,11 +12,12 @@ export default function Operations() {
   const [live, setLive] = useState(false);
   const [perf, setPerf] = useState(null);
 
-  const refresh = useCallback(async () => {
-    try { const p = await fetchPaperTradingPerformance(); setPerf(p); setLive(true); } catch { setLive(false); }
-  }, []);
+  const refreshRef = useRef(null);
+  refreshRef.current = async () => {
+    try { const p = await fetchPaperTradingPerformance(); setPerf(p); setLive(true); } catch { /* offline */ }
+  };
 
-  useEffect(() => { refresh(); const t = setInterval(refresh, 10000); return () => clearInterval(t); }, [refresh]);
+  useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 10000); return () => clearInterval(t); }, []);
 
   const rpt = perf ? {
     daily: { trades: perf.daily_trades || 0, winRate: perf.win_rate || 0, pnl: perf.pnl_daily || 0, sharpe: perf.sharpe_ratio || 0, maxDD: perf.max_drawdown || 0 },

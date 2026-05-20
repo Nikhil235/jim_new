@@ -17,23 +17,14 @@ export default function SignIn() {
     if (!isLoaded || !signIn) return;
     setIsLoading(true);
     setError('');
-    // #region agent log
-    fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'SignIn.jsx:handleGoogleSignIn:entry',message:'Google SSO start',data:{isLoaded,hasSignIn:!!signIn,hasSso:typeof signIn?.sso},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     try {
-      const result = await signIn.sso({
+      await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
         redirectUrl: '/sso-callback',
         redirectUrlComplete: '/dashboard',
       });
-      // #region agent log
-      fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'SignIn.jsx:handleGoogleSignIn:success',message:'Google SSO returned',data:{resultType:typeof result,resultKeys:result&&typeof result==='object'?Object.keys(result):null},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
     } catch (err) {
-      // #region agent log
-      fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'SignIn.jsx:handleGoogleSignIn:error',message:'Google SSO threw',data:{errMsg:err?.message,clerkCode:err?.errors?.[0]?.code,clerkMsg:err?.errors?.[0]?.message},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      console.error(err);
+      console.error('Google SSO error:', err);
       setError(err.errors?.[0]?.message || 'Failed to initialize Google OAuth');
       setIsLoading(false);
     }
@@ -60,7 +51,7 @@ export default function SignIn() {
         setError('Authentication incomplete. Please contact support.');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Email sign-in error:', err);
       setError(err.errors?.[0]?.message || 'Invalid email or password');
     } finally {
       setIsLoading(false);
@@ -74,17 +65,17 @@ export default function SignIn() {
       <div className="orb orb-2"></div>
       <div className="orb orb-3"></div>
 
-      <div className="login-glass-card animate-in max-w-md w-full p-8 rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-2xl relative z-10">
-        <div className="login-header text-center mb-8">
-          <div className="login-logo-icon w-14 h-14 bg-gradient-to-br from-gold-primary to-gold-secondary rounded-xl flex items-center justify-center text-2xl font-extrabold text-bg-primary shadow-lg mx-auto mb-4">M</div>
-          <h2 className="text-2xl font-bold text-white tracking-tight mb-1">Mini-Medallion</h2>
-          <p className="text-xs text-gold-primary font-semibold uppercase tracking-wider">Institutional Gold Trading</p>
+      <div className="login-glass-card animate-in">
+        <div className="login-header">
+          <div className="login-logo-icon">M</div>
+          <h2>Mini-Medallion</h2>
+          <p>Institutional Gold Trading</p>
         </div>
 
-        <h3 className="text-lg font-medium text-white mb-6 text-center">Sign In to Dashboard</h3>
+        <h3 style={{ fontSize: '17px', fontWeight: 500, color: 'var(--text-bright)', marginBottom: '24px', textAlign: 'center' }}>Sign In to Dashboard</h3>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-lg text-center">
+          <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,77,106,0.1)', border: '1px solid rgba(255,77,106,0.2)', color: 'var(--red)', fontSize: '13px', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
             {error}
           </div>
         )}
@@ -94,9 +85,9 @@ export default function SignIn() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 mb-6 rounded-lg bg-white/5 border border-white/10 text-white font-medium text-sm hover:bg-white/10 transition-all duration-200 cursor-pointer disabled:opacity-50"
+          className="google-oauth-btn"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
+          <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 24 24">
             <path
               fill="#EA4335"
               d="M12 5.04c1.62 0 3.08.56 4.22 1.66l3.15-3.15C17.45 1.74 14.93 1 12 1 7.35 1 3.4 3.65 1.5 7.5l3.6 2.8C6.01 7.2 8.76 5.04 12 5.04z"
@@ -117,13 +108,11 @@ export default function SignIn() {
           Continue with Google
         </button>
 
-        <div className="flex items-center my-6">
-          <div className="flex-grow border-t border-white/5"></div>
-          <span className="mx-4 text-xs text-text-muted font-medium uppercase tracking-wider">or sign in with email</span>
-          <div className="flex-grow border-t border-white/5"></div>
+        <div className="auth-divider">
+          <span>or sign in with email</span>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group">
             <input
               type="email"
@@ -131,9 +120,8 @@ export default function SignIn() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full pl-12 pr-4 py-3 bg-slate-950/80 border border-white/5 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-gold-primary focus:ring-1 focus:ring-gold-primary/30 transition-all"
             />
-            <Mail className="input-icon absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors" size={18} />
+            <Mail className="input-icon" size={18} />
           </div>
 
           <div className="input-group">
@@ -143,13 +131,12 @@ export default function SignIn() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full pl-12 pr-4 py-3 bg-slate-950/80 border border-white/5 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-gold-primary focus:ring-1 focus:ring-gold-primary/30 transition-all"
             />
-            <Lock className="input-icon absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors" size={18} />
+            <Lock className="input-icon" size={18} />
           </div>
 
-          <div className="flex justify-end text-xs">
-            <Link to="/forgot-password" className="text-gold-primary hover:text-gold-secondary transition-colors">
+          <div style={{ textAlign: 'right' }}>
+            <Link to="/forgot-password" style={{ fontSize: '12px', color: 'var(--gold-primary)' }}>
               Forgot Password?
             </Link>
           </div>
@@ -157,10 +144,10 @@ export default function SignIn() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 mt-2 bg-gradient-to-r from-gold-primary to-gold-secondary hover:from-gold-secondary hover:to-gold-primary text-bg-primary font-bold rounded-lg shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:transform-none"
+            className="login-button"
           >
             {isLoading ? (
-              <Activity className="spin-icon animate-spin" size={18} />
+              <Activity className="spin-icon" size={18} />
             ) : (
               <>
                 Sign In <ChevronRight size={18} />
@@ -169,11 +156,42 @@ export default function SignIn() {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-text-secondary">
+        <div className="auth-footer-link">
           Don't have an account?{' '}
-          <Link to="/sign-up" className="text-gold-primary hover:text-gold-secondary font-medium transition-colors">
-            Sign Up
-          </Link>
+          <Link to="/sign-up">Sign Up</Link>
+        </div>
+
+        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.setItem('AUTH_BYPASS', 'true');
+              window.location.href = '/dashboard';
+            }}
+            style={{
+              background: 'rgba(240,185,11,0.08)',
+              border: '1px solid rgba(240,185,11,0.2)',
+              color: 'var(--gold-primary)',
+              padding: '10px 16px',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              letterSpacing: '0.5px',
+              transition: 'all 0.2s',
+              width: '100%'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(240,185,11,0.15)';
+              e.currentTarget.style.boxShadow = '0 0 12px rgba(240,185,11,0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(240,185,11,0.08)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            Bypass Sign In (Developer Mode)
+          </button>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Wifi, WifiOff } from 'lucide-react';
 import { fetchHealth, fetchInferenceStatus } from '../data/api';
 
@@ -7,12 +7,13 @@ export default function Infrastructure() {
   const [health, setHealth] = useState(null);
   const [inference, setInference] = useState(null);
 
-  const refresh = useCallback(async () => {
-    try { const h = await fetchHealth(); setHealth(h); setLive(true); } catch { setLive(false); }
-    try { setInference(await fetchInferenceStatus()); } catch {}
-  }, []);
+  const refreshRef = useRef(null);
+  refreshRef.current = async () => {
+    try { const h = await fetchHealth(); setHealth(h); setLive(true); } catch { /* offline */ }
+    try { setInference(await fetchInferenceStatus()); } catch { /* offline */ }
+  };
 
-  useEffect(() => { refresh(); const t = setInterval(refresh, 5000); return () => clearInterval(t); }, [refresh]);
+  useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 5000); return () => clearInterval(t); }, []);
 
   const newModules = [
     { name: 'Backup Daemon', status: 'active', desc: 'Daily automated tar.gz backups with 30-day retention', icon: '💾', phase: '6C' },

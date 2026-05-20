@@ -35,7 +35,7 @@ export default function ForgotPassword() {
       setSuccessMessage('A reset code has been sent to your email.');
       setStep(2);
     } catch (err) {
-      console.error(err);
+      console.error('Reset code error:', err);
       setError(err.errors?.[0]?.message || 'Failed to send reset code. Please verify your email.');
     } finally {
       setIsLoading(false);
@@ -74,7 +74,7 @@ export default function ForgotPassword() {
         setError('Verification complete, but password reset failed. Please try again.');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Password reset error:', err);
       setError(err.errors?.[0]?.message || 'Failed to reset password. The code might be incorrect or expired.');
     } finally {
       setIsLoading(false);
@@ -88,29 +88,29 @@ export default function ForgotPassword() {
       <div className="orb orb-2"></div>
       <div className="orb orb-3"></div>
 
-      <div className="login-glass-card animate-in max-w-md w-full p-8 rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-2xl relative z-10">
-        <div className="login-header text-center mb-8">
-          <div className="login-logo-icon w-14 h-14 bg-gradient-to-br from-gold-primary to-gold-secondary rounded-xl flex items-center justify-center text-2xl font-extrabold text-bg-primary shadow-lg mx-auto mb-4">M</div>
-          <h2 className="text-2xl font-bold text-white tracking-tight mb-1">Reset Password</h2>
-          <p className="text-xs text-gold-primary font-semibold uppercase tracking-wider">Secure Access Protocol</p>
+      <div className="login-glass-card animate-in">
+        <div className="login-header">
+          <div className="login-logo-icon">M</div>
+          <h2>Reset Password</h2>
+          <p>Secure Access Protocol</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-lg text-center">
+          <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,77,106,0.1)', border: '1px solid rgba(255,77,106,0.2)', color: 'var(--red)', fontSize: '13px', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
             {error}
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 text-green-400 text-sm rounded-lg text-center">
+          <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(0,196,140,0.1)', border: '1px solid rgba(0,196,140,0.2)', color: 'var(--green)', fontSize: '13px', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
             {successMessage}
           </div>
         )}
 
         {step === 1 ? (
           /* Step 1: Input Email */
-          <form onSubmit={handleSendCode} className="flex flex-col gap-4">
-            <p className="text-sm text-text-secondary text-center mb-2">
+          <form onSubmit={handleSendCode} className="login-form">
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '8px' }}>
               Enter your registered email address to receive a secure password reset code.
             </p>
 
@@ -121,18 +121,17 @@ export default function ForgotPassword() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-3 bg-slate-950/80 border border-white/5 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-gold-primary focus:ring-1 focus:ring-gold-primary/30 transition-all"
               />
-              <Mail className="input-icon absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors" size={18} />
+              <Mail className="input-icon" size={18} />
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 mt-2 bg-gradient-to-r from-gold-primary to-gold-secondary hover:from-gold-secondary hover:to-gold-primary text-bg-primary font-bold rounded-lg shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:transform-none"
+              className="login-button"
             >
               {isLoading ? (
-                <Activity className="spin-icon animate-spin" size={18} />
+                <Activity className="spin-icon" size={18} />
               ) : (
                 <>
                   Send Reset Code <ChevronRight size={18} />
@@ -142,9 +141,9 @@ export default function ForgotPassword() {
           </form>
         ) : (
           /* Step 2: Input Verification Code & New Password */
-          <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
-            <p className="text-sm text-text-secondary text-center mb-2">
-              Enter the reset code sent to <span className="text-white font-medium">{email}</span> and configure your new password.
+          <form onSubmit={handleResetPassword} className="login-form">
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '8px' }}>
+              Enter the reset code sent to <span style={{ color: 'var(--text-bright)', fontWeight: 500 }}>{email}</span> and configure your new password.
             </p>
 
             <div className="input-group">
@@ -154,9 +153,9 @@ export default function ForgotPassword() {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-3 bg-slate-950/80 border border-white/5 rounded-lg text-white placeholder-slate-500 text-center tracking-widest font-mono text-lg focus:outline-none focus:border-gold-primary focus:ring-1 focus:ring-gold-primary/30 transition-all"
+                style={{ textAlign: 'center', letterSpacing: '4px', fontFamily: 'var(--font-mono)', fontSize: '18px' }}
               />
-              <ShieldAlert className="input-icon absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors" size={18} />
+              <ShieldAlert className="input-icon" size={18} />
             </div>
 
             <div className="input-group">
@@ -166,9 +165,8 @@ export default function ForgotPassword() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-3 bg-slate-950/80 border border-white/5 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-gold-primary focus:ring-1 focus:ring-gold-primary/30 transition-all"
               />
-              <Lock className="input-icon absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors" size={18} />
+              <Lock className="input-icon" size={18} />
             </div>
 
             <div className="input-group">
@@ -178,18 +176,17 @@ export default function ForgotPassword() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-3 bg-slate-950/80 border border-white/5 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-gold-primary focus:ring-1 focus:ring-gold-primary/30 transition-all"
               />
-              <KeyRound className="input-icon absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors" size={18} />
+              <KeyRound className="input-icon" size={18} />
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 mt-2 bg-gradient-to-r from-gold-primary to-gold-secondary hover:from-gold-secondary hover:to-gold-primary text-bg-primary font-bold rounded-lg shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:transform-none"
+              className="login-button"
             >
               {isLoading ? (
-                <Activity className="spin-icon animate-spin" size={18} />
+                <Activity className="spin-icon" size={18} />
               ) : (
                 <>
                   Reset Password <ChevronRight size={18} />
@@ -200,18 +197,16 @@ export default function ForgotPassword() {
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="text-xs text-text-muted hover:text-white transition-colors mt-2 text-center bg-transparent border-none cursor-pointer"
+              style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginTop: '8px', textAlign: 'center' }}
             >
               Request a new code
             </button>
           </form>
         )}
 
-        <div className="mt-6 text-center text-sm text-text-secondary">
+        <div className="auth-footer-link">
           Back to{' '}
-          <Link to="/sign-in" className="text-gold-primary hover:text-gold-secondary font-medium transition-colors">
-            Sign In
-          </Link>
+          <Link to="/sign-in">Sign In</Link>
         </div>
       </div>
     </div>

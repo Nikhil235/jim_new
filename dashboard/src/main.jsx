@@ -23,14 +23,14 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="login-container flex items-center justify-center min-h-screen bg-[#0a0e1a] relative overflow-hidden p-4">
+        <div className="login-container">
           <div className="orb orb-1"></div>
           <div className="orb orb-2"></div>
           <div className="orb orb-3"></div>
-          <div className="login-glass-card max-w-md w-full p-8 rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-2xl relative z-10 text-center">
-            <div className="login-logo-icon w-14 h-14 bg-gradient-to-br from-gold-primary to-gold-secondary rounded-xl flex items-center justify-center text-2xl font-extrabold text-bg-primary shadow-lg mx-auto mb-4">M</div>
-            <h2 className="text-xl font-bold text-white mb-2">Secure Link Offline</h2>
-            <p className="text-sm text-slate-300 mb-6">
+          <div className="login-glass-card" style={{ textAlign: 'center' }}>
+            <div className="login-logo-icon">M</div>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-bright)', marginBottom: '8px' }}>Secure Link Offline</h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
               Could not establish connection to the authorization servers. The saved Clerk Publishable Key may be invalid or expired.
             </p>
             <button
@@ -38,7 +38,7 @@ class ErrorBoundary extends React.Component {
                 localStorage.removeItem('VITE_CLERK_PUBLISHABLE_KEY');
                 window.location.reload();
               }}
-              className="w-full py-3 px-4 bg-gradient-to-r from-gold-primary to-gold-secondary hover:from-gold-secondary hover:to-gold-primary text-bg-primary font-bold rounded-lg shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5"
+              className="login-button"
             >
               Reset Config Key
             </button>
@@ -58,12 +58,6 @@ function MainApp() {
   const [error, setError] = useState('');
 
   const isPlaceholder = !clerkKey || clerkKey === 'pk_test_Y2xlcmsuYWNjb3VudHMuZGV2JA' || clerkKey.trim() === '';
-
-  // #region agent log
-  if (typeof window !== 'undefined') {
-    fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'main.jsx:MainApp',message:'Clerk key gate',data:{isPlaceholder,hasEnvKey:!!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,hasStoredKey:!!localStorage.getItem('VITE_CLERK_PUBLISHABLE_KEY')},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-  }
-  // #endregion
 
   const handleSaveKey = (e) => {
     e.preventDefault();
@@ -85,57 +79,54 @@ function MainApp() {
 
   if (isPlaceholder) {
     return (
-      <div className="login-container flex items-center justify-center min-h-screen bg-[#0a0e1a] relative overflow-hidden p-4">
+      <div className="login-container">
         {/* Background Orbs */}
         <div className="orb orb-1"></div>
         <div className="orb orb-2"></div>
         <div className="orb orb-3"></div>
 
-        <div className="login-glass-card animate-in max-w-lg w-full p-8 rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-2xl relative z-10">
-          <div className="login-header text-center mb-6">
-            <div className="login-logo-icon w-14 h-14 bg-gradient-to-br from-gold-primary to-gold-secondary rounded-xl flex items-center justify-center text-2xl font-extrabold text-bg-primary shadow-lg mx-auto mb-4">M</div>
-            <h2 className="text-2xl font-bold text-white tracking-tight mb-1">Clerk Auth Setup</h2>
-            <p className="text-xs text-gold-primary font-semibold uppercase tracking-wider">Configuration Panel</p>
+        <div className="login-glass-card animate-in" style={{ maxWidth: '480px' }}>
+          <div className="login-header">
+            <div className="login-logo-icon">M</div>
+            <h2>Clerk Auth Setup</h2>
+            <p>Configuration Panel</p>
           </div>
 
-          <div className="text-sm text-slate-300 space-y-4 mb-6">
-            <p className="text-center">
-              A valid <strong>Clerk Publishable Key</strong> is required to enable secure login for the Mini-Medallion Trading Dashboard.
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', textAlign: 'center' }}>
+            <p style={{ marginBottom: '16px' }}>
+              A valid <strong style={{ color: 'var(--text-bright)' }}>Clerk Publishable Key</strong> is required to enable secure login for the Mini-Medallion Trading Dashboard.
             </p>
-            <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-2 text-xs">
-              <h4 className="font-semibold text-white uppercase text-[10px] tracking-wider">How to configure your credentials:</h4>
-              <ol className="list-decimal list-inside space-y-1 text-slate-400">
-                <li>Log in to your <a href="https://dashboard.clerk.com/" target="_blank" rel="noopener noreferrer" className="text-gold-primary hover:underline font-medium">Clerk Dashboard</a>.</li>
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '16px', textAlign: 'left' }}>
+              <h4 style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-bright)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>How to configure your credentials:</h4>
+              <ol style={{ listStylePosition: 'inside', color: 'var(--text-muted)', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <li>Log in to your <a href="https://dashboard.clerk.com/" target="_blank" rel="noopener noreferrer">Clerk Dashboard</a>.</li>
                 <li>Select your application instance (or create a new one).</li>
                 <li>Go to <strong>API Keys</strong> in the sidebar, and copy the <strong>Publishable Key</strong>.</li>
-                <li>Paste it below to load instantly, or set <code>VITE_CLERK_PUBLISHABLE_KEY</code> in your <code>dashboard/.env</code>.</li>
+                <li>Paste it below to load instantly, or set <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>VITE_CLERK_PUBLISHABLE_KEY</code> in your <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>dashboard/.env</code>.</li>
               </ol>
             </div>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-lg text-center font-medium">
+            <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,77,106,0.1)', border: '1px solid rgba(255,77,106,0.2)', color: 'var(--red)', fontSize: '12px', borderRadius: 'var(--radius-sm)', textAlign: 'center', fontWeight: 500 }}>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSaveKey} className="flex flex-col gap-4">
-            <div className="input-group relative">
+          <form onSubmit={handleSaveKey} className="login-form">
+            <div className="input-group">
               <input
                 type="text"
                 placeholder="Paste Clerk Publishable Key (pk_test_...)"
                 value={inputKey}
                 onChange={(e) => setInputKey(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-3 bg-slate-950/80 border border-white/5 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-gold-primary focus:ring-1 focus:ring-gold-primary/30 transition-all font-mono"
+                style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}
               />
-              <Key className="input-icon absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <Key className="input-icon" size={18} />
             </div>
 
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-gold-primary to-gold-secondary hover:from-gold-secondary hover:to-gold-primary text-bg-primary font-bold rounded-lg shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
-            >
+            <button type="submit" className="login-button">
               <Save size={18} /> Apply Publishable Key
             </button>
           </form>
@@ -146,7 +137,14 @@ function MainApp() {
 
   return (
     <ErrorBoundary>
-      <ClerkProvider publishableKey={clerkKey}>
+      <ClerkProvider
+        publishableKey={clerkKey}
+        signInUrl="/sign-in"
+        signUpUrl="/sign-up"
+        afterSignOutUrl="/sign-in"
+        signInFallbackRedirectUrl="/dashboard"
+        signUpFallbackRedirectUrl="/dashboard"
+      >
         <BrowserRouter>
           <App onClearKey={handleClearKey} hasCustomKey={!!localStorage.getItem('VITE_CLERK_PUBLISHABLE_KEY')} />
         </BrowserRouter>

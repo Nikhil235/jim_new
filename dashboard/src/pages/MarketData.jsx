@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, ComposedChart, Line } from 'recharts';
+import { useState, useEffect, useRef } from 'react';
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, ComposedChart, Line, Area } from 'recharts';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import { fetchGoldPrice, fetchFeatures, fetchPaperTradingTrades } from '../data/api';
+import { fetchGoldPrice, fetchPaperTradingTrades } from '../data/api';
 
 const Candlestick = (props) => {
   const { x, y, width, height, payload } = props;
@@ -87,7 +87,8 @@ export default function MarketData() {
   const [interval, setInterval_] = useState('1d');
   const [selectedTrade, setSelectedTrade] = useState(null);
 
-  const refresh = useCallback(async () => {
+  const refreshRef = useRef(null);
+  refreshRef.current = async () => {
     setLoading(true);
     try {
       const data = await fetchGoldPrice(interval, period);
@@ -97,15 +98,16 @@ export default function MarketData() {
         setTrades(t || []);
       } catch (err) { console.warn("Could not fetch trades", err); }
       setLive(true);
-    } catch { setLive(false); }
+    } catch { /* offline */ }
     setLoading(false);
-  }, [interval, period]);
+  };
 
-  useEffect(() => { refresh(); const t = setInterval(refresh, 30000); return () => clearInterval(t); }, [refresh]);
+  useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 30000); return () => clearInterval(t); }, [interval, period]);
 
   const candles = goldData?.candles || [];
   const chartData = candles.map((c, i) => {
-    const nextTime = i < candles.length - 1 ? candles[i + 1].time : Date.now();
+    const now = Date.now();
+    const nextTime = i < candles.length - 1 ? candles[i + 1].time : now;
     const cTrades = trades.filter(t => {
       const time = new Date(t.entry_time).getTime();
       return time >= c.time && time < nextTime;
@@ -145,7 +147,7 @@ export default function MarketData() {
     <div className="page-body"><div className="card" style={{padding:40,textAlign:'center',color:'var(--text-muted)'}}>
       <WifiOff size={48} style={{margin:'0 auto 16px',opacity:0.3}}/><div style={{fontSize:16,fontWeight:600}}>No Connection</div>
       <div style={{fontSize:12,marginTop:8}}>Run <code style={{background:'var(--bg-input)',padding:'2px 8px',borderRadius:4}}>python -m uvicorn src.api.app:app --port 8000</code> to start</div>
-      <button onClick={refresh} style={{marginTop:16,padding:'8px 20px',borderRadius:6,border:'1px solid var(--border-color)',background:'var(--bg-secondary)',color:'var(--text-secondary)',cursor:'pointer',fontSize:12}}><RefreshCw size={12} style={{marginRight:4,verticalAlign:'middle'}}/> Retry</button>
+      <button onClick={() => refreshRef.current?.()} style={{marginTop:16,padding:'8px 20px',borderRadius:6,border:'1px solid var(--border-color)',background:'var(--bg-secondary)',color:'var(--text-secondary)',cursor:'pointer',fontSize:12}}><RefreshCw size={12} style={{marginRight:4,verticalAlign:'middle'}}/> Retry</button>
     </div></div></>
   );
 

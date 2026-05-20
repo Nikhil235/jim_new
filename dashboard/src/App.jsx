@@ -1,6 +1,5 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { useUser, useClerk, AuthenticateWithRedirectCallback } from '@clerk/react';
-import { useEffect } from 'react';
 import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users } from 'lucide-react';
 import Overview from './pages/Overview';
 import MarketData from './pages/MarketData';
@@ -33,25 +32,15 @@ const navItems = [
 ];
 
 function SsoCallbackRoute() {
-  useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'App.jsx:SsoCallbackRoute',message:'SSO callback route mounted',data:{uses:'AuthenticateWithRedirectCallback'},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-  }, []);
   return (
     <AuthenticateWithRedirectCallback signUpForceRedirectUrl="/dashboard" signInForceRedirectUrl="/dashboard" />
   );
 }
 
-export default function App() {
+export default function App({ onClearKey, hasCustomKey }) {
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
-
-  useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7498/ingest/0829a907-b6db-4bac-a83c-374903799449',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'edbe57'},body:JSON.stringify({sessionId:'edbe57',location:'App.jsx:auth-state',message:'Clerk auth snapshot',data:{isLoaded,isSignedIn,path:window.location.pathname},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-  }, [isLoaded, isSignedIn]);
+  const hasBypass = localStorage.getItem('AUTH_BYPASS') === 'true';
 
   // Show a premium glassmorphic loading screen during Clerk initialization
   if (!isLoaded) {
@@ -60,16 +49,16 @@ export default function App() {
         <div className="orb orb-1"></div>
         <div className="orb orb-2"></div>
         <div className="orb orb-3"></div>
-        <div className="login-glass-card animate-in flex flex-col items-center justify-center py-16 max-w-md w-full rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-2xl relative z-10">
-          <Activity className="spin-icon animate-spin text-gold-primary mb-4" size={32} />
-          <p className="text-xs text-gold-primary tracking-widest uppercase font-semibold">Initializing Secure Auth Link...</p>
+        <div className="login-glass-card animate-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '64px', paddingBottom: '64px' }}>
+          <Activity className="spin-icon" size={32} style={{ color: 'var(--gold-primary)', marginBottom: '16px' }} />
+          <p style={{ fontSize: '11px', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 600 }}>Initializing Secure Auth Link...</p>
         </div>
       </div>
     );
   }
 
   // Protect dashboard routes: Redirect to sign-in if unauthenticated
-  if (!isSignedIn) {
+  if (!isSignedIn && !hasBypass) {
     return (
       <Routes>
         <Route path="/sign-in" element={<SignIn />} />
@@ -113,25 +102,57 @@ export default function App() {
 
         <div className="sidebar-footer">
           {/* User Profile & Sign Out Controls */}
-          <div className="pb-4 mb-4 border-b border-white/5">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gold-glow border border-gold-border flex items-center justify-center text-gold-primary font-bold text-sm">
-                  {user?.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase() || 'O'}
+          <div style={{ paddingBottom: '16px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '32px', height: '32px', borderRadius: '50%',
+                  background: 'var(--gold-glow)', border: '1px solid var(--gold-border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--gold-primary)', fontWeight: 700, fontSize: '13px'
+                }}>
+                  {user?.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase() || 'D'}
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs text-text-primary font-medium truncate">
-                    {user?.primaryEmailAddress?.emailAddress}
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user?.primaryEmailAddress?.emailAddress || 'developer@medallion.local'}
                   </span>
-                  <span className="text-[10px] text-text-muted">Terminal Operator</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Terminal Operator</span>
                 </div>
               </div>
-              <button
-                onClick={() => signOut()}
-                className="w-full py-2 px-3 mt-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 hover:text-red-300 font-semibold text-xs rounded-md transition-all cursor-pointer text-center"
-              >
-                Disconnect Link
-              </button>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('AUTH_BYPASS');
+                    signOut();
+                    window.location.href = '/sign-in';
+                  }}
+                  style={{
+                    flex: 1, padding: '8px 12px', marginTop: '4px',
+                    background: 'rgba(255,77,106,0.1)', border: '1px solid rgba(255,77,106,0.2)',
+                    color: 'var(--red)', fontWeight: 600, fontSize: '11px',
+                    borderRadius: '6px', cursor: 'pointer', textAlign: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Disconnect Link
+                </button>
+                {hasCustomKey && onClearKey && (
+                  <button
+                    onClick={onClearKey}
+                    title="Reset Clerk API Key"
+                    style={{
+                      padding: '8px 10px', marginTop: '4px',
+                      background: 'rgba(255,159,67,0.1)', border: '1px solid rgba(255,159,67,0.2)',
+                      color: 'var(--orange)', fontWeight: 600, fontSize: '11px',
+                      borderRadius: '6px', cursor: 'pointer', textAlign: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Reset Key
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -175,4 +196,3 @@ export default function App() {
     </div>
   );
 }
-

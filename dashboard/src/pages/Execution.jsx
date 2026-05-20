@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Wifi, WifiOff } from 'lucide-react';
 import { fetchPaperTradingStatus, fetchPaperTradingTrades } from '../data/api';
 
@@ -7,14 +7,15 @@ export default function Execution() {
   const [status, setStatus] = useState(null);
   const [trades, setTrades] = useState([]);
 
-  const refresh = useCallback(async () => {
+  const refreshRef = useRef(null);
+  refreshRef.current = async () => {
     try {
       const [s, t] = await Promise.all([fetchPaperTradingStatus(), fetchPaperTradingTrades(20)]);
       setStatus(s); setTrades(Array.isArray(t) ? t : []); setLive(true);
-    } catch { setLive(false); }
-  }, []);
+    } catch { /* offline */ }
+  };
 
-  useEffect(() => { refresh(); const t = setInterval(refresh, 5000); return () => clearInterval(t); }, [refresh]);
+  useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 5000); return () => clearInterval(t); }, []);
 
   if (!live) return (
     <><div className="page-header"><h2>Execution Engine</h2><p>⚠ Backend offline</p></div>

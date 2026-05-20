@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Play, Pause, Square, DollarSign, TrendingUp, Activity, Target, ArrowUpRight, ArrowDownRight, Minus, Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import { startPaperTrading, stopPaperTrading, fetchPaperTradingStatus, fetchPaperTradingPerformance, fetchPaperTradingTrades, fetchLiveSignals, fetchRiskReport, resetDailyCounters, injectSignal } from '../data/api';
+import { startPaperTrading, stopPaperTrading, fetchPaperTradingStatus, fetchPaperTradingPerformance, fetchPaperTradingTrades, fetchLiveSignals, fetchRiskReport, resetDailyCounters } from '../data/api';
 
 
 const signalColor = (s) => s === 'LONG' ? 'var(--green)' : s === 'SHORT' ? 'var(--red)' : 'var(--text-muted)';
@@ -22,11 +22,11 @@ export default function PaperTrading() {
   const [signals, setSignals] = useState(null);
   const [risk, setRisk] = useState(null);
   const [eqHistory, setEqHistory] = useState([]);
-  const [pnlHistory, setPnlHistory] = useState([]);
   const [starting, setStarting] = useState(false);
   const [config, setConfig] = useState({ initial_capital:100000, kelly_fraction:0.25, max_position_pct:0.10, max_daily_loss_pct:0.02, max_drawdown_pct:0.15, min_confidence:0.60 });
 
-  const refresh = useCallback(async () => {
+  const refreshRef = useRef(null);
+  refreshRef.current = async () => {
     try {
       const s = await fetchPaperTradingStatus();
       setStatus(s); setLive(true);
@@ -36,22 +36,22 @@ export default function PaperTrading() {
           return n.length > 300 ? n.slice(-300) : n;
         });
       }
-    } catch { setLive(false); setStatus(null); }
-    try { setPerf(await fetchPaperTradingPerformance()); } catch {}
-    try { setTrades(await fetchPaperTradingTrades(20)); } catch {}
-    try { setSignals(await fetchLiveSignals()); } catch {}
-    try { setRisk(await fetchRiskReport()); } catch {}
-  }, []);
+    } catch { /* offline */ }
+    try { setPerf(await fetchPaperTradingPerformance()); } catch { /* offline */ }
+    try { setTrades(await fetchPaperTradingTrades(20)); } catch { /* offline */ }
+    try { setSignals(await fetchLiveSignals()); } catch { /* offline */ }
+    try { setRisk(await fetchRiskReport()); } catch { /* offline */ }
+  };
 
-  useEffect(() => { refresh(); const t = setInterval(refresh, 5000); return () => clearInterval(t); }, [refresh]);
+  useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 5000); return () => clearInterval(t); }, []);
 
   const handleStart = async () => {
     setStarting(true);
-    try { await startPaperTrading(config); refresh(); } catch(e) { alert('Start failed: ' + e.message); }
+    try { await startPaperTrading(config); refreshRef.current?.(); } catch(e) { alert('Start failed: ' + e.message); }
     setStarting(false);
   };
-  const handleStop = async () => { if(!confirm('Stop engine?')) return; try { await stopPaperTrading(); refresh(); } catch(e) { alert(e.message); } };
-  const handleReset = async () => { try { await resetDailyCounters(); refresh(); } catch(e) { alert(e.message); } };
+  const handleStop = async () => { if(!confirm('Stop engine?')) return; try { await stopPaperTrading(); refreshRef.current?.(); } catch(e) { alert(e.message); } };
+  const handleReset = async () => { try { await resetDailyCounters(); refreshRef.current?.(); } catch(e) { alert(e.message); } };
 
 
   const engineStatus = status?.status || 'NOT STARTED';

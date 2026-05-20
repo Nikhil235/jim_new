@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, ComposedChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { useState, useEffect, useRef } from 'react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { Wifi, WifiOff, Radio, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
-import { fetchLiveSignals, fetchInferenceStatus, fetchModels, fetchRegime } from '../data/api';
+import { fetchLiveSignals, fetchInferenceStatus, fetchRegime } from '../data/api';
 import { regimeData, modelMetrics, featureImportance, featureConfig } from '../data/mockData';
 
 const TT = ({ active, payload, label }) => {
@@ -44,7 +44,8 @@ export default function Models() {
   const [inferenceStatus, setInferenceStatus] = useState(null);
   const [liveRegime, setLiveRegime] = useState(null);
 
-  const refresh = useCallback(async () => {
+  const refreshRef = useRef(null);
+  refreshRef.current = async () => {
     try {
       const [signals, infStatus] = await Promise.all([
         fetchLiveSignals(),
@@ -53,18 +54,16 @@ export default function Models() {
       setLiveSignals(signals);
       setInferenceStatus(infStatus);
       setLive(true);
-    } catch {
-      setLive(false);
-    }
+    } catch { /* offline */ }
 
     try { setLiveRegime(await fetchRegime()); } catch { /* offline */ }
-  }, []);
+  };
 
   useEffect(() => {
-    refresh();
-    const timer = setInterval(refresh, 10000); // every 10s
+    refreshRef.current?.();
+    const timer = setInterval(() => refreshRef.current?.(), 10000);
     return () => clearInterval(timer);
-  }, [refresh]);
+  }, []);
 
   // Build model data
   const models = liveSignals?.models || null;
@@ -160,7 +159,7 @@ export default function Models() {
                 const sig = data.signal || 'IDLE';
                 const conf = ((data.confidence || 0) * 100).toFixed(0);
                 const updatedAgo = data.last_updated
-                  ? `${Math.max(0, Math.floor((Date.now() - new Date(data.last_updated).getTime()) / 1000))}s ago`
+                  ? new Date(data.last_updated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
                   : 'never';
                 const reasoning = (data.reasoning || '').slice(0, 100) || 'Awaiting inference...';
                 return (

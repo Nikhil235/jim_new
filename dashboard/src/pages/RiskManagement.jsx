@@ -1,14 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Wifi, WifiOff, AlertTriangle, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Wifi, WifiOff, RotateCcw } from 'lucide-react';
 import { fetchRiskReport, fetchPaperTradingStatus, fetchPaperTradingPerformance, resetCircuitBreakers } from '../data/api';
-
-const TT = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (<div className="custom-tooltip"><div className="label">{label}</div>
-    {payload.map((p, i) => <div key={i} className="value" style={{ color: p.color }}>{p.name}: {p.value}</div>)}
-  </div>);
-};
 
 function CircuitBreaker({ name, status, value, limit, unit = '%' }) {
   const pct = Math.min(Math.abs(value / limit) * 100, 100);
@@ -34,13 +26,21 @@ export default function RiskManagement() {
   const [perf, setPerf] = useState(null);
   const [status, setStatus] = useState(null);
   const [resetting, setResetting] = useState(false);
+  const refreshRef = useRef(null);
+
+  refreshRef.current = async () => {
+    try {
+      const [r, p, s] = await Promise.all([fetchRiskReport(), fetchPaperTradingPerformance(), fetchPaperTradingStatus()]);
+      setRisk(r); setPerf(p); setStatus(s); setLive(true);
+    } catch { /* offline */ }
+  };
 
   const handleReset = async () => {
     if (!window.confirm("Are you sure you want to reset all circuit breakers? Trading will resume immediately.")) return;
     setResetting(true);
     try {
       await resetCircuitBreakers();
-      await refresh();
+      await refreshRef.current?.();
     } catch (e) {
       alert("Failed to reset circuit breakers: " + e.message);
     } finally {
@@ -48,14 +48,11 @@ export default function RiskManagement() {
     }
   };
 
-  const refresh = useCallback(async () => {
-    try {
-      const [r, p, s] = await Promise.all([fetchRiskReport(), fetchPaperTradingPerformance(), fetchPaperTradingStatus()]);
-      setRisk(r); setPerf(p); setStatus(s); setLive(true);
-    } catch { setLive(false); }
+  useEffect(() => {
+    refreshRef.current?.();
+    const t = setInterval(() => refreshRef.current?.(), 5000);
+    return () => clearInterval(t);
   }, []);
-
-  useEffect(() => { refresh(); const t = setInterval(refresh, 5000); return () => clearInterval(t); }, [refresh]);
 
   if (!live) return (
     <><div className="page-header"><h2>Risk Management</h2><p>⚠ Backend offline — start the API and paper trading engine</p></div>

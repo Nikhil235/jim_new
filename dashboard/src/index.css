@@ -662,3 +662,88 @@ a:hover { color: var(--gold-secondary); }
   padding-top: 20px;
   border-top: 1px solid var(--border-color);
 }
+
+.login-button:disabled,
+.login-button.loading {
+  background: var(--bg-card-hover);
+  color: var(--gold-primary);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+/* ---- Google OAuth Button ---- */
+.google-oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-bright);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.google-oauth-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.google-oauth-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- Auth Divider ---- */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.auth-divider span {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* ---- Auth Footer Link ---- */
+.auth-footer-link {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.auth-footer-link a,
+.auth-footer-link button {
+  color: var(--gold-primary);
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.auth-footer-link a:hover,
+.auth-footer-link button:hover {
+  color: var(--gold-secondary);
+}

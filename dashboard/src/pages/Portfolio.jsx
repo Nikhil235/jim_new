@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Wifi, WifiOff } from 'lucide-react';
 import { fetchPaperTradingPerformance, fetchPaperTradingTrades, fetchPaperTradingStatus } from '../data/api';
@@ -17,7 +17,8 @@ export default function Portfolio() {
   const [eqHistory, setEqHistory] = useState([]);
   const [status, setStatus] = useState(null);
 
-  const refresh = useCallback(async () => {
+  const refreshRef = useRef(null);
+  refreshRef.current = async () => {
     try {
       const [p, t, s] = await Promise.all([
         fetchPaperTradingPerformance(),
@@ -31,10 +32,10 @@ export default function Portfolio() {
           return n.length > 300 ? n.slice(-300) : n;
         });
       }
-    } catch { setLive(false); }
-  }, []);
+    } catch { /* offline */ }
+  };
 
-  useEffect(() => { refresh(); const t = setInterval(refresh, 5000); return () => clearInterval(t); }, [refresh]);
+  useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 5000); return () => clearInterval(t); }, []);
 
   if (!live) return (
     <><div className="page-header"><h2>Portfolio</h2><p>⚠ Backend offline — start the API server and paper trading engine</p></div>

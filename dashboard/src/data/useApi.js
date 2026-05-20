@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * React hook for polling an API endpoint with automatic fallback to mock data.
@@ -14,8 +14,9 @@ export function useApi(apiFn, mockFallback = null, intervalMs = 0) {
   const [error, setError] = useState(null);
   const [live, setLive] = useState(false);
   const mountedRef = useRef(true);
+  const refreshRef = useRef(null);
 
-  const refresh = useCallback(async () => {
+  refreshRef.current = async () => {
     try {
       const result = await apiFn();
       if (mountedRef.current) {
@@ -32,24 +33,24 @@ export function useApi(apiFn, mockFallback = null, intervalMs = 0) {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [apiFn, mockFallback]);
+  };
 
   useEffect(() => {
     mountedRef.current = true;
-    refresh();
+    refreshRef.current?.();
 
     let timer;
     if (intervalMs > 0) {
-      timer = setInterval(refresh, intervalMs);
+      timer = setInterval(() => refreshRef.current?.(), intervalMs);
     }
 
     return () => {
       mountedRef.current = false;
       if (timer) clearInterval(timer);
     };
-  }, [refresh, intervalMs]);
+  }, [apiFn, mockFallback, intervalMs]);
 
-  return { data, loading, error, live, refresh };
+  return { data, loading, error, live, refresh: () => refreshRef.current?.() };
 }
 
 /**
