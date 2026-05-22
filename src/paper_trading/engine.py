@@ -546,6 +546,15 @@ class PaperTradingEngine:
             )
         
         logger.info(f"Position closed: P&L ${trade.pnl:.2f} ({trade.pnl_pct:.2f}%)")
+
+        # --- Retroactively update P&L in prediction CSV ---
+        try:
+            from src.paper_trading.prediction_logger import update_pnl_for_trade
+            ts_prefix = trade.entry_time.strftime("%Y-%m-%dT%H:%M") if trade.entry_time else ""
+            if ts_prefix:
+                update_pnl_for_trade(ts_prefix, trade.pnl)
+        except Exception as e:
+            logger.debug(f"Could not update prediction CSV P&L: {e}")
         
         self.current_position = None
         return trade

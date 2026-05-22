@@ -819,6 +819,39 @@ async def get_model_weights() -> Dict[str, Any]:
 
 
 # ============================================================================
+# PREDICTION LOG
+# ============================================================================
+
+@router.get("/prediction-log", summary="Get Model Prediction Logs")
+def get_prediction_log(limit: int = Query(default=100, ge=1, le=1000)):
+    """
+    Get the prediction cycle CSV log.
+    Returns the most recent `limit` rows.
+    """
+    try:
+        from src.paper_trading.prediction_logger import get_csv_path
+        import os
+        import csv
+        
+        csv_path = get_csv_path()
+        if not os.path.exists(csv_path):
+            return {"status": "ok", "logs": []}
+            
+        with open(csv_path, "r", newline="") as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+            
+        # Return the most recent 'limit' rows
+        return {
+            "status": "ok",
+            "logs": rows[-limit:] if limit > 0 else rows,
+        }
+    except Exception as e:
+        logger.error(f"Failed to read prediction log: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
 # WEBSOCKET ENDPOINT
 # ============================================================================
 

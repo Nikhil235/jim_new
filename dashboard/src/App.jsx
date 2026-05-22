@@ -1,6 +1,6 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { useUser, useClerk, AuthenticateWithRedirectCallback } from '@clerk/react';
-import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users } from 'lucide-react';
+import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users, Database } from 'lucide-react';
 import Overview from './pages/Overview';
 import MarketData from './pages/MarketData';
 import Models from './pages/Models';
@@ -10,6 +10,7 @@ import Infrastructure from './pages/Infrastructure';
 import Execution from './pages/Execution';
 import Backtesting from './pages/Backtesting';
 import PaperTrading from './pages/PaperTrading';
+import PredictionLog from './pages/PredictionLog';
 import Operations from './pages/Operations';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/portfolio', icon: Wallet, label: 'Portfolio' },
   { path: '/backtest', icon: FlaskConical, label: 'Backtesting' },
   { path: '/paper-trading', icon: FileText, label: 'Paper Trading' },
+  { path: '/prediction-log', icon: Database, label: 'Prediction Log' },
   { section: 'System' },
   { path: '/execution', icon: Zap, label: 'Execution Engine' },
   { path: '/infra', icon: Server, label: 'Infrastructure' },
@@ -151,6 +153,7 @@ function DashboardShell({ user, onSignOut, onClearKey, hasCustomKey }) {
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/backtest" element={<Backtesting />} />
           <Route path="/paper-trading" element={<PaperTrading />} />
+          <Route path="/prediction-log" element={<PredictionLog />} />
           <Route path="/execution" element={<Execution />} />
           <Route path="/infra" element={<Infrastructure />} />
           <Route path="/operations" element={<Operations />} />

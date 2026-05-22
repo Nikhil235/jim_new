@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from src.models.nlp_sentiment import run_nlp_sentiment
+from src.paper_trading.prediction_logger import log_prediction_cycle, update_pnl_for_trade
 
 # ============================================================================
 # MODEL SIGNAL REGISTRY (shared state, updated by inference loop)
@@ -614,7 +615,21 @@ class LiveInferenceLoop:
 
         all_results = {**individual, "ensemble": ensemble_res}
 
-        all_results = {**individual, "ensemble": ensemble_res}
+        # ── CSV LOG: record this prediction cycle ──
+        _trade_taken = (
+            self.engine is not None
+            and self.engine.status == "RUNNING"
+            and ensemble_res.get("signal") in ("LONG", "SHORT")
+            and float(ensemble_res.get("confidence", 0)) >= (self.engine.config.min_confidence if self.engine else 0.6)
+        )
+        _kelly = self.engine.config.kelly_fraction if self.engine else None
+        log_prediction_cycle(
+            price=current_price,
+            regime=regime,
+            all_signals=all_results,
+            kelly_fraction=_kelly,
+            trade_taken=_trade_taken,
+        )
 
         # 4. Update LIVE_MODEL_SIGNALS registry
 
