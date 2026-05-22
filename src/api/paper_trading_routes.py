@@ -75,6 +75,8 @@ class PaperTradingStartRequest(BaseModel):
     max_daily_loss_pct: float = Field(default=0.02, ge=0.005, le=0.10, description="Max daily loss %")
     max_drawdown_pct: float = Field(default=0.15, ge=0.05, le=0.50, description="Max drawdown %")
     min_confidence: float = Field(default=0.60, ge=0.0, le=1.0, description="Min signal confidence to trade")
+    commission_per_trade: float = Field(default=5.0, ge=0.0, description="Fixed commission per trade in USD")
+    slippage_pct: float = Field(default=0.01, ge=0.0, description="Slippage as % of price")
 
 
 class PaperTradingStatusResponse(BaseModel):
@@ -241,6 +243,8 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, An
             max_daily_loss_pct=request.max_daily_loss_pct,
             max_drawdown_pct=request.max_drawdown_pct,
             min_confidence=request.min_confidence,
+            commission_per_trade=request.commission_per_trade,
+            slippage_pct=request.slippage_pct,
         )
         
         # Initialize engine
