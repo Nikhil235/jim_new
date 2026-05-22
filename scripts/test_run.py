@@ -55,85 +55,152 @@ def simulate_1000_dollars():
     print(f"   Starting Cash: ${portfolio.get('cash', 0):,.2f}")
 
     # ---------------------------------------------------------------
-    # Simulate 10 realistic trades across different models & regimes
+    # Simulate 100 realistic trades across actual models
     # ---------------------------------------------------------------
-    trades = [
-        # (model, direction, confidence, entry, exit, reasoning, regime)
-        ("ensemble", "LONG",  0.82, 2380.00, 2395.50, "Bullish consensus across all models",        "GROWTH"),
-        ("wavelet", "SHORT", 0.75, 2395.50, 2388.00, "Wavelet detects mean-reversion signal",      "NORMAL"),
-        ("hmm",     "LONG",  0.88, 2388.00, 2412.30, "HMM: regime shift to growth detected",       "GROWTH"),
-        ("ensemble","SHORT", 0.70, 2412.30, 2403.10, "Ensemble predicts pullback from overbought",  "NORMAL"),
-        ("wavelet", "LONG",  0.90, 2403.10, 2428.00, "Strong denoised uptrend signal",              "GROWTH"),
-        ("hmm",     "LONG",  0.85, 2428.00, 2441.50, "HMM confirms continuation of growth regime",  "GROWTH"),
-        ("ensemble","SHORT", 0.72, 2441.50, 2435.20, "Short-term exhaustion detected",              "NORMAL"),
-        ("wavelet", "LONG",  0.80, 2435.20, 2420.00, "Denoised signal reverses - LOSS",             "NORMAL"),  # LOSING trade
-        ("hmm",     "LONG",  0.87, 2420.00, 2448.70, "New bullish regime confirmed",                "GROWTH"),
-        ("ensemble","LONG",  0.91, 2448.70, 2470.00, "Strong multi-model consensus to close week",   "GROWTH"),
-    ]
+    import sys
+    import os
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+    
+    import pandas as pd
+    from src.paper_trading.live_inference import (
+        run_wavelet, run_hmm, run_lstm, run_tft, run_genetic, run_ensemble, fetch_live_gold_data
+    )
+    from src.paper_trading.prediction_logger import log_prediction_cycle
+
+    print("\n[STEP 2] Fetching historical data for simulation...")
+    df_full = fetch_live_gold_data(period="1mo", interval="1h")
+    
+    if df_full is None or len(df_full) < 130:
+        print("Not enough data fetched.")
+        return
+
+    # We will simulate the last 100 bars
+    sim_length = 100
+    start_idx = len(df_full) - sim_length
 
     wins = 0
     losses = 0
 
-    for i, (model, direction, conf, entry, exit_price, reason, regime) in enumerate(trades, 1):
+    for step in range(sim_length):
+        current_idx = start_idx + step
+        # Type hint to resolve static checker confusion: iloc slice returns a DataFrame
+        df_slice: pd.DataFrame = df_full.iloc[:current_idx+1].copy()  # type: ignore
+        current_price = float(df_slice["close"].iloc[-1])
+        
         print(f"\n{'---'*20}")
-        expected = "UP" if (direction == "LONG" and exit_price > entry) or (direction == "SHORT" and exit_price < entry) else "DOWN"
-        will_win = (direction == "LONG" and exit_price > entry) or (direction == "SHORT" and exit_price < entry)
-
-        print(f"[TRADE {i}/10] {model.upper()} -> {direction} @ ${entry:,.2f}")
-        print(f"   Confidence: {conf*100:.0f}% | Regime: {regime}")
-        print(f"   Thesis: {reason}")
-
-        # Open position
+        print(f"[TRADE {step+1}/{sim_length}] Analyzing price: ${current_price:,.2f}")
+        
+        # ACTUALLY run the real models
+        wavelet_res = run_wavelet(df_slice)
+        hmm_res = run_hmm(df_slice)
+        lstm_res = run_lstm(df_slice)
+        tft_res = run_tft(df_slice)
+        genetic_res = run_genetic(df_slice)
+        
+        regime = hmm_res.get("regime", "NORMAL")
+        macro_data = {
+            "dxy_momentum": float(df_slice["dxy_returns"].iloc[-3:].sum() * 100) if "dxy_returns" in df_slice.columns else 0.0,
+            "yield_momentum": float(df_slice["us10y_returns"].iloc[-3:].sum() * 100) if "us10y_returns" in df_slice.columns else 0.0,
+        }
+        
+        individual = {
+            "wavelet": wavelet_res,
+            "hmm": hmm_res,
+            "lstm": lstm_res,
+            "tft": tft_res,
+            "genetic": genetic_res,
+        }
+        
+        # Run ensemble meta-learner
+        ensemble_res = run_ensemble(individual, regime, macro_data)
+        
+        model_outputs = {
+            **individual,
+            "ensemble": ensemble_res
+        }
+        
+        # Print actual model outputs
+        print(f"   Wavelet : {wavelet_res['signal']:5} (conf: {wavelet_res['confidence']:.2f})")
+        print(f"   HMM     : {hmm_res['signal']:5} (conf: {hmm_res['confidence']:.2f})")
+        print(f"   LSTM    : {lstm_res['signal']:5} (conf: {lstm_res['confidence']:.2f})")
+        print(f"   TFT     : {tft_res['signal']:5} (conf: {tft_res['confidence']:.2f})")
+        print(f"   Genetic : {genetic_res['signal']:5} (conf: {genetic_res['confidence']:.2f})")
+        print(f"   => ENSEMBLE: {ensemble_res['signal']} (conf: {ensemble_res['confidence']:.2f})")
+        
+        # We simulate the entry
+        direction = ensemble_res["signal"]
+        conf = ensemble_res["confidence"]
+        reason = ensemble_res["reasoning"]
+        
+        trade_taken = direction in ["LONG", "SHORT"] and float(conf) >= 0.60
+        
+        if not trade_taken:
+            print("   Action: HOLD (Confidence too low or NO signal)")
+            continue
+            
+        # Post the ensemble signal
         resp = requests.post(
             f"{BASE_URL}/paper-trading/signal",
             json={
-                "model_name": model,
+                "model_name": "ensemble",
                 "signal_type": direction,
-                "confidence": conf,
-                "price": entry,
+                "confidence": float(conf),
+                "price": current_price,
                 "regime": regime,
                 "reasoning": reason,
             },
         )
+        
         result = resp.json()
         executed = result.get("trade_executed", False)
+        
         if executed:
             trade_info = result.get("trade", {})
             qty = trade_info.get("quantity", 0)
-            value = qty * entry
-            print(f"   Opened: {qty:.4f} oz (${value:,.2f} position)")
+            value = qty * current_price
+            print(f"   Opened: {direction} {qty:.4f} oz (${value:,.2f})")
         else:
-            print(f"   Signal skipped (risk limits / confidence threshold)")
+            print(f"   Signal skipped by engine limits.")
             continue
-
-        time.sleep(0.2)
-
+            
+        time.sleep(0.1)
+        
+        # Look ahead 1 step to simulate price move and exit
+        if current_idx + 1 < len(df_full):
+            next_price = float(df_full["close"].iloc[current_idx + 1])
+        else:
+            next_price = current_price
+            
         # Close position
         close_resp = requests.post(
             f"{BASE_URL}/paper-trading/signal",
             json={
-                "model_name": model,
+                "model_name": "ensemble",
                 "signal_type": "CLOSE",
                 "confidence": 0.90,
-                "price": exit_price,
+                "price": next_price,
                 "regime": regime,
-                "reasoning": "Target/stop reached.",
+                "reasoning": "Target/stop reached on next bar.",
             },
         )
-
-        time.sleep(0.2)
-
+        time.sleep(0.1)
+        
         # Get updated P&L
         perf = requests.get(f"{BASE_URL}/paper-trading/performance").json()
         total_val = perf.get("total_value", 0)
         pnl = perf.get("pnl_total", 0)
-        move = exit_price - entry
+        move = next_price - current_price
+        
+        expected = "UP" if (direction == "LONG" and next_price > current_price) or (direction == "SHORT" and next_price < current_price) else "DOWN"
+        will_win = expected == "UP"
+        
         if will_win:
             wins += 1
-            print(f"   >> WIN  | Gold moved ${move:+,.2f}/oz")
+            print(f"   >> WIN  | Price moved to ${next_price:,.2f}")
         else:
             losses += 1
-            print(f"   >> LOSS | Gold moved ${move:+,.2f}/oz")
+            print(f"   >> LOSS | Price moved to ${next_price:,.2f}")
+            
         print(f"   Portfolio: ${total_val:,.2f} (P&L: ${pnl:+,.2f})")
 
     # ---------------------------------------------------------------

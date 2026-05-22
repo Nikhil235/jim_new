@@ -59,9 +59,18 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "15m") -> Optional[
     """
     try:
         import yfinance as yf
+        import time
+        
         # Group download is faster and aligns timestamps perfectly
         tickers = "GC=F DX-Y.NYB ^TNX"
-        df_all = yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False)
+        
+        df_all = pd.DataFrame()
+        for attempt in range(3):
+            df_all = yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False)
+            if not df_all.empty and "GC=F" in df_all:
+                break
+            logger.warning(f"yfinance returned empty dataframe (attempt {attempt+1}/3), retrying...")
+            time.sleep(2)
 
         if df_all.empty:
             logger.warning("yfinance returned empty dataframe")
