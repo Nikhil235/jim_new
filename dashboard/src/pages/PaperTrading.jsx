@@ -76,15 +76,15 @@ export default function PaperTrading() {
 
   return (<>
     <div className="page-header">
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start', flexWrap:'wrap', gap:16}}>
         <div>
           <h2>📄 Paper Trading Engine</h2>
           <p>Phase 6B — Live simulated trading with 6-model signal generation, Kelly sizing & circuit breakers</p>
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:10, flexWrap:'wrap'}}>
           <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 12px',borderRadius:'var(--radius-sm)',fontSize:12,fontWeight:600,
             background:'var(--gold-dim)',color:'var(--gold)', border:'1px solid rgba(240,185,11,0.3)'}}>
-            DXY: {signals?.macro?.dxy?.toFixed(2) || '---'} | US10Y: {signals?.macro?.us10y?.toFixed(2) || '---'}%
+            DXY: {signals?.macro?.dxy?.toFixed(2) || '---'} | US10Y: {signals?.macro?.us10y?.toFixed(2) || '---'}% | GSR: {signals?.macro?.gold_silver_ratio?.toFixed(1) || '---'}
           </div>
           <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 12px',borderRadius:'var(--radius-sm)',fontSize:12,fontWeight:600,
             background:'var(--blue-dim)',color:'var(--blue)', border:'1px solid rgba(59,130,246,0.3)'}}>
@@ -200,7 +200,7 @@ export default function PaperTrading() {
               </span>}
             </div>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(240px, 1fr))',gap:10}}>
             {Object.entries(modelSigs).map(([model,sig])=>{
               const s = sig.signal || sig.lastSignal || 'HOLD';
               const c = sig.confidence ?? 0;
@@ -225,30 +225,32 @@ export default function PaperTrading() {
         </div>
         <div className="card animate-in">
           <div className="card-header"><span className="card-title">Recent Trades</span><span className="card-badge badge-purple">{tradeList.length} TRADES</span></div>
-          <table className="data-table"><thead><tr><th>ID</th><th>Model</th><th>Signal</th><th>Entry</th><th>Exit</th><th>HWM</th><th>Trail Stop</th><th>P&L</th><th>Status</th></tr></thead>
-            <tbody>{tradeList.map((t,i)=>{
-              const id = t.trade_id||t.tradeId||`#${i}`;
-              const model = t.model_name||t.model||'—';
-              const sig = t.signal_type||t.signal||'—';
-              const entry = t.entry_price||t.entry||0;
-              const exit = t.exit_price||t.exit||null;
-              const hwm = t.high_water_mark||null;
-              const trail = t.trailing_stop||null;
-              const pnl = t.pnl||0;
-              const st = t.status||'OPEN';
-              return (<tr key={i}>
-                <td className="mono">{typeof id==='string'?id.slice(0,8):id}</td>
-                <td style={{fontWeight:600}}>{model}</td>
-                <td><span style={{color:signalColor(sig),fontWeight:600,fontSize:11}}>{sig}</span></td>
-                <td className="mono">${Number(entry).toFixed(2)}</td>
-                <td className="mono">{exit?`$${Number(exit).toFixed(2)}`:'—'}</td>
-                <td className="mono">{hwm?`$${Number(hwm).toFixed(2)}`:'—'}</td>
-                <td className="mono" style={{color:'var(--orange)'}}>{trail?`$${Number(trail).toFixed(2)}`:'—'}</td>
-                <td className="mono" style={{color:pnl>=0?'var(--green)':'var(--red)',fontWeight:600}}>{pnl>=0?'+':''}${Number(pnl).toFixed(2)}</td>
-                <td><span className={`card-badge ${st==='CLOSED'?'badge-green':'badge-blue'}`}>{st}</span></td>
-              </tr>);
-            })}</tbody>
-          </table>
+          <div className="table-responsive">
+            <table className="data-table"><thead><tr><th>ID</th><th>Model</th><th>Signal</th><th>Entry</th><th>Exit</th><th>HWM</th><th>Trail Stop</th><th>P&L</th><th>Status</th></tr></thead>
+              <tbody>{tradeList.map((t,i)=>{
+                const id = t.trade_id||t.tradeId||`#${i}`;
+                const model = t.model_name||t.model||'—';
+                const sig = t.signal_type||t.signal||'—';
+                const entry = t.entry_price||t.entry||0;
+                const exit = t.exit_price||t.exit||null;
+                const hwm = t.high_water_mark||null;
+                const trail = t.trailing_stop||null;
+                const pnl = t.pnl||0;
+                const st = t.status||'OPEN';
+                return (<tr key={i}>
+                  <td className="mono">{typeof id==='string'?id.slice(0,8):id}</td>
+                  <td style={{fontWeight:600}}>{model}</td>
+                  <td><span style={{color:signalColor(sig),fontWeight:600,fontSize:11}}>{sig}</span></td>
+                  <td className="mono">${Number(entry).toFixed(2)}</td>
+                  <td className="mono">{exit?`$${Number(exit).toFixed(2)}`:'—'}</td>
+                  <td className="mono">{hwm?`$${Number(hwm).toFixed(2)}`:'—'}</td>
+                  <td className="mono" style={{color:'var(--orange)'}}>{trail?`$${Number(trail).toFixed(2)}`:'—'}</td>
+                  <td className="mono" style={{color:pnl>=0?'var(--green)':'var(--red)',fontWeight:600}}>{pnl>=0?'+':''}${Number(pnl).toFixed(2)}</td>
+                  <td><span className={`card-badge ${st==='CLOSED'?'badge-green':'badge-blue'}`}>{st}</span></td>
+                </tr>);
+              })}</tbody>
+            </table>
+          </div>
         </div>
       </div>
 

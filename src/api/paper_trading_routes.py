@@ -748,6 +748,7 @@ async def get_live_signals() -> Dict[str, Any]:
             "last_price_update": li.LAST_PRICE_UPDATE.isoformat() if li.LAST_PRICE_UPDATE else None,
             "inference_running": _inference_loop is not None and _inference_loop._running,
             "iteration": _inference_loop.iteration if _inference_loop else 0,
+            "macro": li.MACRO_DATA,
             "models": signals,
         }
     except Exception as e:

@@ -821,6 +821,51 @@ async def get_gold_price(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/gs-ratio")
+async def get_gs_ratio(
+    period: str = Query("2y", description="Lookback period: 1mo, 3mo, 1y, 2y, 5y"),
+    interval: str = Query("1mo", description="Interval: 1d, 1wk, 1mo"),
+):
+    """
+    Get historical gold and silver prices and the gold-silver ratio.
+    """
+    try:
+        import yfinance as yf
+        tickers = "GC=F SI=F"
+        df_all = yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False)
+        
+        if df_all.empty:
+            raise HTTPException(status_code=503, detail="No data available")
+            
+        gold = df_all["GC=F"]["Close"].ffill()
+        silver = df_all["SI=F"]["Close"].ffill()
+        
+        df = pd.DataFrame({
+            "gold": gold,
+            "silver": silver,
+            "ratio": gold / silver
+        }).dropna()
+        
+        data = []
+        for ts, row in df.iterrows():
+            data.append({
+                "time": ts.strftime("%Y-%m-%d"),
+                "month": ts.strftime("%b '%y") if interval == "1mo" else ts.strftime("%b %d"),
+                "gold": round(float(row["gold"]), 2),
+                "silver": round(float(row["silver"]), 2),
+                "ratio": round(float(row["ratio"]), 2),
+            })
+            
+        return {
+            "current_gold": data[-1]["gold"] if data else 0,
+            "current_silver": data[-1]["silver"] if data else 0,
+            "current_ratio": data[-1]["ratio"] if data else 0,
+            "history": data
+        }
+    except Exception as e:
+        logger.error(f"GS Ratio endpoint failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============================================================================
 # ERROR HANDLERS
 # ============================================================================

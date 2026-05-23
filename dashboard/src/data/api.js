@@ -95,6 +95,10 @@ export async function fetchGoldPrice(interval = '15m', period = '5d') {
   return apiFetch(`/gold-price?interval=${interval}&period=${period}`);
 }
 
+export async function fetchGsRatio(period = '2y', interval = '1mo') {
+  return apiFetch(`/gs-ratio?period=${period}&interval=${interval}`);
+}
+
 export async function runBacktest(strategy, params) {
   return apiPost(`/backtest/${strategy}`, params);
 }

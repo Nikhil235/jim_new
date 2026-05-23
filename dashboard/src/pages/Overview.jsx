@@ -60,7 +60,7 @@ export default function Overview() {
 
   return (<>
     <div className="page-header">
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start', flexWrap:'wrap', gap: 16}}>
         <div>
           <h2>Dashboard Overview</h2>
           <p>Mini-Medallion Gold Trading Engine — {live?'Connected to Backend':'Offline'} • System {health?.status||'unknown'}</p>
@@ -154,9 +154,9 @@ export default function Overview() {
       <div className="card animate-in">
         <div className="card-header"><span className="card-title">Development Roadmap</span><span className="card-badge badge-green">100% Complete</span></div>
         <div className="phase-timeline">
-          {phaseProgress.map(p => (<div key={p.phase} className="phase-row">
-            <div className="phase-label"><span className={`phase-num ${p.status}`}>P{p.phase}</span><span className="phase-name">{p.name}</span></div>
-            <div className="phase-bar-wrap">
+          {phaseProgress.map(p => (<div key={p.phase} className="phase-row" style={{ flexWrap: 'wrap' }}>
+            <div className="phase-label" style={{ minWidth: 'min(260px, 100%)' }}><span className={`phase-num ${p.status}`}>P{p.phase}</span><span className="phase-name">{p.name}</span></div>
+            <div className="phase-bar-wrap" style={{ minWidth: '200px' }}>
               <div className="progress-bar" style={{height:8,flex:1}}><div className="progress-fill" style={{width:`${p.progress}%`,background:p.status==='complete'?'var(--green)':p.status==='in-progress'?'var(--gold-primary)':'var(--bg-input)'}}/></div>
               <span className="mono" style={{fontSize:11,minWidth:36,textAlign:'right'}}>{p.progress}%</span>
             </div>

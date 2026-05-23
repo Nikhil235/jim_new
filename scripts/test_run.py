@@ -134,6 +134,15 @@ def simulate_1000_dollars():
         
         trade_taken = direction in ["LONG", "SHORT"] and float(conf) >= 0.60
         
+        # Log to prediction_log.csv
+        log_prediction_cycle(
+            price=current_price,
+            regime=regime,
+            all_signals=model_outputs,
+            kelly_fraction=0.25,
+            trade_taken=trade_taken,
+        )
+        
         if not trade_taken:
             print("   Action: HOLD (Confidence too low or NO signal)")
             continue

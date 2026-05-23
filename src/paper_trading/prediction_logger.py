@@ -145,8 +145,7 @@ def update_pnl_for_trade(trade_timestamp_prefix: str, pnl: float):
         updated = False
         for i in range(len(rows) - 1, 0, -1):
             row = rows[i]
-            if (row[0].startswith(trade_timestamp_prefix)
-                    and len(row) > trade_idx
+            if (len(row) > trade_idx
                     and row[trade_idx] == "YES"
                     and (len(row) <= pnl_idx or row[pnl_idx] == "")):
                 row[pnl_idx] = str(round(pnl, 4))

@@ -47,6 +47,15 @@ LIVE_MODEL_SIGNALS: Dict[str, Dict] = {
 CURRENT_GOLD_PRICE: float = 0.0
 LAST_PRICE_UPDATE: Optional[datetime] = None
 
+# Current macro data
+MACRO_DATA: Dict[str, float] = {
+    "dxy": 0.0,
+    "us10y": 0.0,
+    "gold_silver_ratio": 0.0,
+    "rl_kelly": 1.0,
+    "rl_trailing": 0.015,
+}
+
 
 # ============================================================================
 # GOLD DATA FETCHER
@@ -62,7 +71,7 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "15m") -> Optional[
         import time
         
         # Group download is faster and aligns timestamps perfectly
-        tickers = "GC=F DX-Y.NYB ^TNX"
+        tickers = "GC=F DX-Y.NYB ^TNX SI=F"
         
         df_all = pd.DataFrame()
         for attempt in range(3):
@@ -81,9 +90,10 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "15m") -> Optional[
         df.columns = [c.lower() for c in df.columns]
         df = df[["open", "high", "low", "close", "volume"]].copy()
         
-        # Extract DXY and US10Y closes (Forward fill to handle slightly misaligned ticks)
+        # Extract DXY, US10Y and Silver closes (Forward fill to handle slightly misaligned ticks)
         df["dxy"] = df_all["DX-Y.NYB"]["Close"].ffill()
         df["us10y"] = df_all["^TNX"]["Close"].ffill()
+        df["silver"] = df_all["SI=F"]["Close"].ffill()
         
         df.dropna(inplace=True)
 
@@ -91,10 +101,12 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "15m") -> Optional[
         df["returns"] = df["close"].pct_change()
         df["dxy_returns"] = df["dxy"].pct_change()
         df["us10y_returns"] = df["us10y"].pct_change()
+        df["silver_returns"] = df["silver"].pct_change()
+        df["gold_silver_ratio"] = df["close"] / df["silver"]
         
         df.dropna(inplace=True)
 
-        logger.debug(f"Data fetched: {len(df)} bars. Gold: ${df['close'].iloc[-1]:.2f}, DXY: {df['dxy'].iloc[-1]:.2f}, US10Y: {df['us10y'].iloc[-1]:.2f}%")
+        logger.debug(f"Data fetched: {len(df)} bars. Gold: ${df['close'].iloc[-1]:.2f}, DXY: {df['dxy'].iloc[-1]:.2f}, GSR: {df['gold_silver_ratio'].iloc[-1]:.2f}")
         return df
 
     except Exception as e:
@@ -294,6 +306,16 @@ def run_tft(df: pd.DataFrame) -> Dict:
             elif dxy_roc < -1.5 or yield_roc < -1.5:
                 combined += 0.4 # Severe bullish override
                 macro_reasoning = f" (MACRO GREED: DXY/US10Y Dropping)"
+
+        # Gold-Silver Ratio adjustment (Investopedia)
+        if "gold_silver_ratio" in df.columns:
+            gs_ratio = df["gold_silver_ratio"].iloc[-1]
+            if gs_ratio > 85:
+                combined -= 0.15
+                macro_reasoning += f" (GSR High: {gs_ratio:.1f})"
+            elif gs_ratio < 75:
+                combined += 0.15
+                macro_reasoning += f" (GSR Low: {gs_ratio:.1f})"
 
         confidence = min(abs(combined) * 0.9 + 0.25, 0.94)
 
@@ -703,17 +725,19 @@ class LiveInferenceLoop:
             
             dxy_val = float(df["dxy"].iloc[-1]) if df is not None and "dxy" in df.columns else 0.0
             us10y_val = float(df["us10y"].iloc[-1]) if df is not None and "us10y" in df.columns else 0.0
+            gsr_val = float(df["gold_silver_ratio"].iloc[-1]) if df is not None and "gold_silver_ratio" in df.columns else 0.0
+            
+            MACRO_DATA["dxy"] = dxy_val
+            MACRO_DATA["us10y"] = us10y_val
+            MACRO_DATA["gold_silver_ratio"] = gsr_val
+            MACRO_DATA["rl_kelly"] = rl_params["kelly_multiplier"]
+            MACRO_DATA["rl_trailing"] = rl_params["trailing_stop_pct"]
             
             broadcast_payload = {
                 "price": current_price,
                 "regime": regime,
                 "timestamp": now_iso,
-                "macro": {
-                    "dxy": dxy_val,
-                    "us10y": us10y_val,
-                    "rl_kelly": rl_params["kelly_multiplier"],
-                    "rl_trailing": rl_params["trailing_stop_pct"],
-                },
+                "macro": MACRO_DATA,
                 "models": {
                     m: {
                         "signal": v["signal"],
