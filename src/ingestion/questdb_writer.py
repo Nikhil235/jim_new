@@ -60,6 +60,11 @@ class QuestDBWriter:
         except OSError:
             return False
 
+    def test_connection(self) -> None:
+        """Test if QuestDB is reachable, raising an exception if it is not."""
+        if not self.is_available():
+            raise ConnectionError(f"Could not connect to QuestDB at {self.host}:{self.ilp_port}")
+
     def _get_ilp_socket(self):
         """Get or create persistent ILP socket."""
         if self._ilp_sock is None:

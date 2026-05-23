@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Database, Download, RefreshCw, AlertCircle } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000';

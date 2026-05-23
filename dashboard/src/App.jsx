@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users, Database, Menu, X, ArrowRightLeft } from 'lucide-react';
 import Overview from './pages/Overview';
 import MarketData from './pages/MarketData';

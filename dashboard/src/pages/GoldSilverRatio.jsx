@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { ArrowRightLeft, TrendingUp, TrendingDown, Info, AlertCircle, Bell, Loader2 } from 'lucide-react';
+import { ArrowRightLeft, TrendingUp, TrendingDown, Info, Bell } from 'lucide-react';
 import { fetchGsRatio } from '../data/api';
 
 function TradingViewChart() {
@@ -50,8 +49,7 @@ function TradingViewChart() {
 export default function GoldSilverRatio() {
   const [goldPrice, setGoldPrice] = useState(0);
   const [silverPrice, setSilverPrice] = useState(0);
-  const [historicalData, setHistoricalData] = useState([]);
-  const [loading, setLoading] = useState(true);
+
   
   const [tradeAmount, setTradeAmount] = useState(2);
   const [tradeAsset, setTradeAsset] = useState('gold'); // 'gold' or 'silver'
@@ -59,15 +57,11 @@ export default function GoldSilverRatio() {
   useEffect(() => {
     async function loadData() {
       try {
-        setLoading(true);
         const data = await fetchGsRatio('2y', '1mo');
         setGoldPrice(data.current_gold);
         setSilverPrice(data.current_silver);
-        setHistoricalData(data.history);
       } catch (err) {
         console.error('Failed to load GS Ratio data', err);
-      } finally {
-        setLoading(false);
       }
     }
     loadData();

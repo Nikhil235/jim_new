@@ -517,11 +517,11 @@ class FeatureEngine:
         since gold data (from yfinance) can be tz-naive while
         ETF/macro data may be tz-aware (America/New_York).
         """
-        if series.index.tz is not None:
+        if getattr(series.index, 'tz', None) is not None:
             series = series.copy()
             series.index = series.index.tz_localize(None)
         # Also strip target if needed
-        if target_index.tz is not None:
+        if getattr(target_index, 'tz', None) is not None:
             target_index = target_index.tz_localize(None)
         return series.reindex(target_index, method="ffill")
 

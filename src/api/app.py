@@ -20,6 +20,7 @@ import asyncio
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -43,6 +44,7 @@ try:
     PAPER_TRADING_ROUTES_AVAILABLE = True
 except ImportError:
     PAPER_TRADING_ROUTES_AVAILABLE = False
+    paper_trading_router = None
     logger.warning("Paper trading routes not available")
 
 from src.api.models import (
@@ -65,41 +67,6 @@ from src.api.models import (
 # APPLICATION SETUP
 # ============================================================================
 
-app = FastAPI(
-    title="Mini-Medallion Trading Engine API",
-    description="GPU-accelerated gold trading engine inspired by Jim Simons",
-    version="1.0.0",
-)
-
-# Add CORS middleware for external integrations
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict to known origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Phase 6B: Include paper trading routes
-if PAPER_TRADING_ROUTES_AVAILABLE:
-    app.include_router(paper_trading_router)
-    logger.info("Paper trading routes included")
-
-# Mount static files for the trading dashboard
-_static_dir = Path(PROJECT_ROOT) / "static"
-if _static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
-    logger.info(f"Static files mounted from {_static_dir}")
-
-
-@app.get("/dashboard", include_in_schema=False)
-async def dashboard():
-    """Serve the trading dashboard UI."""
-    html_path = Path(PROJECT_ROOT) / "static" / "dashboard.html"
-    if html_path.exists():
-        return FileResponse(str(html_path), media_type="text/html")
-    return JSONResponse({"error": "Dashboard not found. Ensure static/dashboard.html exists."}, status_code=404)
-
 # Global state
 CONFIG = None
 GPU_INFO = None
@@ -111,10 +78,9 @@ LAST_SIGNAL_TIME = None
 HEALTH_MONITOR = None
 PERFORMANCE_MONITOR = None
 
-
-@app.on_event("startup")
-async def startup():
-    """Initialize app on startup."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown."""
     global CONFIG, GPU_INFO, GPU_ACCELERATORS, HEALTH_MONITOR, PERFORMANCE_MONITOR
     
     logger.info("=" * 70)
@@ -164,12 +130,48 @@ async def startup():
     
     logger.info("API ready to serve requests")
     logger.info("=" * 70)
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    """Cleanup on shutdown."""
+    
+    yield
+    
     logger.info("Shutting down API...")
+
+app = FastAPI(
+    title="Mini-Medallion Trading Engine API",
+    description="GPU-accelerated gold trading engine inspired by Jim Simons",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# Add CORS middleware for external integrations
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, restrict to known origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Phase 6B: Include paper trading routes
+if PAPER_TRADING_ROUTES_AVAILABLE and paper_trading_router is not None:
+    app.include_router(paper_trading_router)
+    logger.info("Paper trading routes included")
+
+# Mount static files for the trading dashboard
+_static_dir = Path(PROJECT_ROOT) / "static"
+if _static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
+    logger.info(f"Static files mounted from {_static_dir}")
+
+
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard():
+    """Serve the trading dashboard UI."""
+    html_path = Path(PROJECT_ROOT) / "static" / "dashboard.html"
+    if html_path.exists():
+        return FileResponse(str(html_path), media_type="text/html")
+    return JSONResponse({"error": "Dashboard not found. Ensure static/dashboard.html exists."}, status_code=404)
+
+
 
 
 # ============================================================================
@@ -257,6 +259,26 @@ async def health_check():
         Service status including SLA compliance, latency metrics, and component health.
     """
     try:
+        # Handle cases where GPU_INFO might not be initialized yet (e.g. before startup completes)
+        if GPU_INFO is not None:
+            gpu_available = bool(GPU_INFO.get("gpu_available", False))
+            
+            # Safely cast device_count
+            raw_device_count = GPU_INFO.get("device_count", 0)
+            device_count = int(raw_device_count) if isinstance(raw_device_count, (int, float, str)) else 0
+            
+            rapids_available = bool(GPU_INFO.get("rapids_available", False))
+            hw_gpu_detected = bool(GPU_INFO.get("hardware_gpu_detected", False))
+            
+            raw_names = GPU_INFO.get("hardware_gpu_names", [])
+            hw_gpu_names = raw_names if isinstance(raw_names, list) else []
+        else:
+            gpu_available = False
+            device_count = 0
+            rapids_available = False
+            hw_gpu_detected = False
+            hw_gpu_names = []
+
         # Use advanced health monitor if available (Phase 6 integration)
         if HEALTH_MONITOR:
             try:
@@ -264,14 +286,14 @@ async def health_check():
                 
                 return HealthResponse(
                     status=health_data.get("overall_status", "ok"),
-                    gpu_available=GPU_INFO["gpu_available"],
-                    gpu_count=GPU_INFO["device_count"],
-                    rapids_available=GPU_INFO["rapids_available"],
+                    gpu_available=gpu_available,
+                    gpu_count=device_count,
+                    rapids_available=rapids_available,
                     database_connected=health_data.get("services", {}).get("questdb", {}).get("status") == "healthy",
                     redis_connected=health_data.get("services", {}).get("redis", {}).get("status") == "healthy",
                     models_loaded=GPU_ACCELERATORS is not None,
-                    hardware_gpu_detected=GPU_INFO.get("hardware_gpu_detected", False),
-                    hardware_gpu_names=GPU_INFO.get("hardware_gpu_names", []),
+                    hardware_gpu_detected=hw_gpu_detected,
+                    hardware_gpu_names=hw_gpu_names,
                     # Phase 6: Extended metrics
                     sla_compliant=health_data.get("sla_compliant", False),
                     uptime_percent=health_data.get("uptime_percent", 0),
@@ -300,14 +322,14 @@ async def health_check():
         
         return HealthResponse(
             status=status,
-            gpu_available=GPU_INFO["gpu_available"],
-            gpu_count=GPU_INFO["device_count"],
-            rapids_available=GPU_INFO["rapids_available"],
+            gpu_available=gpu_available,
+            gpu_count=device_count,
+            rapids_available=rapids_available,
             database_connected=db_ok,
             redis_connected=redis_ok,
             models_loaded=GPU_ACCELERATORS is not None,
-            hardware_gpu_detected=GPU_INFO.get("hardware_gpu_detected", False),
-            hardware_gpu_names=GPU_INFO.get("hardware_gpu_names", []),
+            hardware_gpu_detected=hw_gpu_detected,
+            hardware_gpu_names=hw_gpu_names,
         )
     
     except Exception as e:
@@ -366,10 +388,10 @@ async def get_regime():
         return RegimeResponse(
             regime=regime_name,
             confidence=float(confidences[-1]),
-            volatility=float(gold_df["returns"].std()),
+            volatility=gold_df["returns"].std(),
             regime_duration_days=regime_duration,
             regime_probabilities={
-                name: float(np.random.rand())
+                name: np.random.rand()
                 for name in ["GROWTH", "NORMAL", "CRISIS"]
             },
         )
@@ -514,7 +536,7 @@ async def get_data_quality():
             macro_data_quality=95,
             missing_values_pct=missing_pct,
             outliers_detected=int(outliers),
-            latest_update=gold_df.index[-1],
+            latest_update=str(gold_df.index[-1]),
             issues=[] if overall_score > 80 else ["Low data quality detected"],
         )
     
@@ -548,9 +570,10 @@ async def backtest(strategy: str, request: BacktestRequest):
         
         # We need a bit of data before start for regime detection / features
         extended_start = start - timedelta(days=60)
-        gold_df = gold_df[extended_start:end]
+        import typing
+        gold_df = typing.cast(pd.DataFrame, gold_df.loc[extended_start:end])
         
-        if gold_df.empty or len(gold_df[start:end]) < 10:
+        if gold_df.empty or len(gold_df.loc[start:end]) < 10:
             raise HTTPException(status_code=404, detail="Not enough data in specified date range")
             
         # Detect regimes for the entire dataframe to use in MarketEvents
@@ -559,7 +582,7 @@ async def backtest(strategy: str, request: BacktestRequest):
         detector.train(gold_df)
         regimes, _ = detector.predict(gold_df)
         
-        from src.backtesting.events import MarketEvent
+        from src.backtesting.events import MarketEvent, EventType
         from src.backtesting.strategy_runner import StrategyRunner
         from src.backtesting.model_strategies import create_strategy
         
@@ -579,7 +602,8 @@ async def backtest(strategy: str, request: BacktestRequest):
             strategy_fn = create_strategy(model_name)
         except Exception as e:
             logger.warning(f"Strategy {strategy} not found, falling back to Wavelet: {e}")
-            strategy_fn = create_strategy("wavelet")
+            model_name = "wavelet"
+            strategy_fn = create_strategy(model_name)
             
         # Build MarketEvents (using actual data, incorporating regime)
         market_events = []
@@ -587,22 +611,23 @@ async def backtest(strategy: str, request: BacktestRequest):
             if ts < start: continue
             
             # Simple fallback for bid/ask spread (adds transaction costs via slippage)
-            spread = row.get("close", 0) * 0.0005 # 5 bps spread
+            close_val = float(row.get("close", 0.0))
+            spread = close_val * 0.0005 # 5 bps spread
             
             regime_id = int(regimes[i]) if i < len(regimes) else 0
             regime_name = detector.REGIME_NAMES.get(regime_id, "NORMAL")
             
             me = MarketEvent(
-                event_type=None,
-                timestamp=ts,
+                event_type=EventType.MARKET,
+                timestamp=pd.Timestamp(ts).to_pydatetime(),
                 symbol="GC=F",
-                open_price=row.get("open", row["close"]),
-                high_price=row.get("high", row["close"]),
-                low_price=row.get("low", row["close"]),
-                close_price=row["close"],
-                volume=row.get("volume", 0),
-                bid_price=row["close"] - spread/2,
-                ask_price=row["close"] + spread/2,
+                open_price=float(row.get("open", close_val)),
+                high_price=float(row.get("high", close_val)),
+                low_price=float(row.get("low", close_val)),
+                close_price=close_val,
+                volume=int(row.get("volume", 0)),
+                bid_price=close_val - spread/2,
+                ask_price=close_val + spread/2,
                 bid_volume=1000,
                 ask_volume=1000,
                 regime=regime_name
@@ -737,7 +762,7 @@ async def get_ensemble_prediction():
             meta_learner_confidence=0.72,
             recommended_position_size_pct=2.5,
             current_regime=regime,
-            current_volatility=float(gold_df["returns"].std()),
+            current_volatility=gold_df["returns"].std(),
             risk_warnings=[],
         )
     
@@ -778,8 +803,8 @@ async def get_gold_price(
         
         candles = []
         for ts, row in df.iterrows():
-            candle = {
-                "time": int(ts.timestamp() * 1000),
+            candle: dict[str, Any] = {
+                "time": int(pd.Timestamp(ts).timestamp() * 1000),
                 "open": round(float(row["open"]), 2),
                 "high": round(float(row["high"]), 2),
                 "low": round(float(row["low"]), 2),
@@ -787,13 +812,29 @@ async def get_gold_price(
                 "volume": int(row.get("volume", 0)),
             }
             patterns = []
-            if pd.notna(row.get("cdl_doji")) and row.get("cdl_doji") > 0: patterns.append("Doji")
-            if pd.notna(row.get("cdl_hammer")) and row.get("cdl_hammer") > 0: patterns.append("Hammer")
-            if pd.notna(row.get("cdl_shooting_star")) and row.get("cdl_shooting_star") > 0: patterns.append("Shooting Star")
-            if pd.notna(row.get("cdl_engulfing")) and row.get("cdl_engulfing") > 0: patterns.append("Bullish Engulfing")
-            if pd.notna(row.get("cdl_engulfing")) and row.get("cdl_engulfing") < 0: patterns.append("Bearish Engulfing")
-            if pd.notna(row.get("cdl_marubozu")) and row.get("cdl_marubozu") > 0: patterns.append("Bullish Marubozu")
-            if pd.notna(row.get("cdl_marubozu")) and row.get("cdl_marubozu") < 0: patterns.append("Bearish Marubozu")
+            doji_val = row.get("cdl_doji", 0)
+            if doji_val is not None and pd.notna(doji_val) and float(doji_val) > 0:
+                patterns.append("Doji")
+                
+            hammer_val = row.get("cdl_hammer", 0)
+            if hammer_val is not None and pd.notna(hammer_val) and float(hammer_val) > 0:
+                patterns.append("Hammer")
+            star_val = row.get("cdl_shooting_star", 0)
+            if star_val is not None and pd.notna(star_val) and float(star_val) > 0:
+                patterns.append("Shooting Star")
+                
+            engulfing_val = row.get("cdl_engulfing", 0)
+            if engulfing_val is not None and pd.notna(engulfing_val):
+                if float(engulfing_val) > 0:
+                    patterns.append("Bullish Engulfing")
+                elif float(engulfing_val) < 0:
+                    patterns.append("Bearish Engulfing")
+            marubozu_val = row.get("cdl_marubozu", 0)
+            if marubozu_val is not None and pd.notna(marubozu_val):
+                if float(marubozu_val) > 0:
+                    patterns.append("Bullish Marubozu")
+                elif float(marubozu_val) < 0:
+                    patterns.append("Bearish Marubozu")
             if patterns:
                 candle["pattern"] = ", ".join(patterns)
             candles.append(candle)
@@ -848,9 +889,10 @@ async def get_gs_ratio(
         
         data = []
         for ts, row in df.iterrows():
+            timestamp = pd.Timestamp(ts)
             data.append({
-                "time": ts.strftime("%Y-%m-%d"),
-                "month": ts.strftime("%b '%y") if interval == "1mo" else ts.strftime("%b %d"),
+                "time": timestamp.strftime("%Y-%m-%d"),
+                "month": timestamp.strftime("%b '%y") if interval == "1mo" else timestamp.strftime("%b %d"),
                 "gold": round(float(row["gold"]), 2),
                 "silver": round(float(row["silver"]), 2),
                 "ratio": round(float(row["ratio"]), 2),

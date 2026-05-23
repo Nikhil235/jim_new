@@ -14,7 +14,7 @@ const TT = ({ active, payload, label }) => {
   );
 };
 
-function ModelConfigCard({ title, badge, configs, architecture, capabilities, statusColor }) {
+function ModelConfigCard({ title, badge, configs, architecture, capabilities }) {
   return (
     <div className="card animate-in">
       <div className="card-header">

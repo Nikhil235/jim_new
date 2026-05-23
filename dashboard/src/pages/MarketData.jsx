@@ -86,6 +86,8 @@ export default function MarketData() {
   const [period, setPeriod] = useState('3mo');
   const [interval, setInterval_] = useState('1d');
   const [selectedTrade, setSelectedTrade] = useState(null);
+  const [activeIndicator, setActiveIndicator] = useState('RSI');
+  const [showBollinger, setShowBollinger] = useState(false);
 
   const refreshRef = useRef(null);
   refreshRef.current = async () => {
@@ -125,22 +127,84 @@ export default function MarketData() {
 
   // Compute RSI from closes
   const closes = chartData.map(d => d.close);
-  const rsiData = chartData.map((d, i) => {
-    if (i < 14) return { ...d, rsi: 50, ob: 70, os: 30 };
-    const gains = [], losses = [];
-    for (let j = i - 13; j <= i; j++) {
-      const diff = closes[j] - closes[j - 1];
-      if (diff > 0) { gains.push(diff); losses.push(0); }
-      else { gains.push(0); losses.push(Math.abs(diff)); }
+  
+  // Calculate EMA
+  const calcEma = (data, period) => {
+    const k = 2 / (period + 1);
+    let emaData = [];
+    let ema = data[0];
+    for (let i = 0; i < data.length; i++) {
+      ema = data[i] * k + ema * (1 - k);
+      emaData.push(ema);
     }
-    const avgGain = gains.reduce((a, b) => a + b, 0) / 14;
-    const avgLoss = losses.reduce((a, b) => a + b, 0) / 14;
-    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-    return { ...d, rsi: +(100 - 100 / (1 + rs)).toFixed(1), ob: 70, os: 30 };
+    return emaData;
+  };
+
+  const ema12 = calcEma(closes, 12);
+  const ema26 = calcEma(closes, 26);
+  const macdLine = ema12.map((val, i) => val - ema26[i]);
+  const signalLine = calcEma(macdLine, 9);
+  const macdHist = macdLine.map((val, i) => val - signalLine[i]);
+
+  const indicatorsData = chartData.map((d, i) => {
+    // RSI
+    let rsi = 50;
+    if (i >= 14) {
+      const gains = [], losses = [];
+      for (let j = i - 13; j <= i; j++) {
+        const diff = closes[j] - closes[j - 1];
+        if (diff > 0) { gains.push(diff); losses.push(0); }
+        else { gains.push(0); losses.push(Math.abs(diff)); }
+      }
+      const avgGain = gains.reduce((a, b) => a + b, 0) / 14;
+      const avgLoss = losses.reduce((a, b) => a + b, 0) / 14;
+      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+      rsi = +(100 - 100 / (1 + rs)).toFixed(1);
+    }
+
+    // Bollinger Bands (20, 2)
+    let sma20 = d.close;
+    let upperBb = d.close;
+    let lowerBb = d.close;
+    if (i >= 19) {
+      const slice = closes.slice(i - 19, i + 1);
+      sma20 = slice.reduce((a, b) => a + b, 0) / 20;
+      const variance = slice.reduce((a, b) => a + Math.pow(b - sma20, 2), 0) / 20;
+      const stdDev = Math.sqrt(variance);
+      upperBb = sma20 + stdDev * 2;
+      lowerBb = sma20 - stdDev * 2;
+    }
+
+    // ATR (14)
+    let atr = 0;
+    if (i >= 14) {
+      let trSum = 0;
+      for (let j = i - 13; j <= i; j++) {
+        const h = chartData[j].high;
+        const l = chartData[j].low;
+        const pc = chartData[j - 1].close;
+        const tr = Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc));
+        trSum += tr;
+      }
+      atr = +(trSum / 14).toFixed(2);
+    }
+
+    return { 
+      ...d, 
+      rsi, ob: 70, os: 30,
+      macd: +macdLine[i].toFixed(2), 
+      macdSignal: +signalLine[i].toFixed(2), 
+      macdHist: +macdHist[i].toFixed(2),
+      sma20: +sma20.toFixed(2),
+      upperBb: +upperBb.toFixed(2),
+      lowerBb: +lowerBb.toFixed(2),
+      atr
+    };
   });
 
   const latest = chartData[chartData.length - 1] || {};
-  const latestRsi = rsiData[rsiData.length - 1]?.rsi || 50;
+  const latestInd = indicatorsData[indicatorsData.length - 1] || {};
+  const latestRsi = latestInd.rsi || 50;
 
   if (!live && !loading) return (
     <><div className="page-header"><h2>Market Data</h2><p>⚠ Backend offline — start the API server to see live gold prices</p></div>
@@ -176,12 +240,26 @@ export default function MarketData() {
       </div>
 
       <div className="card animate-in" style={{marginBottom:16}}>
-        <div className="card-header"><span className="card-title">Price Chart</span><span className="card-badge badge-gold">{period.toUpperCase()} / {interval}</span></div>
+        <div className="card-header">
+          <span className="card-title">Price Chart</span>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <label style={{fontSize:11,color:'var(--text-muted)',display:'flex',alignItems:'center',gap:4,cursor:'pointer'}}>
+              <input type="checkbox" checked={showBollinger} onChange={e=>setShowBollinger(e.target.checked)} />
+              Bollinger Bands
+            </label>
+            <span className="card-badge badge-gold">{period.toUpperCase()} / {interval}</span>
+          </div>
+        </div>
         <ResponsiveContainer width="100%" height={320}>
-          <ComposedChart data={chartData}>
+          <ComposedChart data={indicatorsData}>
             <XAxis dataKey="date" tick={{fontSize:10,fill:'#6b7280'}} tickFormatter={v=>v} interval={Math.max(1,Math.floor(chartData.length/10))}/>
             <YAxis tick={{fontSize:10,fill:'#6b7280'}} domain={['auto','auto']}/>
             <Tooltip content={<TT/>}/>
+            {showBollinger && <Area type="monotone" dataKey="upperBb" stroke="none" fill="rgba(0,196,140,0.05)" />}
+            {showBollinger && <Area type="monotone" dataKey="lowerBb" stroke="none" fill="rgba(0,196,140,0.05)" />}
+            {showBollinger && <Line type="monotone" dataKey="upperBb" stroke="rgba(0,196,140,0.4)" strokeDasharray="3 3" dot={false} name="Upper BB" />}
+            {showBollinger && <Line type="monotone" dataKey="lowerBb" stroke="rgba(0,196,140,0.4)" strokeDasharray="3 3" dot={false} name="Lower BB" />}
+            {showBollinger && <Line type="monotone" dataKey="sma20" stroke="rgba(240,185,11,0.4)" dot={false} name="SMA 20" />}
             <Bar dataKey="range" shape={<Candlestick onTradeClick={setSelectedTrade} />} name="Price" />
           </ComposedChart>
         </ResponsiveContainer>
@@ -223,7 +301,7 @@ export default function MarketData() {
         <div className="card animate-in">
           <div className="card-header"><span className="card-title">Volume</span></div>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartData.slice(-30)}>
+            <BarChart data={indicatorsData.slice(-30)}>
               <XAxis dataKey="date" tick={{fontSize:9,fill:'#6b7280'}}/>
               <YAxis tick={{fontSize:10,fill:'#6b7280'}} tickFormatter={v=>`${(v/1000).toFixed(0)}k`}/>
               <Tooltip content={<TT/>}/>
@@ -232,16 +310,48 @@ export default function MarketData() {
           </ResponsiveContainer>
         </div>
         <div className="card animate-in">
-          <div className="card-header"><span className="card-title">RSI (14)</span><span className="card-badge badge-blue">{latestRsi>70?'OVERBOUGHT':latestRsi<30?'OVERSOLD':'NEUTRAL'} — {latestRsi}</span></div>
+          <div className="card-header">
+            <span className="card-title">Technical Indicators</span>
+            <div style={{display:'flex', gap:4}}>
+              {['RSI', 'MACD', 'ATR'].map(ind => (
+                <button 
+                  key={ind} 
+                  onClick={() => setActiveIndicator(ind)}
+                  className={`badge-${activeIndicator === ind ? 'blue' : 'gray'}`}
+                  style={{border:'none', cursor:'pointer', padding:'2px 8px', borderRadius:4, fontSize:10, fontWeight:600}}
+                >
+                  {ind}
+                </button>
+              ))}
+            </div>
+          </div>
           <ResponsiveContainer width="100%" height={200}>
-            <ComposedChart data={rsiData.slice(-30)}>
-              <XAxis dataKey="date" tick={{fontSize:9,fill:'#6b7280'}}/>
-              <YAxis tick={{fontSize:10,fill:'#6b7280'}} domain={[0,100]}/>
-              <Tooltip content={<TT/>}/>
-              <Area type="monotone" dataKey="rsi" stroke="#f0b90b" strokeWidth={2} fill="rgba(240,185,11,0.1)" name="RSI"/>
-              <Line type="monotone" dataKey="ob" stroke="rgba(255,77,106,0.4)" strokeDasharray="4 4" dot={false} name="Overbought"/>
-              <Line type="monotone" dataKey="os" stroke="rgba(0,196,140,0.4)" strokeDasharray="4 4" dot={false} name="Oversold"/>
-            </ComposedChart>
+            {activeIndicator === 'RSI' ? (
+              <ComposedChart data={indicatorsData.slice(-30)}>
+                <XAxis dataKey="date" tick={{fontSize:9,fill:'#6b7280'}}/>
+                <YAxis tick={{fontSize:10,fill:'#6b7280'}} domain={[0,100]}/>
+                <Tooltip content={<TT/>}/>
+                <Area type="monotone" dataKey="rsi" stroke="#f0b90b" strokeWidth={2} fill="rgba(240,185,11,0.1)" name="RSI"/>
+                <Line type="monotone" dataKey="ob" stroke="rgba(255,77,106,0.4)" strokeDasharray="4 4" dot={false} name="Overbought"/>
+                <Line type="monotone" dataKey="os" stroke="rgba(0,196,140,0.4)" strokeDasharray="4 4" dot={false} name="Oversold"/>
+              </ComposedChart>
+            ) : activeIndicator === 'MACD' ? (
+              <ComposedChart data={indicatorsData.slice(-30)}>
+                <XAxis dataKey="date" tick={{fontSize:9,fill:'#6b7280'}}/>
+                <YAxis tick={{fontSize:10,fill:'#6b7280'}} domain={['auto','auto']}/>
+                <Tooltip content={<TT/>}/>
+                <Bar dataKey="macdHist" name="Histogram" fill="rgba(240,185,11,0.4)" />
+                <Line type="monotone" dataKey="macd" stroke="#00c48c" strokeWidth={2} dot={false} name="MACD" />
+                <Line type="monotone" dataKey="macdSignal" stroke="#ff4d6a" strokeWidth={2} dot={false} name="Signal" />
+              </ComposedChart>
+            ) : (
+              <ComposedChart data={indicatorsData.slice(-30)}>
+                <XAxis dataKey="date" tick={{fontSize:9,fill:'#6b7280'}}/>
+                <YAxis tick={{fontSize:10,fill:'#6b7280'}} domain={['auto','auto']}/>
+                <Tooltip content={<TT/>}/>
+                <Area type="monotone" dataKey="atr" stroke="#3b82f6" strokeWidth={2} fill="rgba(59,130,246,0.1)" name="ATR (14)"/>
+              </ComposedChart>
+            )}
           </ResponsiveContainer>
         </div>
       </div>
