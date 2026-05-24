@@ -88,10 +88,11 @@ class FeatureEngine:
             features = self._add_etf_flow_features(features, alt_data)
             features = self._add_cot_features(features, alt_data)
             features = self._add_google_trends_features(features, alt_data)
+            features = self._add_sentiment_features(features, alt_data)
 
         # Smart NaN handling: don't let alt data (shorter history) eliminate all rows
-        # 1. Forward-fill alt data columns (COT, ETF, trends) — they are weekly/sparse
-        alt_prefixes = ("cot_", "etf_", "trends_", "google_")
+        # 1. Forward-fill alt data columns (COT, ETF, trends, sentiment) — they are weekly/sparse/daily
+        alt_prefixes = ("cot_", "etf_", "trends_", "google_", "sentiment_")
         alt_cols = [c for c in features.columns if any(c.startswith(p) for p in alt_prefixes)]
         core_cols = [c for c in features.columns if c not in alt_cols]
 
@@ -519,10 +520,10 @@ class FeatureEngine:
         """
         if getattr(series.index, 'tz', None) is not None:
             series = series.copy()
-            series.index = series.index.tz_localize(None)
+            series.index = pd.DatetimeIndex(series.index).tz_localize(None)
         # Also strip target if needed
         if getattr(target_index, 'tz', None) is not None:
-            target_index = target_index.tz_localize(None)
+            target_index = pd.DatetimeIndex(target_index).tz_localize(None)
         return series.reindex(target_index, method="ffill")
 
     def _add_etf_flow_features(self, df: pd.DataFrame, alt_data: dict) -> pd.DataFrame:
@@ -686,11 +687,37 @@ class FeatureEngine:
         # Combined gold interest index (mean of all keyword columns)
         trends_cols = [c for c in df.columns if c.startswith("trends_") and not c.endswith("_change")]
         if trends_cols:
-            df["trends_gold_index"] = df[trends_cols].mean(axis=1)
+            trends_df = df[trends_cols]
+            if isinstance(trends_df, pd.DataFrame):
+                df["trends_gold_index"] = trends_df.mean(axis=1)
+            else:
+                df["trends_gold_index"] = trends_df
             df["trends_gold_index_zscore"] = (
                 (df["trends_gold_index"] - df["trends_gold_index"].rolling(52).mean())
                 / df["trends_gold_index"].rolling(52).std().replace(0, np.nan)
             )
+
+        return df
+
+    def _add_sentiment_features(self, df: pd.DataFrame, alt_data: dict) -> pd.DataFrame:
+        """News sentiment features.
+
+        Generates rolling averages, momentum, and fear index features.
+        """
+        # 1. News API sentiment
+        if "sentiment" in alt_data:
+            sentiment_df = alt_data["sentiment"]
+            if "keyword_score" in sentiment_df.columns:
+                score = self._tz_naive_series(sentiment_df["keyword_score"], df.index)
+                df["sentiment_news_score"] = score
+                # Rolling MA
+                for w in [5, 10, 20]:
+                    df[f"sentiment_news_score_ma{w}"] = score.rolling(w).mean()
+                # Sentiment momentum
+                df["sentiment_news_momentum"] = score.diff()
+
+            if "fear_index" in sentiment_df.columns:
+                df["sentiment_news_fear_index"] = self._tz_naive_series(sentiment_df["fear_index"], df.index)
 
         return df
 

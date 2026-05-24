@@ -297,9 +297,11 @@ class SentimentScorer:
 
             for date, titles in sorted(headlines_by_date.items()):
                 scores = self.score_headlines(titles)
-                scores["date"] = date
-                scores["source"] = "newsapi"
-                daily_scores.append(scores)
+                daily_scores.append({
+                    **scores,
+                    "date": date,
+                    "source": "newsapi",
+                })
 
             if daily_scores:
                 df = pd.DataFrame(daily_scores)
@@ -528,6 +530,8 @@ class AlternativeDataManager:
         results["sentiment"] = sentiment_df
         self.sentiment.save_to_parquet(sentiment_df)
 
+
+
         # ETF flows
         logger.info("Fetching ETF flow data...")
         etf_data = self.etf.fetch_etf_flows()
@@ -537,3 +541,4 @@ class AlternativeDataManager:
 
         logger.info(f"Alternative data: {len(results)} sources fetched")
         return results
+

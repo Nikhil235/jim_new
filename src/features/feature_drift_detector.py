@@ -58,7 +58,7 @@ class FeatureDistribution:
     kurtosis: float = 0.0
     count: int = 0
     
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
             "name": self.name,
@@ -340,7 +340,10 @@ class FeatureDriftDetector:
     def get_metrics(self, feature_name: Optional[str] = None) -> Dict[str, DriftMetrics]:
         """Get drift metrics"""
         if feature_name:
-            return {feature_name: self.metrics.get(feature_name)}
+            metrics = self.metrics.get(feature_name)
+            if metrics is not None:
+                return {feature_name: metrics}
+            return {}
         return self.metrics.copy()
     
     def get_alerts(self, since: Optional[datetime] = None) -> List[DriftAlert]:

@@ -290,6 +290,23 @@ class PipelineOrchestrator:
         alt_data_for_features = {}
         if self._alt_data:
             alt_data_for_features = self._alt_data
+        else:
+            # Try to load saved alternative data files from raw directory
+            from src.utils.config import PROJECT_ROOT
+            raw_dir = PROJECT_ROOT / "data" / "raw"
+            if raw_dir.exists():
+                for f in raw_dir.glob("*.parquet"):
+                    try:
+                        name = f.stem
+                        if name == "cot_gold":
+                            alt_data_for_features["cot"] = pd.read_parquet(f)
+                        elif name == "sentiment_daily":
+                            alt_data_for_features["sentiment"] = pd.read_parquet(f)
+                        elif name.startswith("etf_"):
+                            symbol = name.replace("etf_", "").upper()
+                            alt_data_for_features[f"etf_{symbol}"] = pd.read_parquet(f)
+                    except Exception as e:
+                        logger.warning(f"Failed to load alternative data {f.name} for feature generation: {e}")
 
         self._features_df = self.feature_engine.generate_all(
             self._gold_df,
