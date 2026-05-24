@@ -317,6 +317,16 @@ class PaperTradingEngine:
         self.last_signals[model_name] = signal
         self.signal_history[model_name].append(signal)
         
+        # --- Hard Confidence Gate (Bug 1 Fix) ---
+        # The raw confidence from the ensemble MUST pass the threshold before any dynamic
+        # weight multipliers are applied, ensuring the Critic's minimum standard is respected.
+        if signal.confidence < self.config.min_confidence:
+            logger.debug(
+                f"{model_name} raw signal below threshold: "
+                f"{signal.confidence:.2f} < {self.config.min_confidence}"
+            )
+            return None
+
         # --- Dynamic Weight Adjustment ---
         # Get current dynamic weights based on regime + recent performance
         if self.config.use_dynamic_weights:
@@ -344,14 +354,6 @@ class PaperTradingEngine:
             )
         else:
             adjusted_confidence = signal.confidence
-        
-        # Check confidence threshold (using adjusted confidence)
-        if adjusted_confidence < self.config.min_confidence:
-            logger.debug(
-                f"{model_name} signal below threshold after weight adjustment: "
-                f"{adjusted_confidence:.2f} < {self.config.min_confidence}"
-            )
-            return None
         
         # Check risk limits
         if not self._check_risk_limits():

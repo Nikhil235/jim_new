@@ -61,7 +61,7 @@ MACRO_DATA: Dict[str, float] = {
 # GOLD DATA FETCHER
 # ============================================================================
 
-def fetch_live_gold_data(period: str = "5d", interval: str = "15m") -> Optional[pd.DataFrame]:
+def fetch_live_gold_data(period: str = "5d", interval: str = "1m") -> Optional[pd.DataFrame]:
     """
     Fetch latest gold futures OHLCV data AND macro indicators (DXY, US10Y) via yfinance.
     Returns DataFrame with columns: open, high, low, close, volume, returns, dxy, us10y, dxy_returns, us10y_returns
@@ -89,6 +89,13 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "15m") -> Optional[
         df = df_all["GC=F"].copy()
         df.columns = [c.lower() for c in df.columns]
         df = df[["open", "high", "low", "close", "volume"]].copy()
+        
+        # --- FROZEN BAR FIX (BUG 3) ---
+        # 1. Filter out 0 volume
+        df = df[df["volume"] > 0].copy()
+        
+        # 2. Filter out perfectly flat bars (stale pricing where high==low and open==close)
+        df = df[~((df["high"] == df["low"]) & (df["open"] == df["close"]))].copy()
         
         # Extract DXY, US10Y and Silver closes (Forward fill to handle slightly misaligned ticks)
         df["dxy"] = df_all["DX-Y.NYB"]["Close"].ffill()
@@ -588,8 +595,9 @@ class LiveInferenceLoop:
         global CURRENT_GOLD_PRICE, LAST_PRICE_UPDATE
 
         # 1. Fetch live gold data (run in thread pool to avoid blocking)
+        # Bug 5 Fix: Changed interval from 15m to 1m so the 60s loop gets fresh data every tick
         df = await asyncio.get_event_loop().run_in_executor(
-            None, fetch_live_gold_data, "5d", "15m"
+            None, fetch_live_gold_data, "5d", "1m"
         )
 
         if df is None or df.empty or len(df) < 35:

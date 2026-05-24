@@ -337,6 +337,27 @@ async def health_check():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/metrics")
+async def get_metrics():
+    """
+    Get live system and model performance metrics.
+    """
+    try:
+        if PERFORMANCE_MONITOR:
+            # Phase 6 Advanced Monitoring
+            return PERFORMANCE_MONITOR.get_summary()
+        
+        # Fallback empty metrics if monitor failed to init
+        return {
+            "status": "unavailable",
+            "message": "Performance monitor not initialized",
+            "models": {}
+        }
+    except Exception as e:
+        logger.error(f"Metrics endpoint failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/signal", response_model=CurrentSignalResponse)
 async def get_signal():
     """

@@ -214,6 +214,29 @@ class TestRiskManager:
         assert not can_trade
         assert "latency" in reason.lower()
 
+    def test_circuit_breaker_min_confidence(self):
+        """Should halt/skip trade when ensemble confidence is below the min threshold."""
+        # When confidence is set and below the limit (default 0.65)
+        can_trade, reason = self.rm.check_circuit_breakers(
+            100000, ensemble_conf=0.60
+        )
+        assert not can_trade
+        assert "LOW_CONFIDENCE" in reason
+
+        # When confidence is above or equal to limit
+        can_trade, reason = self.rm.check_circuit_breakers(
+            100000, ensemble_conf=0.68
+        )
+        assert can_trade
+        assert reason == "OK"
+
+        # When confidence is 0 (signaling to ignore or no signal)
+        can_trade, reason = self.rm.check_circuit_breakers(
+            100000, ensemble_conf=0.0
+        )
+        assert can_trade
+        assert reason == "OK"
+
     def test_circuit_breaker_model_disagreement(self):
         """Should return MIN_POSITION when models disagree."""
         can_trade, reason = self.rm.check_circuit_breakers(

@@ -83,6 +83,7 @@ class RiskManager:
         self.consecutive_loss_limit = cb_cfg.get("consecutive_loss_limit", 3)
         self.consecutive_loss_reduction = cb_cfg.get("consecutive_loss_reduction", 0.25)
         self.cooldown_bars = cb_cfg.get("cooldown_bars", 5)
+        self.min_confidence = cb_cfg.get("min_confidence", 0.65)
 
         # State
         self.risk_state = RiskState()
@@ -266,6 +267,7 @@ class RiskManager:
         portfolio_value: float,
         model_disagreement: float = 0.0,
         data_latency_ms: float = 0.0,
+        ensemble_conf: float = 0.0,
     ) -> Tuple[bool, str]:
         """
         Check all circuit breakers.
@@ -274,6 +276,7 @@ class RiskManager:
             portfolio_value: Current portfolio value.
             model_disagreement: Fraction of models that disagree (0.0 to 1.0).
             data_latency_ms: Current data feed latency in milliseconds.
+            ensemble_conf: Confidence level from meta-label/critic model.
 
         Returns:
             Tuple of (can_trade, reason_if_blocked)
@@ -281,6 +284,11 @@ class RiskManager:
         # Already halted?
         if self.risk_state.is_halted:
             return False, f"HALTED: {self.risk_state.halt_reason}"
+
+        # Critic confidence gate — must pass before anything else
+        if ensemble_conf > 0 and ensemble_conf < self.min_confidence:
+            logger.debug(f"🚫 CONFIDENCE GATE: {ensemble_conf:.3f} < {self.min_confidence:.3f}")
+            return False, f"LOW_CONFIDENCE: {ensemble_conf:.3f}"
 
         # Regime switch cooldown: prevent entering new trades too close to transition
         cooldown_bars = self.cooldown_bars
@@ -411,4 +419,24 @@ class RiskManager:
             ),
             "consecutive_losses": self.risk_state.consecutive_losses,
             "rolling_stats": self.get_rolling_stats(),
+        }
+
+    def get_risk_report(self, current_equity: float, daily_pnl: float) -> dict:
+        """Generate a comprehensive risk report for the API and frontend dashboard."""
+        return {
+            "daily_loss_limit": self.daily_loss_limit,
+            "drawdown_reduce": self.drawdown_reduce,
+            "drawdown_stop": self.drawdown_stop,
+            "max_position_pct": self.max_position_pct,
+            "kelly_fraction": self.kelly_fraction,
+            "crisis_fraction": self.crisis_fraction,
+            "growth_fraction": self.growth_fraction,
+            "current_regime": self.risk_state.current_regime,
+            "bars_since_regime_switch": self.risk_state.bars_since_regime_switch,
+            "consecutive_losses": self.risk_state.consecutive_losses,
+            "is_halted": self.risk_state.is_halted,
+            "halt_reason": self.risk_state.halt_reason,
+            "daily_pnl": daily_pnl,
+            "current_equity": current_equity,
+            "status_summary": self.get_status(),
         }

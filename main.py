@@ -173,7 +173,7 @@ def run_paper_trading(cfg: dict):
             ModelSignal,
             SignalType,
         )
-        from src.paper_trading.risk_manager import RiskManager, RiskLimits
+        from src.risk.manager import RiskManager, RiskLimits
 
         pt_cfg = PaperTradingConfig(
             initial_capital=cfg.get("paper_trading", {}).get("initial_capital", 100000.0),

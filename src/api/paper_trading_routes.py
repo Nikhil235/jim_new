@@ -37,7 +37,7 @@ try:
         TradeStatus,
     )
     # pyrefly: ignore [missing-import]
-    from src.paper_trading.risk_manager import RiskManager, RiskLimits
+    from src.risk.manager import RiskManager
     # pyrefly: ignore [missing-import]
     from src.paper_trading.live_inference import (
         LiveInferenceLoop,
@@ -228,7 +228,7 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, An
     """
     global _paper_trading_engine, _paper_trading_config, _risk_manager
     
-    if not PAPER_TRADING_AVAILABLE or PaperTradingConfig is None or PaperTradingEngine is None or RiskLimits is None or RiskManager is None:
+    if not PAPER_TRADING_AVAILABLE or PaperTradingConfig is None or PaperTradingEngine is None or RiskManager is None:
         raise HTTPException(status_code=500, detail="Paper trading module not available")
     
     if _paper_trading_engine is not None and _paper_trading_engine.status == "RUNNING":
@@ -250,13 +250,21 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, An
         # Initialize engine
         _paper_trading_engine = PaperTradingEngine(_paper_trading_config)
         
-        # Initialize risk manager
-        risk_limits = RiskLimits(
-            max_position_pct=request.max_position_pct,
-            max_daily_loss_pct=request.max_daily_loss_pct,
-            max_drawdown_pct=request.max_drawdown_pct,
-        )
-        _risk_manager = RiskManager(request.initial_capital, risk_limits)
+        # Initialize risk manager with config dict instead of deprecated RiskLimits
+        risk_cfg = {
+            "risk": {
+                "kelly": {
+                    "max_position_pct": request.max_position_pct,
+                    "fraction": request.kelly_fraction,
+                },
+                "circuit_breakers": {
+                    "daily_loss_limit": request.max_daily_loss_pct,
+                    "drawdown_stop": request.max_drawdown_pct,
+                    "min_confidence": request.min_confidence,
+                }
+            }
+        }
+        _risk_manager = RiskManager(risk_cfg)
         
         # Start engine
         result = _paper_trading_engine.start()
@@ -571,6 +579,22 @@ async def inject_signal(request: SignalInjectionRequest) -> Dict[str, Any]:
             regime=request.regime,
         )
         
+        # --- CONFIDENCE GATE (BUG 1 FIX) ---
+        # The RiskManager acts as the gatekeeper. We pass the raw ensemble confidence.
+        if _risk_manager is not None:
+            can_trade, reason = _risk_manager.check_circuit_breakers(
+                portfolio_value=_paper_trading_engine._create_portfolio_snapshot().total_value,
+                ensemble_conf=request.confidence
+            )
+            if not can_trade:
+                logger.warning(f"Trade blocked by RiskManager: {reason}")
+                return {
+                    "status": "success", 
+                    "signal_processed": True, 
+                    "trade_executed": False, 
+                    "reason": f"Blocked by RiskManager: {reason}"
+                }
+
         # Process signal through engine
         trade = _paper_trading_engine.process_signal(request.model_name, signal)
         

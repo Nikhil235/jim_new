@@ -106,7 +106,7 @@ class RegimeDetector(BaseModel):
         n_regimes: int = 3,
         covariance_type: str = "diag",
         n_iter: int = 1000,
-        min_regime_duration: int = 5,
+        min_regime_duration: int = 30,  # Bug 4 Fix: Increased from 5 to 30 bars to prevent 34% flip rate
         regime_persistence_weight: float = 0.3,
         vol_windows: Optional[List[int]] = None,
         version: str = "2.0",
@@ -132,6 +132,7 @@ class RegimeDetector(BaseModel):
         self.vol_windows = vol_windows or [10, 20, 50]
 
         # HMM model
+        self.model: Optional[Any] = None
         if HMM_AVAILABLE:
             self.model = hmm.GaussianHMM(
                 n_components=n_regimes,
@@ -140,8 +141,6 @@ class RegimeDetector(BaseModel):
                 random_state=42,
                 tol=1e-4,
             )
-        else:
-            self.model = None
 
         # Learned parameters
         self._regime_order = None  # Maps HMM states to vol-ordered regimes
@@ -178,9 +177,13 @@ class RegimeDetector(BaseModel):
         features = pd.DataFrame(index=df.index)
 
         # Core features
-        features["returns"] = df["close"].pct_change()
-        features["volatility"] = features["returns"].rolling(20).std()
-        features["abs_returns"] = features["returns"].abs()
+        # Bug 4 Fix: Use smoothed returns for HMM features to prevent volatile 1-minute flipping
+        smoothed_close = df["close"].rolling(5).mean()
+        raw_returns = df["close"].pct_change()
+        
+        features["returns"] = smoothed_close.pct_change()
+        features["volatility"] = raw_returns.rolling(20).std()
+        features["abs_returns"] = raw_returns.abs().rolling(5).mean()
 
         # Intraday range
         if "high" in df.columns and "low" in df.columns:
@@ -248,12 +251,12 @@ class RegimeDetector(BaseModel):
             states, probs = self._fallback_regime_detection(obs_cpu)
 
         # Order regimes by volatility (column 0 = returns)
-        vol_by_state = {}
+        vol_by_state: Dict[int, float] = {}
         for s in range(self.n_regimes):
             mask = states == s
-            vol_by_state[s] = np.std(obs_cpu[mask, 0]) if mask.any() else 0.0
+            vol_by_state[s] = float(np.std(obs_cpu[mask, 0])) if mask.any() else 0.0
 
-        sorted_states = sorted(vol_by_state, key=vol_by_state.get)
+        sorted_states = sorted(vol_by_state, key=lambda x: vol_by_state[x])
         self._regime_order = {old: new for new, old in enumerate(sorted_states)}
 
         # Compute regime statistics
@@ -333,7 +336,8 @@ class RegimeDetector(BaseModel):
             raw_states, probs = self._fallback_regime_detection(obs_cpu)
 
         # Reorder to volatility-based regime IDs
-        ordered_states = np.array([self._regime_order.get(s, s) for s in raw_states])
+        order = self._regime_order or {}
+        ordered_states = np.array([order.get(s, s) for s in raw_states])
         confidences = np.max(probs, axis=1)
 
         return ordered_states, confidences
@@ -438,8 +442,8 @@ class RegimeDetector(BaseModel):
         regime_name, regime_conf = self.get_current_regime(df)
 
         # Recent price momentum
-        recent_return = float(df["close"].pct_change().iloc[-1])
-        recent_vol = float(df["close"].pct_change().rolling(10).std().iloc[-1]) if len(df) > 10 else 0.01
+        recent_return = df["close"].pct_change().iloc[-1]
+        recent_vol = df["close"].pct_change().rolling(10).std().iloc[-1] if len(df) > 10 else 0.01
 
         # Regime-based signal generation
         strategy = self.REGIME_STRATEGIES.get(regime_name, self.REGIME_STRATEGIES["NORMAL"])
@@ -449,17 +453,19 @@ class RegimeDetector(BaseModel):
         crisis_prob = transition_probs.get(regime_name, {}).get("CRISIS", 0.0)
         growth_prob = transition_probs.get(regime_name, {}).get("GROWTH", 0.0)
 
+        # Bug 3 Fix: Removed arbitrary heuristic scalar clamps (* 1.1, * 0.7) so the HMM 
+        # returns the true unadulterated probability, not a hardcoded constant.
         if regime_name == "GROWTH":
             # Calm market: Buy dips (mean reversion)
             if recent_return > 0:
                 signal = "LONG"
-                confidence = min(regime_conf * 1.1, 0.95)
+                confidence = regime_conf
             elif recent_return < -0.005:
                 signal = "LONG"  # Buy the dip in growth regime
-                confidence = min(regime_conf * 0.9, 0.85)
+                confidence = regime_conf * 0.90
             else:
                 signal = "HOLD"
-                confidence = regime_conf * 0.5
+                confidence = 0.0
 
             reasoning = (
                 f"GROWTH regime (conf={regime_conf:.0%}) | "
@@ -471,13 +477,13 @@ class RegimeDetector(BaseModel):
             # Crisis: Defensive positioning
             if recent_return < -0.005:
                 signal = "SHORT"  # Follow the trend down
-                confidence = min(regime_conf * 0.8, 0.85)
+                confidence = regime_conf
             elif recent_return > 0.005:
                 signal = "HOLD"  # Don't fight the crisis but don't chase
-                confidence = regime_conf * 0.4
+                confidence = 0.0
             else:
                 signal = "HOLD"
-                confidence = regime_conf * 0.3
+                confidence = 0.0
 
             reasoning = (
                 f"CRISIS regime (conf={regime_conf:.0%}) | "
@@ -489,13 +495,13 @@ class RegimeDetector(BaseModel):
             # Normal: Follow momentum
             if recent_return > 0.002:
                 signal = "LONG"
-                confidence = regime_conf * 0.7
+                confidence = regime_conf
             elif recent_return < -0.002:
                 signal = "SHORT"
-                confidence = regime_conf * 0.6
+                confidence = regime_conf
             else:
                 signal = "HOLD"
-                confidence = regime_conf * 0.4
+                confidence = 0.0
 
             reasoning = (
                 f"NORMAL regime (conf={regime_conf:.0%}) | "
@@ -507,19 +513,19 @@ class RegimeDetector(BaseModel):
 
         return ModelOutput(
             signal=signal,
-            confidence=round(float(confidence), 4),
+            confidence=round(confidence, 4),
             regime=regime_name,
             reasoning=reasoning,
             features_used=["close", "high", "low", "volume", "returns"],
             metadata={
-                "regime_confidence": round(float(regime_conf), 4),
+                "regime_confidence": round(regime_conf, 4),
                 "transition_probabilities": transition_probs.get(regime_name, {}),
                 "expected_duration_bars": round(self.get_expected_regime_duration(regime_name), 1),
                 "kelly_fraction": strategy.get("kelly_fraction", 0.5),
-                "regime_stats": self._regime_stats.get(regime_name, {}),
-                "recent_return": round(float(recent_return), 6),
-                "recent_volatility": round(float(recent_vol), 6),
-                "crisis_probability": round(float(crisis_prob), 4),
+                "regime_stats": (self._regime_stats or {}).get(regime_name, {}),
+                "recent_return": round(recent_return, 6),
+                "recent_volatility": round(recent_vol, 6),
+                "crisis_probability": round(crisis_prob, 4),
             },
             latency_ms=latency_ms,
             timestamp=pd.Timestamp.now().isoformat(),
@@ -555,19 +561,26 @@ class RegimeDetector(BaseModel):
         else:
             vol_col = np.abs(obs[:, 0])
 
-        # Assign regimes based on volatility terciles
-        p33 = np.percentile(vol_col, 33)
-        p66 = np.percentile(vol_col, 66)
-
-        states = np.where(vol_col <= p33, 0, np.where(vol_col <= p66, 1, 2))
-
-        # Fake probabilities based on distance to thresholds
+        # Calculate cluster centers (tercile midpoints)
+        c0 = np.percentile(vol_col, 16.5) # LOW Volatility
+        c1 = np.percentile(vol_col, 50.0) # MED Volatility
+        c2 = np.percentile(vol_col, 83.5) # HIGH Volatility
+        
+        centers = np.array([c0, c1, c2])
         probs = np.zeros((len(obs), self.n_regimes))
-        for i, s in enumerate(states):
-            probs[i, s] = 0.7
-            for j in range(self.n_regimes):
-                if j != s:
-                    probs[i, j] = 0.15
+        
+        # Calculate dynamic probabilities based on inverse distance to cluster centers
+        for i, v in enumerate(vol_col):
+            # Distance from current volatility to each center
+            dists = np.abs(v - centers)
+            
+            # Convert distances to weights (add small epsilon to prevent div/0)
+            weights = 1.0 / (dists + 1e-6)
+            
+            # Softmax/normalize weights to get probabilities
+            probs[i] = weights / np.sum(weights)
+            
+        states = np.argmax(probs, axis=1)
 
         return states, probs
 

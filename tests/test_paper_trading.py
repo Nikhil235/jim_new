@@ -23,7 +23,7 @@ from src.paper_trading.engine import (
     SignalType,
     TradeStatus,
 )
-from src.paper_trading.risk_manager import RiskManager, RiskLimits
+from src.risk.manager import RiskManager, RiskLimits
 
 
 class TestPaperTradingConfig:
