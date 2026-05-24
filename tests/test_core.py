@@ -87,14 +87,15 @@ class TestWaveletDenoiser:
             assert len(band) == len(signal)
 
     def test_generate_signal_output_format(self):
-        """Signal should be -1, 0, or 1 with confidence 0-1."""
+        """Signal should be LONG, SHORT, or HOLD with confidence 0-1."""
         np.random.seed(42)
         prices = 1800 + np.cumsum(np.random.randn(300) * 5)
+        df = pd.DataFrame({"close": prices})
 
-        signal, confidence = self.model.generate_signal(prices)
+        output = self.model.generate_signal(df)
 
-        assert signal in [-1, 0, 1]
-        assert 0.0 <= confidence <= 1.0
+        assert output.signal in ["LONG", "SHORT", "HOLD"]
+        assert 0.0 <= output.confidence <= 1.0
 
 
 # =============================================================================
@@ -251,6 +252,41 @@ class TestRiskManager:
         assert stats["win_rate"] == 0.5
         assert stats["profit_factor"] > 1.0  # 180/80 = 2.25
 
+    def test_regime_cooldown_blocks_trade(self):
+        """Should temporarily halt trading immediately after a regime switch."""
+        # Initial state should not block (starts high)
+        can_trade, reason = self.rm.check_circuit_breakers(100000)
+        assert can_trade
+        assert reason == "OK"
+
+        # Change regime from NORMAL to CRISIS
+        self.rm.calculate_kelly_size(0.55, 100, 90, 100000, regime="CRISIS")
+        
+        # Bars since switch should reset to 0
+        assert self.rm.risk_state.bars_since_regime_switch == 0
+
+        # Should now block trading
+        can_trade, reason = self.rm.check_circuit_breakers(100000)
+        assert not can_trade
+        assert "REGIME_COOLDOWN" in reason
+
+        # Increment bars to 4 (under limit of 5)
+        for _ in range(4):
+            self.rm.calculate_kelly_size(0.55, 100, 90, 100000, regime="CRISIS")
+        
+        assert self.rm.risk_state.bars_since_regime_switch == 4
+        can_trade, reason = self.rm.check_circuit_breakers(100000)
+        assert not can_trade
+
+        # Increment to 5 (limit met)
+        self.rm.calculate_kelly_size(0.55, 100, 90, 100000, regime="CRISIS")
+        assert self.rm.risk_state.bars_since_regime_switch == 5
+        
+        # Should now allow trading again
+        can_trade, reason = self.rm.check_circuit_breakers(100000)
+        assert can_trade
+        assert reason == "OK"
+
 
 # =============================================================================
 # Feature Engine Tests (Enhanced)
@@ -315,6 +351,26 @@ class TestFeatureEngine:
         feature_names = engine.get_feature_names(result)
 
         assert len(feature_names) >= 80, f"Only {len(feature_names)} features (expected 80+)"
+
+    def test_feature_pruning_limits_feature_count(self):
+        """Pruned engine should keep strictly less than 35 features including OHLCV and Golden Features."""
+        from src.features.engine import FeatureEngine
+        # Initialize with pruning turned on explicitly
+        config = {
+            "features": {
+                "prune_features": True,
+                "max_features_ceiling": 25
+            }
+        }
+        engine = FeatureEngine(config)
+        df = _make_sample_data(300)
+
+        result = engine.generate_all(df)
+        feature_names = engine.get_feature_names(result)
+
+        # Should only contain OHLCV, returns, and existing Golden Features
+        assert len(feature_names) <= 25
+        assert "volatility_20" in feature_names or "macd" in feature_names
 
 
 # =============================================================================

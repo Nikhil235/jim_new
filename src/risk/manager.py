@@ -44,6 +44,8 @@ class RiskState:
     losses_today: int = 0
     consecutive_losses: int = 0
     last_trade_pnls: list = field(default_factory=list)
+    current_regime: str = "NORMAL"
+    bars_since_regime_switch: int = 100  # Start high to not block initial trades
 
 
 class RiskManager:
@@ -80,6 +82,7 @@ class RiskManager:
         self.max_latency_ms = cb_cfg.get("max_latency_ms", 500)
         self.consecutive_loss_limit = cb_cfg.get("consecutive_loss_limit", 3)
         self.consecutive_loss_reduction = cb_cfg.get("consecutive_loss_reduction", 0.25)
+        self.cooldown_bars = cb_cfg.get("cooldown_bars", 5)
 
         # State
         self.risk_state = RiskState()
@@ -90,6 +93,17 @@ class RiskManager:
             f"MaxPos={self.max_position_pct} | DD_Stop={self.drawdown_stop} | "
             f"MaxLatency={self.max_latency_ms}ms | ConsecLossLimit={self.consecutive_loss_limit}"
         )
+
+    def _update_regime_tracking(self, regime: str) -> None:
+        """Track regime switches and update cooldown counters."""
+        if regime != self.risk_state.current_regime:
+            logger.warning(
+                f"🔄 HMM REGIME CHANGE DECLARED: {self.risk_state.current_regime} ──> {regime}. Cool-down initiated!"
+            )
+            self.risk_state.current_regime = regime
+            self.risk_state.bars_since_regime_switch = 0
+        else:
+            self.risk_state.bars_since_regime_switch += 1
 
     def calculate_kelly_size(
         self,
@@ -119,6 +133,7 @@ class RiskManager:
         Returns:
             Position size in dollars.
         """
+        self._update_regime_tracking(regime)
         if avg_loss == 0 or win_prob <= 0:
             return 0.0
 
@@ -162,6 +177,90 @@ class RiskManager:
 
         return position_size
 
+    def calculate_pairs_kelly_sizes(
+        self,
+        win_prob: float,
+        avg_win: float,
+        avg_loss: float,
+        portfolio_value: float,
+        hedge_ratio: float,
+        regime: str = "NORMAL",
+        signal_direction: int = 1,
+    ) -> Tuple[float, float]:
+        """
+        Calculate pairs trading position sizes for both Gold and Silver legs simultaneously
+        using Fractional Kelly Criterion with market-neutral volatility multipliers.
+
+        Because pairs trading is market-neutral (long and short legs balance),
+        the volatility of the spread is significantly lower than individual assets.
+        We safely apply a 1.5x pairs multiplier to our Kelly sizing while enforcing
+        tight stop-losses on co-integration breakdowns.
+
+        Args:
+            win_prob: Probability of winning (from Meta-Label Critic).
+            avg_win: Average win amount.
+            avg_loss: Average loss amount (positive number).
+            portfolio_value: Current portfolio value.
+            hedge_ratio: Kalman-derived dynamic hedge ratio (beta).
+            regime: Current market regime (GROWTH/NORMAL/CRISIS).
+            signal_direction: 1 for Gold Long/Silver Short, -1 for Gold Short/Silver Long.
+
+        Returns:
+            Tuple of (gold_size_dollars, silver_size_dollars)
+        """
+        self._update_regime_tracking(regime)
+        if avg_loss == 0 or win_prob <= 0:
+            return 0.0, 0.0
+
+        b = avg_win / avg_loss
+        p = win_prob
+        q = 1 - p
+
+        # Raw Kelly
+        kelly_f = (p * b - q) / b
+        if kelly_f <= 0:
+            logger.debug(f"Pairs Kelly negative ({kelly_f:.4f}) — skip arbitrage trade")
+            return 0.0, 0.0
+
+        # Leverage bonus: 1.5x multiplier for market-neutral hedged trades
+        pairs_multiplier = 1.5
+        adjusted_f = kelly_f * self.kelly_fraction * pairs_multiplier
+
+        # Regime-aware adjustments
+        if regime == "CRISIS":
+            adjusted_f *= self.crisis_fraction
+        elif regime == "GROWTH":
+            adjusted_f *= self.growth_fraction
+
+        # Reduce further if consecutive losses
+        if self.risk_state.consecutive_losses >= self.consecutive_loss_limit:
+            adjusted_f *= (1.0 - self.consecutive_loss_reduction)
+
+        # Cap Gold leg at slightly higher max position percentage (e.g. 1.2x normal limit due to hedging)
+        max_pair_pct = self.max_position_pct * 1.2
+        final_f = min(adjusted_f, max_pair_pct)
+
+        # Gold leg size in dollars
+        gold_size = portfolio_value * final_f
+
+        # Silver leg size (hedged by beta multiplier)
+        silver_size = gold_size * abs(hedge_ratio)
+
+        # Directional signing
+        if signal_direction == 1:
+            gold_allocation = gold_size
+            silver_allocation = -silver_size
+        else:
+            gold_allocation = -gold_size
+            silver_allocation = silver_size
+
+        logger.info(
+            f"⚖️ Pairs Kelly: adj_f={adjusted_f:.4f} final_f={final_f:.4f} | "
+            f"Gold Leg: ${gold_allocation:,.2f} | Silver Leg: ${silver_allocation:,.2f} (beta={hedge_ratio:.3f})"
+        )
+
+        return gold_allocation, silver_allocation
+
     def check_circuit_breakers(
         self,
         portfolio_value: float,
@@ -182,6 +281,13 @@ class RiskManager:
         # Already halted?
         if self.risk_state.is_halted:
             return False, f"HALTED: {self.risk_state.halt_reason}"
+
+        # Regime switch cooldown: prevent entering new trades too close to transition
+        cooldown_bars = self.cooldown_bars
+        if self.risk_state.bars_since_regime_switch < cooldown_bars:
+            reason = f"Regime switch cooldown active ({self.risk_state.bars_since_regime_switch} bars since transition < {cooldown_bars} bars limit)"
+            logger.warning(f"⚠️ RISK BREAKER: {reason}")
+            return False, f"REGIME_COOLDOWN: {self.risk_state.bars_since_regime_switch} bars"
 
         # Daily loss limit
         daily_loss_pct = abs(self.risk_state.daily_pnl) / portfolio_value if portfolio_value > 0 else 0

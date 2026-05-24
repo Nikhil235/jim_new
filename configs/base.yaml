@@ -67,6 +67,8 @@ features:
     family: "db4"
     levels: 5
     denoise_remove_levels: [1, 2]
+  prune_features: true
+  max_features_ceiling: 25
 
 # --- Models ---
 models:
@@ -170,6 +172,7 @@ risk:
     drawdown_stop: 0.10      # 10% DD → stop all
     model_disagreement: 0.70 # 70% disagreement → min position
     max_latency_ms: 500      # Data feed latency limit
+    cooldown_bars: 5         # Cooldown limit post HMM regime switches
   monte_carlo:
     n_simulations: 100000
     run_frequency: "hourly"

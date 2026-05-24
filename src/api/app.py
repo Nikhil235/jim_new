@@ -868,27 +868,54 @@ async def get_gs_ratio(
     interval: str = Query("1mo", description="Interval: 1d, 1wk, 1mo"),
 ):
     """
-    Get historical gold and silver prices and the gold-silver ratio.
+    Get historical gold and silver prices and the gold-silver ratio,
+    integrated with the dynamic Kalman Filter Spread Engine and volatility regime boundaries.
     """
     try:
         import yfinance as yf
         tickers = "GC=F SI=F"
         df_all = yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False)
-        
+
         if df_all.empty:
             raise HTTPException(status_code=503, detail="No data available")
-            
+
         gold = df_all["GC=F"]["Close"].ffill()
         silver = df_all["SI=F"]["Close"].ffill()
-        
+
         df = pd.DataFrame({
             "gold": gold,
             "silver": silver,
             "ratio": gold / silver
         }).dropna()
-        
+
+        # Clean series to prevent NaNs propagating in Kalman Filter
+        gold_series = df["gold"].ffill().bfill()
+        silver_series = df["silver"].ffill().bfill()
+
+        # Run Kalman Filter Spread Engine recursively
+        from src.features.engine import FeatureEngine
+        betas, alphas, residuals, z_scores = FeatureEngine._compute_kalman_spread(
+            gold_series.to_numpy(), silver_series.to_numpy()
+        )
+
+        # Volatility regime proxy calculation for boundaries
+        returns = gold_series.pct_change()
+        vol_20 = returns.rolling(20).std()
+        vol_50 = returns.rolling(50).std()
+        # Handle division by zero and NaNs
+        denom = vol_50.replace(0, np.nan)
+        vol_regime = (vol_20 / denom).ffill().bfill().to_numpy()
+        vol_regime = np.nan_to_num(vol_regime, nan=1.0)
+
+        # Scale boundaries between 1.5 and 2.5 dynamically based on volatility
+        dynamic_upper = np.clip(2.0 * vol_regime, 1.5, 2.5)
+        dynamic_lower = -dynamic_upper
+
+        # Signal generation
+        signals = np.where(z_scores > dynamic_upper, 1.0, np.where(z_scores < dynamic_lower, -1.0, 0.0))
+
         data = []
-        for ts, row in df.iterrows():
+        for i, (ts, row) in enumerate(df.iterrows()):
             timestamp = pd.Timestamp(ts)
             data.append({
                 "time": timestamp.strftime("%Y-%m-%d"),
@@ -896,12 +923,25 @@ async def get_gs_ratio(
                 "gold": round(float(row["gold"]), 2),
                 "silver": round(float(row["silver"]), 2),
                 "ratio": round(float(row["ratio"]), 2),
+                "beta": round(float(betas[i]), 4),
+                "alpha": round(float(alphas[i]), 4),
+                "residual": round(float(residuals[i]), 4),
+                "z_score": round(float(z_scores[i]), 4),
+                "upper_boundary": round(float(dynamic_upper[i]), 4),
+                "lower_boundary": round(float(dynamic_lower[i]), 4),
+                "signal": int(signals[i]),
             })
-            
+
         return {
             "current_gold": data[-1]["gold"] if data else 0,
             "current_silver": data[-1]["silver"] if data else 0,
             "current_ratio": data[-1]["ratio"] if data else 0,
+            "current_beta": data[-1]["beta"] if data else 0,
+            "current_alpha": data[-1]["alpha"] if data else 0,
+            "current_z_score": data[-1]["z_score"] if data else 0,
+            "current_upper": data[-1]["upper_boundary"] if data else 2.0,
+            "current_lower": data[-1]["lower_boundary"] if data else -2.0,
+            "current_signal": data[-1]["signal"] if data else 0,
             "history": data
         }
     except Exception as e:

@@ -50,7 +50,6 @@ export default function GoldSilverRatio() {
   const [goldPrice, setGoldPrice] = useState(0);
   const [silverPrice, setSilverPrice] = useState(0);
 
-  
   const [tradeAmount, setTradeAmount] = useState(2);
   const [tradeAsset, setTradeAsset] = useState('gold'); // 'gold' or 'silver'
 
@@ -100,7 +99,7 @@ export default function GoldSilverRatio() {
           marginBottom: 24,
           boxShadow: `0 4px 20px ${signal.color}20`
         }} className="animate-in">
-          <div style={{ padding: 12, background: signal.color, color: '#000', borderRadius: '50%' }}>
+          <div style={{ padding: 12, background: signal.color, color: '#000', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Bell size={24} />
           </div>
           <div>
