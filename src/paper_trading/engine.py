@@ -14,6 +14,7 @@ Architecture:
 """
 
 import uuid
+import threading
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
@@ -173,6 +174,7 @@ class PaperTradingEngine:
         """Initialize paper trading engine."""
         self.config = config or PaperTradingConfig()
         self.state_config = get_config()
+        self._lock = threading.Lock()
         
         # Core state
         self.status = "INITIALIZED"
@@ -296,7 +298,7 @@ class PaperTradingEngine:
     
     def process_signal(self, model_name: str, signal: ModelSignal) -> Optional[TradeExecution]:
         """
-        Process a new signal from a model.
+        Process a new signal from a model with thread/concurrency safety.
         
         Uses dynamic regime-conditional weighting to adjust signal confidence:
         - Each model's raw confidence is scaled by its current dynamic weight
@@ -310,74 +312,75 @@ class PaperTradingEngine:
         Returns:
             TradeExecution if trade was executed, None otherwise
         """
-        if self.status != "RUNNING":
-            return None
-        
-        # Store signal
-        self.last_signals[model_name] = signal
-        self.signal_history[model_name].append(signal)
-        
-        # --- Hard Confidence Gate (Bug 1 Fix) ---
-        # The raw confidence from the ensemble MUST pass the threshold before any dynamic
-        # weight multipliers are applied, ensuring the Critic's minimum standard is respected.
-        if signal.confidence < self.config.min_confidence:
-            logger.debug(
-                f"{model_name} raw signal below threshold: "
-                f"{signal.confidence:.2f} < {self.config.min_confidence}"
-            )
-            return None
-
-        # --- Dynamic Weight Adjustment ---
-        # Get current dynamic weights based on regime + recent performance
-        if self.config.use_dynamic_weights:
-            current_signals_map = {
-                name: sig.signal_type.value
-                for name, sig in self.last_signals.items()
-            }
-            dynamic_weights = self.weight_adjuster.get_weights(
-                regime=signal.regime,
-                current_signals=current_signals_map,
-            )
-            model_weight = dynamic_weights.get(model_name, 0.10)
-            
-            # Scale confidence by model's dynamic weight relative to average
-            # A model with 2× average weight gets a confidence boost
-            avg_weight = 1.0 / len(dynamic_weights) if dynamic_weights else 0.14
-            weight_multiplier = model_weight / avg_weight
-            adjusted_confidence = signal.confidence * weight_multiplier
-            adjusted_confidence = min(adjusted_confidence, 1.0)  # Cap at 1.0
-            
-            logger.debug(
-                f"{model_name} | regime={signal.regime} | "
-                f"raw_conf={signal.confidence:.2f} | weight={model_weight:.3f} | "
-                f"adj_conf={adjusted_confidence:.2f}"
-            )
-        else:
-            adjusted_confidence = signal.confidence
-        
-        # Check risk limits
-        if not self._check_risk_limits():
-            logger.warning("Risk limits exceeded, skipping trade")
-            return None
-        
-        # Check if position already open
-        if self.current_position and self.current_position.status == TradeStatus.OPEN:
-            # If signal is CLOSE or opposite direction, close existing position
-            if signal.signal_type == SignalType.CLOSE or \
-               (self.current_position.signal_type == SignalType.LONG and signal.signal_type == SignalType.SHORT) or \
-               (self.current_position.signal_type == SignalType.SHORT and signal.signal_type == SignalType.LONG):
-                self._close_position(signal.timestamp, signal.current_price)
-            else:
-                logger.debug("Position already open, skipping new signal")
+        with self._lock:
+            if self.status != "RUNNING":
                 return None
-        
-        # Execute trade (pass adjusted confidence for position sizing)
-        if signal.signal_type in (SignalType.LONG, SignalType.SHORT):
-            return self._execute_trade(model_name, signal, adjusted_confidence)
-        elif signal.signal_type == SignalType.CLOSE:
-            return self._close_position(signal.timestamp, signal.current_price)
-        
-        return None
+            
+            # Store signal
+            self.last_signals[model_name] = signal
+            self.signal_history[model_name].append(signal)
+            
+            # --- Hard Confidence Gate (Bug 1 Fix) ---
+            # The raw confidence from the ensemble MUST pass the threshold before any dynamic
+            # weight multipliers are applied, ensuring the Critic's minimum standard is respected.
+            if signal.confidence < self.config.min_confidence:
+                logger.debug(
+                    f"{model_name} raw signal below threshold: "
+                    f"{signal.confidence:.2f} < {self.config.min_confidence}"
+                )
+                return None
+    
+            # --- Dynamic Weight Adjustment ---
+            # Get current dynamic weights based on regime + recent performance
+            if self.config.use_dynamic_weights:
+                current_signals_map = {
+                    name: sig.signal_type.value
+                    for name, sig in self.last_signals.items()
+                }
+                dynamic_weights = self.weight_adjuster.get_weights(
+                    regime=signal.regime,
+                    current_signals=current_signals_map,
+                )
+                model_weight = dynamic_weights.get(model_name, 0.10)
+                
+                # Scale confidence by model's dynamic weight relative to average
+                # A model with 2× average weight gets a confidence boost
+                avg_weight = 1.0 / len(dynamic_weights) if dynamic_weights else 0.14
+                weight_multiplier = model_weight / avg_weight
+                adjusted_confidence = signal.confidence * weight_multiplier
+                adjusted_confidence = min(adjusted_confidence, 1.0)  # Cap at 1.0
+                
+                logger.debug(
+                    f"{model_name} | regime={signal.regime} | "
+                    f"raw_conf={signal.confidence:.2f} | weight={model_weight:.3f} | "
+                    f"adj_conf={adjusted_confidence:.2f}"
+                )
+            else:
+                adjusted_confidence = signal.confidence
+            
+            # Check risk limits
+            if not self._check_risk_limits():
+                logger.warning("Risk limits exceeded, skipping trade")
+                return None
+            
+            # Check if position already open
+            if self.current_position and self.current_position.status == TradeStatus.OPEN:
+                # If signal is CLOSE or opposite direction, close existing position
+                if signal.signal_type == SignalType.CLOSE or \
+                   (self.current_position.signal_type == SignalType.LONG and signal.signal_type == SignalType.SHORT) or \
+                   (self.current_position.signal_type == SignalType.SHORT and signal.signal_type == SignalType.LONG):
+                    closed_trade = self._close_position(signal.timestamp, signal.current_price)
+                    if signal.signal_type == SignalType.CLOSE:
+                        return closed_trade
+                else:
+                    logger.debug("Position already open, skipping new signal")
+                    return None
+            
+            # Execute trade (pass adjusted confidence for position sizing)
+            if signal.signal_type in (SignalType.LONG, SignalType.SHORT):
+                return self._execute_trade(model_name, signal, adjusted_confidence)
+            
+            return None
     
     def update_price(self, price: float, timestamp: datetime) -> Dict:
         """

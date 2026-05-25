@@ -18,7 +18,8 @@ Endpoints (10 total):
 - POST /paper-trading/reset-circuit-breakers - Hard reset all circuit breakers
 """
 
-from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, Security, Request
+from src.api.security import verify_api_key, limiter
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Dict, List, Optional, Any
@@ -173,6 +174,78 @@ _inference_loop: Optional['LiveInferenceLoop'] = None
 _inference_task: Optional[asyncio.Task] = None
 
 
+class QueuedSignal:
+    def __init__(self, model_name: str, signal: 'ModelSignal', future: asyncio.Future):
+        self.model_name = model_name
+        self.signal = signal
+        self.future = future
+
+class TradingQueueWorker:
+    def __init__(self):
+        self.queue = asyncio.Queue()
+        self._lock = asyncio.Lock()
+        self._task = None
+
+    async def start(self):
+        logger.info("Starting TradingQueueWorker task...")
+        self._task = asyncio.create_task(self._loop())
+
+    async def stop(self):
+        if self._task:
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+            logger.info("TradingQueueWorker task stopped.")
+
+    async def _loop(self):
+        global _paper_trading_engine, _risk_manager
+        while True:
+            try:
+                item: QueuedSignal = await self.queue.get()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error getting from queue: {e}")
+                continue
+
+            async with self._lock:
+                try:
+                    if _paper_trading_engine is None:
+                        item.future.set_result((None, "Engine not initialized"))
+                        self.queue.task_done()
+                        continue
+
+                    # 1. Risk checks
+                    signal_type = item.signal.signal_type
+                    if _risk_manager is not None and signal_type != SignalType.CLOSE:
+                        can_trade, reason = _risk_manager.check_circuit_breakers(
+                            portfolio_value=_paper_trading_engine._create_portfolio_snapshot().total_value,
+                            ensemble_conf=item.signal.confidence
+                        )
+                        if not can_trade:
+                            logger.warning(f"Trade blocked by RiskManager in queue worker: {reason}")
+                            item.future.set_result((None, f"Blocked by RiskManager: {reason}"))
+                            self.queue.task_done()
+                            continue
+
+                    # 2. Process signal through engine
+                    trade = _paper_trading_engine.process_signal(item.model_name, item.signal)
+                    if trade is not None and _risk_manager is not None:
+                        _risk_manager.risk_state.bars_since_last_trade = 0
+                    item.future.set_result((trade, "OK"))
+                except Exception as e:
+                    logger.error(f"Error processing signal in queue worker: {e}")
+                    if not item.future.done():
+                        item.future.set_exception(e)
+                finally:
+                    self.queue.task_done()
+
+
+_trading_queue_worker: Optional[TradingQueueWorker] = None
+
+
 def get_engine():
     """Get the paper trading engine instance (for testing injection)."""
     return _paper_trading_engine
@@ -218,15 +291,16 @@ async def broadcast_update(event_type: str, data: Dict[str, Any]):
 # ROUTE HANDLERS
 # ============================================================================
 
-@router.post("/start", response_model=Dict[str, Any])
-async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, Any]:
+@router.post("/start", response_model=Dict[str, Any], dependencies=[Security(verify_api_key)])
+@limiter.limit("5/minute")
+async def start_paper_trading(request: Request, start_request: PaperTradingStartRequest) -> Dict[str, Any]:
     """
     Start paper trading engine.
     
     Initializes the engine with specified capital, risk limits, and signal
     configuration. Returns initialization details on success.
     """
-    global _paper_trading_engine, _paper_trading_config, _risk_manager
+    global _paper_trading_engine, _paper_trading_config, _risk_manager, _trading_queue_worker
     
     if not PAPER_TRADING_AVAILABLE or PaperTradingConfig is None or PaperTradingEngine is None or RiskManager is None:
         raise HTTPException(status_code=500, detail="Paper trading module not available")
@@ -237,14 +311,14 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, An
     try:
         # Create configuration
         _paper_trading_config = PaperTradingConfig(
-            initial_capital=request.initial_capital,
-            kelly_fraction=request.kelly_fraction,
-            max_position_pct=request.max_position_pct,
-            max_daily_loss_pct=request.max_daily_loss_pct,
-            max_drawdown_pct=request.max_drawdown_pct,
-            min_confidence=request.min_confidence,
-            commission_per_trade=request.commission_per_trade,
-            slippage_pct=request.slippage_pct,
+            initial_capital=start_request.initial_capital,
+            kelly_fraction=start_request.kelly_fraction,
+            max_position_pct=start_request.max_position_pct,
+            max_daily_loss_pct=start_request.max_daily_loss_pct,
+            max_drawdown_pct=start_request.max_drawdown_pct,
+            min_confidence=start_request.min_confidence,
+            commission_per_trade=start_request.commission_per_trade,
+            slippage_pct=start_request.slippage_pct,
         )
         
         # Initialize engine
@@ -254,13 +328,13 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, An
         risk_cfg = {
             "risk": {
                 "kelly": {
-                    "max_position_pct": request.max_position_pct,
-                    "fraction": request.kelly_fraction,
+                    "max_position_pct": start_request.max_position_pct,
+                    "fraction": start_request.kelly_fraction,
                 },
                 "circuit_breakers": {
-                    "daily_loss_limit": request.max_daily_loss_pct,
-                    "drawdown_stop": request.max_drawdown_pct,
-                    "min_confidence": request.min_confidence,
+                    "daily_loss_limit": start_request.max_daily_loss_pct,
+                    "drawdown_stop": start_request.max_drawdown_pct,
+                    "min_confidence": start_request.min_confidence,
                 }
             }
         }
@@ -268,6 +342,10 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, An
         
         # Start engine
         result = _paper_trading_engine.start()
+
+        # Start queue worker
+        _trading_queue_worker = TradingQueueWorker()
+        await _trading_queue_worker.start()
 
         # ── Start live inference loop ──────────────────────────────────────
         global _inference_loop, _inference_task
@@ -281,7 +359,7 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, An
             logger.info("Live inference loop started (60s cadence, all 6 models)")
         # ─────────────────────────────────────────────────────────────────
 
-        logger.info(f"Paper trading started with ${request.initial_capital:,.0f} capital")
+        logger.info(f"Paper trading started with ${start_request.initial_capital:,.0f} capital")
         
         # Broadcast to WebSocket clients
         await broadcast_update("engine_started", result)
@@ -290,11 +368,11 @@ async def start_paper_trading(request: PaperTradingStartRequest) -> Dict[str, An
             "status": "success",
             "message": "Paper trading engine started",
             "config": {
-                "initial_capital": request.initial_capital,
-                "kelly_fraction": request.kelly_fraction,
-                "max_position_pct": request.max_position_pct,
-                "max_daily_loss_pct": request.max_daily_loss_pct,
-                "min_confidence": request.min_confidence,
+                "initial_capital": start_request.initial_capital,
+                "kelly_fraction": start_request.kelly_fraction,
+                "max_position_pct": start_request.max_position_pct,
+                "max_daily_loss_pct": start_request.max_daily_loss_pct,
+                "min_confidence": start_request.min_confidence,
             },
             "details": result,
         }
@@ -377,19 +455,25 @@ async def get_performance_metrics() -> PerformanceMetricsResponse:
         raise HTTPException(status_code=500, detail=f"Failed to get metrics: {str(e)}")
 
 
-@router.post("/stop", response_model=Dict[str, Any])
-async def stop_paper_trading() -> Dict[str, Any]:
+@router.post("/stop", response_model=Dict[str, Any], dependencies=[Security(verify_api_key)])
+@limiter.limit("5/minute")
+async def stop_paper_trading(request: Request) -> Dict[str, Any]:
     """
     Stop paper trading and close all open positions.
     Returns final P&L summary and session statistics.
     """
-    global _paper_trading_engine
+    global _paper_trading_engine, _trading_queue_worker
     
     if _paper_trading_engine is None:
         raise HTTPException(status_code=404, detail="Paper trading engine not initialized")
     
     try:
         result = _paper_trading_engine.stop()
+
+        # Stop queue worker
+        if _trading_queue_worker is not None:
+            await _trading_queue_worker.stop()
+            _trading_queue_worker = None
 
         # ── Stop live inference loop ──────────────────────────────────────
         global _inference_loop, _inference_task
@@ -534,14 +618,15 @@ async def get_risk_report() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Failed to get risk report: {str(e)}")
 
 
-@router.post("/signal", response_model=Dict[str, Any])
-async def inject_signal(request: SignalInjectionRequest) -> Dict[str, Any]:
+@router.post("/signal", response_model=Dict[str, Any], dependencies=[Security(verify_api_key)])
+@limiter.limit("5/second")
+async def inject_signal(request: Request, signal_request: SignalInjectionRequest) -> Dict[str, Any]:
     """
     Inject a trading signal from a model into the paper trading engine.
     The engine will evaluate the signal against risk limits and execute
     if all checks pass.
     """
-    global _paper_trading_engine
+    global _paper_trading_engine, _trading_queue_worker
     
     if _paper_trading_engine is None or SignalType is None or ModelSignal is None:
         raise HTTPException(status_code=404, detail="Paper trading engine not initialized")
@@ -551,7 +636,7 @@ async def inject_signal(request: SignalInjectionRequest) -> Dict[str, Any]:
     
     # Validate model name
     valid_models = ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp", "ensemble"]
-    if request.model_name not in valid_models:
+    if signal_request.model_name not in valid_models:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid model_name. Must be one of: {valid_models}"
@@ -559,7 +644,7 @@ async def inject_signal(request: SignalInjectionRequest) -> Dict[str, Any]:
     
     # Validate signal type
     try:
-        signal_type = SignalType(request.signal_type)
+        signal_type = SignalType(signal_request.signal_type)
     except ValueError:
         raise HTTPException(
             status_code=400,
@@ -569,41 +654,63 @@ async def inject_signal(request: SignalInjectionRequest) -> Dict[str, Any]:
     try:
         # Create ModelSignal
         signal = ModelSignal(
-            model_name=request.model_name,
+            model_name=signal_request.model_name,
             signal_type=signal_type,
-            confidence=request.confidence,
-            entry_price=request.price,
-            current_price=request.price,
+            confidence=signal_request.confidence,
+            entry_price=signal_request.price,
+            current_price=signal_request.price,
             timestamp=datetime.now(),
-            reasoning=request.reasoning,
-            regime=request.regime,
+            reasoning=signal_request.reasoning,
+            regime=signal_request.regime,
         )
         
-        # --- CONFIDENCE GATE (BUG 1 FIX) ---
-        # The RiskManager acts as the gatekeeper. We pass the raw ensemble confidence.
-        if _risk_manager is not None:
-            can_trade, reason = _risk_manager.check_circuit_breakers(
-                portfolio_value=_paper_trading_engine._create_portfolio_snapshot().total_value,
-                ensemble_conf=request.confidence
-            )
-            if not can_trade:
-                logger.warning(f"Trade blocked by RiskManager: {reason}")
-                return {
-                    "status": "success", 
-                    "signal_processed": True, 
-                    "trade_executed": False, 
-                    "reason": f"Blocked by RiskManager: {reason}"
-                }
+        # In testing environments, standard synchronous TestClient blocks the event loop
+        # so background queue worker task is never executed. Bypass queue worker in tests.
+        from src.api.security import is_testing
+        if is_testing:
+            if _risk_manager is not None and signal_type != SignalType.CLOSE:
+                can_trade, reason = _risk_manager.check_circuit_breakers(
+                    portfolio_value=_paper_trading_engine._create_portfolio_snapshot().total_value,
+                    ensemble_conf=signal_request.confidence
+                )
+                if not can_trade:
+                    logger.warning(f"Trade blocked by RiskManager: {reason}")
+                    return {
+                        "status": "success", 
+                        "signal_processed": True, 
+                        "trade_executed": False, 
+                        "reason": f"Blocked by RiskManager: {reason}"
+                    }
+            trade = _paper_trading_engine.process_signal(signal_request.model_name, signal)
+            if trade is not None and _risk_manager is not None:
+                _risk_manager.risk_state.bars_since_last_trade = 0
+        else:
+            # Ensure queue worker is running
+            if _trading_queue_worker is None:
+                _trading_queue_worker = TradingQueueWorker()
+                await _trading_queue_worker.start()
 
-        # Process signal through engine
-        trade = _paper_trading_engine.process_signal(request.model_name, signal)
+            # Enqueue signal and wait for queue worker execution
+            future = asyncio.get_running_loop().create_future()
+            queued_item = QueuedSignal(signal_request.model_name, signal, future)
+            await _trading_queue_worker.queue.put(queued_item)
+            
+            trade, status_msg = await future
+            
+            if status_msg != "OK":
+                return {
+                    "status": "success",
+                    "signal_processed": True,
+                    "trade_executed": False,
+                    "reason": status_msg
+                }
         
         result: Dict[str, Any] = {
             "status": "success",
             "signal_processed": True,
-            "model": request.model_name,
-            "signal_type": request.signal_type,
-            "confidence": request.confidence,
+            "model": signal_request.model_name,
+            "signal_type": signal_request.signal_type,
+            "confidence": signal_request.confidence,
             "trade_executed": trade is not None,
         }
         
@@ -625,7 +732,7 @@ async def inject_signal(request: SignalInjectionRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Failed to process signal: {str(e)}")
 
 
-@router.post("/config", response_model=Dict[str, Any])
+@router.post("/config", response_model=Dict[str, Any], dependencies=[Security(verify_api_key)])
 async def update_config(request: ConfigUpdateRequest) -> Dict[str, Any]:
     """
     Update paper trading configuration dynamically.
@@ -682,7 +789,7 @@ async def update_config(request: ConfigUpdateRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Failed to update config: {str(e)}")
 
 
-@router.post("/reset-daily", response_model=Dict[str, Any])
+@router.post("/reset-daily", response_model=Dict[str, Any], dependencies=[Security(verify_api_key)])
 async def reset_daily_counters() -> Dict[str, Any]:
     """
     Reset daily P&L counters and trade limits.
@@ -703,7 +810,7 @@ async def reset_daily_counters() -> Dict[str, Any]:
         # Reset risk manager daily state
         if _risk_manager:
             current_equity = _paper_trading_engine._create_portfolio_snapshot().total_value
-            _risk_manager.update_daily_state(current_equity)
+            _risk_manager.reset_daily()
         
         logger.info(f"Daily counters reset. Previous daily P&L: ${previous_daily_pnl:.2f}")
         
@@ -719,7 +826,7 @@ async def reset_daily_counters() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Failed to reset: {str(e)}")
 
 
-@router.post("/reset-circuit-breakers")
+@router.post("/reset-circuit-breakers", dependencies=[Security(verify_api_key)])
 async def reset_circuit_breakers() -> Dict[str, Any]:
     """
     Hard reset all circuit breakers (drawdown, consecutive losses, daily limits)

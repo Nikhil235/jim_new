@@ -20,9 +20,14 @@ def simulate_1000_dollars():
     print("  $1,000 INVESTMENT SIMULATION (STATISTICAL RUN)")
     print("=" * 60)
 
+    from dotenv import load_dotenv
+    load_dotenv()
+    api_key = os.getenv("API_ACCESS_KEY", "medallion_secret_key")
+    headers = {"X-API-Key": api_key}
+
     # 0. Stop any existing engine first
     try:
-        requests.post(f"{BASE_URL}/paper-trading/stop")
+        requests.post(f"{BASE_URL}/paper-trading/stop", headers=headers)
         time.sleep(1)
     except Exception:
         pass
@@ -37,10 +42,11 @@ def simulate_1000_dollars():
                 "kelly_fraction": 0.25,
                 "max_position_pct": 0.10,
                 "max_daily_loss_pct": 0.05,
-                "min_confidence": 0.65,
+                "min_confidence": 0.42,
                 "commission_per_trade": 0.0,
                 "slippage_pct": 0.0,
             },
+            headers=headers,
         )
         data = start_resp.json()
         print(f"   OK: {data.get('message', 'Started')}")
@@ -72,26 +78,34 @@ def simulate_1000_dollars():
     losses = 0
     trades_taken = 0
 
-    # Fetch NLP sentiment ONCE for the simulation to avoid 5000+ network requests
-    print("\n[STEP 3] Fetching initial NLP Sentiment...")
-    try:
-        nlp_res = run_nlp_sentiment()
-        print(f"   NLP Sentiment: {nlp_res['signal']} (Conf: {nlp_res['confidence']:.2f})")
-    except Exception as e:
-        print(f"   Failed to fetch NLP, defaulting to HOLD: {e}")
-        nlp_res = {"signal": "HOLD", "confidence": 0.0, "reasoning": "Failed to fetch"}
+    print("\n[STEP 3] Preparing NLP Sentiment Proxy...")
+    print("   Note: Using dynamic price-action proxy for historical NLP to avoid network spam and static bias.")
 
     print(f"\n[STEP 4] Running Simulation for {sim_length} bars...")
     print("=" * 60)
+
+    MIN_BARS_BETWEEN_TRADES = 2
+    bars_since_last_trade = MIN_BARS_BETWEEN_TRADES
 
     for step in range(sim_length):
         current_idx = start_idx + step
         df_slice: pd.DataFrame = df_full.iloc[:current_idx+1].copy()  # type: ignore
         current_price = float(df_slice["close"].iloc[-1])
         
+        bars_since_last_trade += 1
+        
         # Progress indicator every 100 bars
         if (step + 1) % 100 == 0:
             print(f"   [Progress] Processed {step + 1}/{sim_length} bars...")
+
+        # Dynamically generate NLP proxy to avoid permanent bias (Macro inversion proxy)
+        recent_ret = float(df_slice["returns"].iloc[-5:].mean())
+        if recent_ret < -0.001:
+            nlp_res = {"signal": "LONG", "confidence": 0.75, "reasoning": "Proxy: Risk-Off Flow"}
+        elif recent_ret > 0.001:
+            nlp_res = {"signal": "SHORT", "confidence": 0.75, "reasoning": "Proxy: Risk-On Flow"}
+        else:
+            nlp_res = {"signal": "HOLD", "confidence": 0.0, "reasoning": "Proxy: Neutral"}
 
         # Run models silently (NLP is reused to prevent network spam)
         wavelet_res = run_wavelet(df_slice)
@@ -116,7 +130,12 @@ def simulate_1000_dollars():
         direction = ensemble_res["signal"]
         conf = ensemble_res["confidence"]
         reason = ensemble_res["reasoning"]
-        trade_taken = direction in ["LONG", "SHORT"] and float(conf) >= 0.65
+        
+        # Apply cooldown
+        if bars_since_last_trade < MIN_BARS_BETWEEN_TRADES:
+            trade_taken = False
+        else:
+            trade_taken = direction in ["LONG", "SHORT"] and float(conf) >= 0.42
         
         log_prediction_cycle(
             price=current_price, regime=regime,
@@ -135,6 +154,7 @@ def simulate_1000_dollars():
                 "confidence": float(conf), "price": current_price,
                 "regime": regime, "reasoning": reason,
             },
+            headers=headers,
         )
         
         result = resp.json()
@@ -142,6 +162,7 @@ def simulate_1000_dollars():
         
         if executed:
             trades_taken += 1
+            bars_since_last_trade = 0
             trade_info = result.get("trade", {})
             qty = trade_info.get("quantity", 0)
             print(f"   [TRADE] Opened {direction} {qty:.4f} oz @ ${current_price:,.2f} (Conf: {conf:.3f})")
@@ -159,15 +180,16 @@ def simulate_1000_dollars():
                     "confidence": 0.90, "price": next_price,
                     "regime": regime, "reasoning": "Simulated Exit",
                 },
+                headers=headers,
             )
             
             expected = "UP" if (direction == "LONG" and next_price > current_price) or (direction == "SHORT" and next_price < current_price) else "DOWN"
             if expected == "UP":
                 wins += 1
-                print(f"           ↳ WIN  | Exited @ ${next_price:,.2f}")
+                print(f"           -> WIN  | Exited @ ${next_price:,.2f}")
             else:
                 losses += 1
-                print(f"           ↳ LOSS | Exited @ ${next_price:,.2f}")
+                print(f"           -> LOSS | Exited @ ${next_price:,.2f}")
 
     # 4. Final Summary
     print(f"\n{'==='*20}")

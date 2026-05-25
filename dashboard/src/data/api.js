@@ -32,11 +32,17 @@ const API_BASE = 'http://localhost:8000';
 // CORE FETCH HELPERS
 // ============================================================================
 
+const API_KEY = import.meta.env.VITE_API_ACCESS_KEY || 'medallion_secret_key';
+
 async function apiFetch(path, options = {}) {
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers: { 
+      'Content-Type': 'application/json', 
+      'X-API-Key': API_KEY,
+      ...options.headers 
+    },
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));

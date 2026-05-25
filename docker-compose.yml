@@ -1,5 +1,5 @@
 # ============================================================
-# Mini-Medallion: Full Infrastructure Stack
+# Mini-Medallion: Full Hardened Infrastructure Stack
 # ============================================================
 # Start:  docker-compose up -d
 # Stop:   docker-compose down
@@ -23,15 +23,17 @@ services:
     environment:
       - REDIS_URL=redis://medallion-redis:6379
       - QUESTDB_HOST=medallion-questdb
+    networks:
+      - medallion-net
 
   # --- Time-Series Database (Tick Data) ---
   questdb:
     image: questdb/questdb:7.4.0
     container_name: medallion-questdb
     ports:
-      - "9000:9000"   # Web Console & REST API
-      - "9009:9009"   # ILP (Influx Line Protocol) ingestion
-      - "8812:8812"   # PostgreSQL wire protocol
+      - "127.0.0.1:9000:9000"   # Web Console & REST API bound only to localhost
+      - "127.0.0.1:9009:9009"   # ILP (Influx Line Protocol) ingestion bound only to localhost
+      - "127.0.0.1:8812:8812"   # PostgreSQL wire protocol bound only to localhost
     volumes:
       - ./docker/volumes/questdb:/var/lib/questdb
     environment:
@@ -43,13 +45,15 @@ services:
       retries: 3
       start_period: 15s
     restart: unless-stopped
+    networks:
+      - medallion-net
 
   # --- In-Memory Cache (Feature Store) ---
   redis:
     image: redis:7-alpine
     container_name: medallion-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"   # Redis cache bound only to localhost
     volumes:
       - ./docker/volumes/redis:/data
     command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
@@ -60,14 +64,16 @@ services:
       retries: 3
       start_period: 5s
     restart: unless-stopped
+    networks:
+      - medallion-net
 
   # --- Object Storage (Data Lake) ---
   minio:
     image: minio/minio:latest
     container_name: medallion-minio
     ports:
-      - "9100:9000"   # API
-      - "9101:9001"   # Console
+      - "127.0.0.1:9100:9000"   # MinIO API bound only to localhost
+      - "127.0.0.1:9101:9001"   # MinIO Console bound only to localhost
     volumes:
       - ./docker/volumes/minio:/data
     environment:
@@ -75,35 +81,41 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
     restart: unless-stopped
+    networks:
+      - medallion-net
 
   # --- ML Model Registry ---
   mlflow:
     image: ghcr.io/mlflow/mlflow:v2.11.1
     container_name: medallion-mlflow
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"   # MLflow Registry bound only to localhost
     volumes:
       - ./docker/volumes/mlflow:/mlflow
     command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow/mlflow.db --default-artifact-root /mlflow/artifacts
     restart: unless-stopped
+    networks:
+      - medallion-net
 
   # --- Monitoring: Metrics ---
   prometheus:
     image: prom/prometheus:v2.50.0
     container_name: medallion-prometheus
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"   # Prometheus Server bound only to localhost
     volumes:
       - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./docker/volumes/prometheus:/prometheus
     restart: unless-stopped
+    networks:
+      - medallion-net
 
   # --- Monitoring: Dashboards ---
   grafana:
     image: grafana/grafana:10.3.1
     container_name: medallion-grafana
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"   # Grafana Console bound only to localhost
     volumes:
       - ./docker/volumes/grafana:/var/lib/grafana
     environment:
@@ -113,3 +125,9 @@ services:
       - prometheus
       - questdb
     restart: unless-stopped
+    networks:
+      - medallion-net
+
+networks:
+  medallion-net:
+    driver: bridge

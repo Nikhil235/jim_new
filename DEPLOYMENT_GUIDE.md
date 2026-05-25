@@ -1191,6 +1191,72 @@ docker-compose exec questdb \
 
 ---
 
+## 🔒 Production Secrets & Environment Hardening
+
+To ensure production-grade security, **never store plain text secrets or API keys in `.env` files in your production environment**. Storing credentials in plain text is a significant vulnerability. Instead, leverage Docker Compose environment variables or Docker Secrets.
+
+### Option A: Shell Environment Injection (Recommended for basic VMs)
+Remove the `.env` file from the production workspace and export variables directly into the execution environment. Docker Compose will automatically pick up variables exported on the host machine:
+
+```bash
+# 1. Remove `.env` in production
+rm .env
+
+# 2. Export keys directly into the shell session
+export API_ACCESS_KEY="your-hardened-access-key"
+export METALPRICE_API_KEY="your-metalprice-key"
+export GOLD_API_KEY="your-gold-api-key"
+export ALPHAVANTAGE_API_KEY="your-alphavantage-key"
+export CLERK_SECRET_KEY="your-clerk-key"
+export QUESTDB_PASSWORD="your-questdb-password"
+
+# 3. Start the stack
+docker-compose up -d
+```
+
+### Option B: Docker Compose Secrets (Recommended for production clustering)
+Docker Compose Secrets store keys separately from the application definition.
+
+1. **Create secret files** outside of your Git repository:
+   ```bash
+   mkdir -p /etc/medallion/secrets
+   echo "your-hardened-access-key" > /etc/medallion/secrets/api_access_key
+   echo "your-metalprice-key" > /etc/medallion/secrets/metalprice_api_key
+   ```
+
+2. **Configure `docker-compose.yml` to consume secrets**:
+   ```yaml
+   services:
+     api:
+       build: .
+       container_name: medallion-api
+       ports:
+         - "8000:8000"
+       environment:
+         - REDIS_URL=redis://medallion-redis:6379
+         - QUESTDB_HOST=medallion-questdb
+         - API_ACCESS_KEY_FILE=/run/secrets/api_access_key
+         - METALPRICE_API_KEY_FILE=/run/secrets/metalprice_api_key
+       secrets:
+         - api_access_key
+         - metalprice_api_key
+
+   secrets:
+     api_access_key:
+       file: /etc/medallion/secrets/api_access_key
+     metalprice_api_key:
+       file: /etc/medallion/secrets/metalprice_api_key
+   ```
+
+### 🛡️ Automatic Log Masking and Redaction
+The Mini-Medallion engine is equipped with an **automatic, real-time log sanitizer** implemented in `src/utils/logger.py`. The logger:
+- Dynamically loads all active API keys, secrets, and auth tokens from the system environment.
+- Automatically regex-scans all stdout console prints, `logs/medallion.log`, and `logs/trades.log`.
+- Redacts sensitive credentials (e.g. `X-API-Key`, `Bearer ...`, `password=...`, and raw key strings) into secure `[REDACTED]` masks.
+- Sanitizes full exception tracebacks to prevent leakage of underlying code strings or local parameters.
+
+---
+
 ## 📞 Support
 
 **If issues arise:**

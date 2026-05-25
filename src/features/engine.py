@@ -24,34 +24,29 @@ class FeatureEngine:
     """Transforms raw OHLCV data into a rich feature matrix.
     All features are computed without lookahead bias."""
 
-    # Top 25 Golden Features driving over 75% of model classification decisions
-    GOLDEN_FEATURES = [
-        "volatility_10",
-        "volatility_20",
-        "volatility_50",
-        "vol_regime",
-        "atr_14",
-        "standard_deviation_20",
-        "zscore_20",
-        "zscore_50",
-        "rsi_14",
-        "macd",
-        "macdsignal",
-        "trend_consistency_20",
-        "trend_consistency_50",
-        "kalman_spread",
-        "kalman_zscore",
-        "kalman_beta",
-        "amihud_illiquidity_20",
-        "kyle_lambda_20",
-        "obv",
-        "vwap",
-        "volume_ratio",
-        "adx_14",
-        "autocorr_10_lag1",
-        "fomc_proximity",
-        "nfp_proximity"
-    ]
+    # Regime-Conditional Golden Features
+    REGIME_GOLDEN_FEATURES = {
+        "GROWTH": [
+            "rsi_14", "macd", "trend_consistency_20", "obv", 
+            "vol_price_divergence_20", "autocorr_10_lag1", 
+            "sma_dist_20", "vwap_dist_20"
+        ],
+        "NORMAL": [
+            "zscore_20", "kalman_zscore", "vol_regime", 
+            "return_skew_20", "range_20", "rsi_14", "macd",
+            "volatility_20", "atr_14", "fomc_proximity"
+        ],
+        "CRISIS": [
+            "volatility_10", "atr_14", "spread_proxy", 
+            "kyle_lambda_20", "amihud_illiquidity_20", 
+            "vol_ratio_10_50", "kalman_beta", "nfp_proximity"
+        ],
+        "HIGH_VOLATILITY": [
+            "volatility_10", "atr_14", "spread_proxy", 
+            "kyle_lambda_20", "amihud_illiquidity_20", 
+            "vol_ratio_10_50", "kalman_beta"
+        ]
+    }
 
     def __init__(self, config: Optional[dict] = None):
         if config:
@@ -73,6 +68,7 @@ class FeatureEngine:
         df: pd.DataFrame,
         macro: Optional[dict] = None,
         alt_data: Optional[dict] = None,
+        current_regime: str = "NORMAL",
     ) -> pd.DataFrame:
         """Generate all features from raw data.
 
@@ -103,7 +99,9 @@ class FeatureEngine:
             features = self._add_volume_features(features)
 
         # --- Phase 2 new feature groups ---
+        features = self._add_mtf_features(features)
         features = self._add_temporal_features(features)
+        features = self._add_intraday_seasonality(features)
         features = self._add_lag_features(features)
         features = self._add_distribution_features(features)
         features = self._add_microstructure_proxies(features)
@@ -123,6 +121,9 @@ class FeatureEngine:
             features = self._add_google_trends_features(features, alt_data)
             features = self._add_sentiment_features(features, alt_data)
 
+        # Target Labels
+        features = self._add_target_labels(features)
+
         # Smart NaN handling: don't let alt data (shorter history) eliminate all rows
         # 1. Forward-fill alt data columns (COT, ETF, trends, sentiment) — they are weekly/sparse/daily
         alt_prefixes = ("cot_", "etf_", "trends_", "google_", "sentiment_")
@@ -141,7 +142,11 @@ class FeatureEngine:
         # 4. Dynamic feature pruning: keep only OHLCV + returns + Top 25 Golden Features
         if self.prune_features:
             keep_cols = ["open", "high", "low", "close", "volume", "returns"]
-            active_golden = [col for col in self.GOLDEN_FEATURES if col in features.columns]
+            
+            # Regime-conditional feature swapping
+            regime_features = self.REGIME_GOLDEN_FEATURES.get(current_regime, self.REGIME_GOLDEN_FEATURES["NORMAL"])
+            active_golden = [col for col in regime_features if col in features.columns]
+            
             target_cols = [c for c in features.columns if "target" in c or c.startswith("future_")]
             final_cols = list(dict.fromkeys(keep_cols + active_golden + target_cols))
             final_cols = [c for c in final_cols if c in features.columns]
@@ -262,6 +267,60 @@ class FeatureEngine:
     # Phase 2: New feature groups
     # ──────────────────────────────────────────────────────
 
+    def _add_mtf_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Compute higher timeframe features and inject into base frame."""
+        if len(df) < 2 or not isinstance(df.index, pd.DatetimeIndex):
+            return df
+            
+        # Determine base frequency
+        median_diff = df.index.to_series().diff().median()
+        if pd.isna(median_diff):
+            return df
+            
+        base_minutes = median_diff.total_seconds() / 60.0
+        
+        # Only compute MTF if base frequency is intraday
+        if base_minutes >= 1440: # Daily or higher
+            return df
+            
+        timeframes = []
+        if base_minutes < 5: timeframes.append(("5T", "5min"))
+        if base_minutes < 15: timeframes.append(("15T", "15min"))
+        if base_minutes < 60: timeframes.append(("1h", "1h"))
+        if base_minutes < 240: timeframes.append(("4h", "4h"))
+        
+        for tf, tf_name in timeframes:
+            try:
+                resampled = df.resample(tf_name).agg({
+                    "open": "first", "high": "max", "low": "min", 
+                    "close": "last", "volume": "sum"
+                }).dropna()
+                
+                if len(resampled) < 15:
+                    continue
+                
+                # Compute RSI
+                delta = resampled["close"].diff()
+                gain = delta.where(delta > 0, 0).rolling(14).mean()
+                loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+                rs = gain / loss.replace(0, np.nan)
+                rsi_tf = 100 - (100 / (1 + rs))
+                df[f"rsi_{tf}"] = rsi_tf.reindex(df.index, method="ffill")
+                
+                # Compute MACD
+                ema12 = resampled["close"].ewm(span=12).mean()
+                ema26 = resampled["close"].ewm(span=26).mean()
+                macd_tf = ema12 - ema26
+                df[f"macd_{tf}"] = macd_tf.reindex(df.index, method="ffill")
+                
+                # Trend alignment (1 for uptrend, -1 for downtrend)
+                trend_tf = np.where(macd_tf > 0, 1, -1)
+                df[f"trend_{tf}"] = pd.Series(trend_tf, index=resampled.index).reindex(df.index, method="ffill")
+            except Exception as e:
+                logger.warning(f"Failed to compute MTF {tf_name}: {e}")
+                
+        return df
+
     def _add_temporal_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """Time-based cyclical features (no lookahead)."""
         if hasattr(df.index, "hour"):
@@ -279,6 +338,25 @@ class FeatureEngine:
         if hasattr(df.index, "dayofyear"):
             df["doy_sin"] = np.sin(2 * np.pi * df.index.dayofyear / 365)
             df["doy_cos"] = np.cos(2 * np.pi * df.index.dayofyear / 365)
+        return df
+
+    def _add_intraday_seasonality(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Gold-specific session features."""
+        if not hasattr(df.index, "hour"):
+            return df
+            
+        hour = df.index.hour
+        time_decimal = hour + (df.index.minute / 60.0 if hasattr(df.index, "minute") else 0)
+        
+        # London AM Fix: 10:30 GMT — historically causes intraday reversal
+        df["london_fix_proximity"] = np.exp(-0.5 * ((time_decimal - 10.5) / 1.0) ** 2)
+        
+        # COMEX active hours: 13:00-17:30 GMT — highest volume
+        df["comex_active"] = ((time_decimal >= 13) & (time_decimal <= 17.5)).astype(float)
+        
+        # Asia premium/discount: 00:00-08:00 GMT
+        df["asia_session"] = ((time_decimal >= 0) & (time_decimal <= 8)).astype(float)
+        
         return df
 
     def _add_lag_features(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -789,6 +867,19 @@ class FeatureEngine:
             oi = self._tz_naive_series(cot_df["open_interest"], df.index).replace(0, np.nan)
             df["cot_crowding"] = nc_net / oi
 
+        # Extreme positioning indicators (most predictive COT signals)
+        if "cot_net_noncommercial" in df.columns:
+            # 1. Managed Money net position as percentile of 3-year range
+            df["cot_mm_percentile_3y"] = df["cot_net_noncommercial"].rolling(756).rank(pct=True)
+            
+        if "cot_net_commercial" in df.columns:
+            # 2. Commercial hedger reversal (smart money): when commercials flip
+            df["cot_commercial_flip"] = np.sign(df["cot_net_commercial"]).diff().abs()
+            
+        if "cot_open_interest" in df.columns:
+            # 3. Open interest velocity (acceleration of speculative interest)
+            df["cot_oi_velocity"] = df["cot_open_interest"].pct_change(5).diff()
+
         return df
 
     def _add_google_trends_features(self, df: pd.DataFrame, alt_data: dict) -> pd.DataFrame:
@@ -856,6 +947,71 @@ class FeatureEngine:
                 df["sentiment_news_fear_index"] = self._tz_naive_series(sentiment_df["fear_index"], df.index)
 
         return df
+
+    def _add_target_labels(self, df: pd.DataFrame, horizons: Optional[List[int]] = None) -> pd.DataFrame:
+        """Target Variable Engineering (Forward Returns) for supervised learning."""
+        if horizons is None:
+            horizons = [1, 5, 10]
+            
+        for h in horizons:
+            # Forward return (what we're trying to predict)
+            df[f"target_return_{h}"] = df["close"].pct_change(h).shift(-h)
+            # Classification target: LONG/HOLD/SHORT
+            df[f"target_class_{h}"] = np.where(
+                df[f"target_return_{h}"] > 0.001, 2,   # LONG
+                np.where(df[f"target_return_{h}"] < -0.001, 0, 1)  # SHORT / HOLD
+            )
+            # Triple-barrier label (profit-taking at 1%, stop-loss at 0.5%)
+            df[f"target_barrier_{h}"] = self._triple_barrier_label(
+                df, take_profit=0.01, stop_loss=0.005, max_bars=h
+            )
+        return df
+
+    def _triple_barrier_label(self, df: pd.DataFrame, take_profit: float, stop_loss: float, max_bars: int) -> pd.Series:
+        """
+        Advances along the time-series and returns:
+          1 if take_profit is hit first,
+         -1 if stop_loss is hit first,
+          0 if max_bars is reached without hitting either barrier.
+        """
+        closes = df["close"].values
+        highs = df["high"].values if "high" in df.columns else closes
+        lows = df["low"].values if "low" in df.columns else closes
+        
+        n = len(closes)
+        labels = np.zeros(n)
+        
+        for i in range(n - max_bars):
+            entry_price = closes[i]
+            if pd.isna(entry_price) or entry_price == 0:
+                continue
+                
+            tp_price = entry_price * (1 + take_profit)
+            sl_price = entry_price * (1 - stop_loss)
+            
+            for j in range(1, max_bars + 1):
+                if i + j >= n:
+                    break
+                    
+                curr_high = highs[i + j]
+                curr_low = lows[i + j]
+                
+                if pd.isna(curr_high) or pd.isna(curr_low):
+                    continue
+                
+                if curr_high >= tp_price and curr_low <= sl_price:
+                    # Ambiguous (both hit in same bar), assume stop loss to be conservative
+                    labels[i] = -1
+                    break
+                elif curr_high >= tp_price:
+                    labels[i] = 1
+                    break
+                elif curr_low <= sl_price:
+                    labels[i] = -1
+                    break
+                    
+        return pd.Series(labels, index=df.index)
+
 
     # ──────────────────────────────────────────────────────
     # Utility

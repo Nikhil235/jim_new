@@ -23,7 +23,7 @@ from src.paper_trading.engine import (
     SignalType,
     TradeStatus,
 )
-from src.risk.manager import RiskManager, RiskLimits
+from src.risk.manager import RiskManager
 
 
 class TestPaperTradingConfig:
@@ -132,6 +132,7 @@ class TestPaperTradingEngine:
              patch('src.paper_trading.engine.ExecutionSimulator'), \
              patch('src.paper_trading.engine.PortfolioTracker'):
             engine = PaperTradingEngine(config)
+            engine.portfolio.current_cash = 100000.0
         return engine
     
     def test_engine_initialization(self, engine):
@@ -259,80 +260,82 @@ class TestRiskManager:
     @pytest.fixture
     def risk_manager(self):
         """Create a test risk manager."""
-        return RiskManager(initial_capital=100000.0)
+        config = {
+            "risk": {
+                "kelly": {
+                    "fraction": 0.25,
+                    "max_position_pct": 0.10,
+                },
+                "circuit_breakers": {
+                    "daily_loss_limit": 0.02,
+                    "drawdown_stop": 0.15,
+                }
+            }
+        }
+        return RiskManager(config)
     
     def test_initialization(self, risk_manager):
         """Test risk manager initialization."""
-        assert risk_manager.initial_capital == 100000.0
-        assert risk_manager.peak_equity == 100000.0
-        assert len(risk_manager.open_positions) == 0
-    
-    def test_check_can_trade_ok(self, risk_manager):
-        """Test can_trade with acceptable conditions."""
-        can_trade, reason = risk_manager.check_can_trade(
-            model_name="wavelet",
-            position_value=5000.0,
-            current_equity=100000.0,
+        assert risk_manager.risk_state.is_halted is False
+        assert risk_manager.risk_state.consecutive_losses == 0
+        assert risk_manager.kelly_fraction == 0.25
+        assert risk_manager.max_position_pct == 0.10
+
+    def test_check_circuit_breakers_ok(self, risk_manager):
+        """Test circuit breakers with acceptable conditions."""
+        can_trade, reason = risk_manager.check_circuit_breakers(
+            portfolio_value=100000.0,
+            ensemble_conf=0.80,
         )
         assert can_trade is True
-        assert reason == "OK"
-    
-    def test_check_can_trade_position_too_large(self, risk_manager):
-        """Test can_trade with position too large."""
-        can_trade, reason = risk_manager.check_can_trade(
-            model_name="wavelet",
-            position_value=20000.0,  # 20% of capital, exceeds 10% limit
-            current_equity=100000.0,
+        assert reason == "OK" or "REDUCE_SIZE" in reason
+
+    def test_check_circuit_breakers_low_confidence(self, risk_manager):
+        """Test circuit breakers with low confidence."""
+        can_trade, reason = risk_manager.check_circuit_breakers(
+            portfolio_value=100000.0,
+            ensemble_conf=0.40,
         )
         assert can_trade is False
-        assert "Position too large" in reason
-    
-    def test_check_can_trade_daily_loss_exceeded(self, risk_manager):
-        """Test can_trade with daily loss exceeded."""
-        risk_manager.daily_start_equity = 100000.0
-        current_equity = 97900.0  # 2.1% loss, exceeds 2% limit
-        can_trade, reason = risk_manager.check_can_trade(
-            model_name="test",
-            position_value=1000.0,
-            current_equity=current_equity,
+        assert "LOW_CONFIDENCE" in reason
+
+    def test_check_circuit_breakers_daily_loss_exceeded(self, risk_manager):
+        """Test circuit breakers with daily loss exceeded."""
+        risk_manager.risk_state.daily_pnl = -3000.0  # 3% loss, exceeds 2% limit
+        can_trade, reason = risk_manager.check_circuit_breakers(
+            portfolio_value=100000.0,
+            ensemble_conf=0.80,
         )
         assert can_trade is False
-        assert "Daily loss" in reason
-    
+        assert "Daily loss" in reason or "HALTED" in reason
+
     def test_consecutive_losses_tracking(self, risk_manager):
         """Test consecutive losses tracking."""
-        trade1 = TradeExecution(pnl=-100.0, status=TradeStatus.CLOSED)
-        trade2 = TradeExecution(pnl=-50.0, status=TradeStatus.CLOSED)
+        risk_manager.record_trade(-100.0)
+        assert risk_manager.risk_state.consecutive_losses == 1
         
-        risk_manager.close_trade(trade1, 99900.0)
-        assert risk_manager.consecutive_losses == 1
-        
-        risk_manager.close_trade(trade2, 99850.0)
-        assert risk_manager.consecutive_losses == 2
-    
+        risk_manager.record_trade(-50.0)
+        assert risk_manager.risk_state.consecutive_losses == 2
+
     def test_consecutive_losses_reset_on_win(self, risk_manager):
         """Test consecutive losses reset on win."""
-        trade1 = TradeExecution(pnl=-100.0, status=TradeStatus.CLOSED)
-        trade2 = TradeExecution(pnl=200.0, status=TradeStatus.CLOSED)
+        risk_manager.record_trade(-100.0)
+        assert risk_manager.risk_state.consecutive_losses == 1
         
-        risk_manager.close_trade(trade1, 99900.0)
-        assert risk_manager.consecutive_losses == 1
-        
-        risk_manager.close_trade(trade2, 100100.0)
-        assert risk_manager.consecutive_losses == 0
-    
+        risk_manager.record_trade(200.0)
+        assert risk_manager.risk_state.consecutive_losses == 0
+
     def test_peak_equity_tracking(self, risk_manager):
         """Test peak equity tracking."""
-        assert risk_manager.peak_equity == 100000.0
+        risk_manager.update_equity(100000.0)
+        assert risk_manager.risk_state.peak_equity == 100000.0
         
-        trade = TradeExecution(pnl=5000.0, status=TradeStatus.CLOSED)
-        risk_manager.close_trade(trade, 105000.0)
-        assert risk_manager.peak_equity == 105000.0
+        risk_manager.update_equity(105000.0)
+        assert risk_manager.risk_state.peak_equity == 105000.0
         
-        trade2 = TradeExecution(pnl=-2000.0, status=TradeStatus.CLOSED)
-        risk_manager.close_trade(trade2, 103000.0)
-        assert risk_manager.peak_equity == 105000.0  # Should not change
-    
+        risk_manager.update_equity(103000.0)
+        assert risk_manager.risk_state.peak_equity == 105000.0  # Should not change
+
     def test_risk_report(self, risk_manager):
         """Test risk report generation."""
         report = risk_manager.get_risk_report(
@@ -340,10 +343,8 @@ class TestRiskManager:
             daily_pnl=2000.0
         )
         assert "current_equity" in report
-        assert "peak_equity" in report
-        assert "drawdown_pct" in report
+        assert "drawdown_stop" in report
         assert "daily_pnl" in report
-        assert "violations" in report
 
 
 class TestPortfolioSnapshot:

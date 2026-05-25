@@ -361,6 +361,7 @@ class RegimeDetector(BaseModel):
             self._recent_regimes = self._recent_regimes[-self.min_regime_duration * 3:]
 
         # Check regime persistence (avoid whipsaw)
+        smoothed_state = current_state
         if len(self._recent_regimes) >= self.min_regime_duration:
             recent = self._recent_regimes[-self.min_regime_duration:]
             persistence = sum(1 for r in recent if r == current_state) / len(recent)
@@ -368,8 +369,14 @@ class RegimeDetector(BaseModel):
             # Boost confidence if regime is persistent, reduce if unstable
             adjusted_conf = current_conf * (1 - self.regime_persistence_weight) + persistence * self.regime_persistence_weight
             current_conf = min(adjusted_conf, 1.0)
+            
+            # Hysteresis on the reported state to prevent flip-flopping
+            from collections import Counter
+            most_common_state, count = Counter(recent).most_common(1)[0]
+            if count >= self.min_regime_duration * 0.6:  # If a state is dominant (e.g. 60% of recent bars)
+                smoothed_state = most_common_state
 
-        regime_name = self.REGIME_NAMES.get(current_state, f"UNKNOWN_{current_state}")
+        regime_name = self.REGIME_NAMES.get(smoothed_state, f"UNKNOWN_{smoothed_state}")
         return regime_name, current_conf
 
     def get_regime_transition_probabilities(self) -> Dict[str, Dict[str, float]]:
@@ -456,13 +463,16 @@ class RegimeDetector(BaseModel):
         # Bug 3 Fix: Removed arbitrary heuristic scalar clamps (* 1.1, * 0.7) so the HMM 
         # returns the true unadulterated probability, not a hardcoded constant.
         if regime_name == "GROWTH":
-            # Calm market: Buy dips (mean reversion)
-            if recent_return > 0:
-                signal = "LONG"
-                confidence = regime_conf
-            elif recent_return < -0.005:
-                signal = "LONG"  # Buy the dip in growth regime
+            # Calm market: Mean reversion
+            if recent_return > 0.003:
+                signal = "SHORT"  # Sell the rip
+                confidence = regime_conf * 0.80
+            elif recent_return < -0.008:
+                signal = "SHORT"  # Trend breakdown, stop buying the dip
                 confidence = regime_conf * 0.90
+            elif recent_return < -0.002:
+                signal = "LONG"  # Buy the dip
+                confidence = regime_conf * 0.80
             else:
                 signal = "HOLD"
                 confidence = 0.0

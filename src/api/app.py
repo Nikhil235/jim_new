@@ -21,8 +21,11 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Security
 from fastapi.responses import JSONResponse, FileResponse
+from src.api.security import verify_api_key, limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
@@ -141,6 +144,10 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Setup slowapi rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add CORS middleware for external integrations
 app.add_middleware(
@@ -566,7 +573,7 @@ async def get_data_quality():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/backtest/{strategy}", response_model=BacktestResponse)
+@app.post("/backtest/{strategy}", response_model=BacktestResponse, dependencies=[Security(verify_api_key)])
 async def backtest(strategy: str, request: BacktestRequest):
     """
     Backtest a strategy using the real engine with transaction costs,
@@ -626,14 +633,27 @@ async def backtest(strategy: str, request: BacktestRequest):
             model_name = "wavelet"
             strategy_fn = create_strategy(model_name)
             
+        # Compute volatility for dynamic spread
+        gold_df["returns"] = gold_df["close"].pct_change()
+        gold_df["volatility"] = gold_df["returns"].rolling(20).std().fillna(0.0)
+
         # Build MarketEvents (using actual data, incorporating regime)
         market_events = []
         for i, (ts, row) in enumerate(gold_df.iterrows()):
             if ts < start: continue
             
-            # Simple fallback for bid/ask spread (adds transaction costs via slippage)
+            # Dynamic spread model based on time-of-day and volatility
             close_val = float(row.get("close", 0.0))
-            spread = close_val * 0.0005 # 5 bps spread
+            ts_dt = pd.Timestamp(ts)
+            hour = ts_dt.hour
+            is_comex = (hour >= 13) and (hour <= 17)
+            vol = float(row.get("volatility", 0.0))
+            
+            base_spread = 0.10  # $0.10 per oz during COMEX hours
+            if not is_comex:
+                base_spread *= 3  # 3x wider during off-hours
+            vol_multiplier = 1 + max(0, (vol - 0.01) * 50)  # Wider in high vol
+            spread = base_spread * vol_multiplier
             
             regime_id = int(regimes[i]) if i < len(regimes) else 0
             regime_name = detector.REGIME_NAMES.get(regime_id, "NORMAL")
@@ -664,13 +684,39 @@ async def backtest(strategy: str, request: BacktestRequest):
             model_name=model_name
         )
         
-        # 2. Walk-Forward Validation (Split 70% In-Sample, 30% Out-Of-Sample)
-        split_idx = int(len(market_events) * 0.7)
-        is_events = market_events[:split_idx]
-        oos_events = market_events[split_idx:]
+        # 2. Walk-Forward Validation (TimeSeriesSplit 5-fold)
+        from sklearn.model_selection import TimeSeriesSplit
         
-        is_result = runner.run_backtest(strategy, strategy_fn, is_events) if len(is_events) > 10 else result
-        oos_result = runner.run_backtest(strategy, strategy_fn, oos_events) if len(oos_events) > 10 else result
+        if len(market_events) > 50:
+            tscv = TimeSeriesSplit(n_splits=5, gap=20)
+            is_returns = []
+            is_sharpes = []
+            oos_returns = []
+            oos_sharpes = []
+            
+            for train_idx, test_idx in tscv.split(market_events):
+                train_events = [market_events[i] for i in train_idx]
+                test_events = [market_events[i] for i in test_idx]
+                
+                if len(train_events) > 10:
+                    train_res = runner.run_backtest(strategy, strategy_fn, train_events)
+                    is_returns.append(train_res.metrics.total_return)
+                    is_sharpes.append(train_res.metrics.sharpe_ratio)
+                
+                if len(test_events) > 10:
+                    test_res = runner.run_backtest(strategy, strategy_fn, test_events)
+                    oos_returns.append(test_res.metrics.total_return)
+                    oos_sharpes.append(test_res.metrics.sharpe_ratio)
+            
+            is_return_avg = np.mean(is_returns) if is_returns else 0.0
+            oos_return_avg = np.mean(oos_returns) if oos_returns else 0.0
+            is_sharpe_avg = np.mean(is_sharpes) if is_sharpes else 0.0
+            oos_sharpe_avg = np.mean(oos_sharpes) if oos_sharpes else 0.0
+        else:
+            is_return_avg = result.metrics.total_return
+            oos_return_avg = result.metrics.total_return
+            is_sharpe_avg = result.metrics.sharpe_ratio
+            oos_sharpe_avg = result.metrics.sharpe_ratio
         
         # 3. Regime-Specific Drawdown Analysis
         regime_drawdowns = {"GROWTH": [], "NORMAL": [], "CRISIS": []}
@@ -708,9 +754,9 @@ async def backtest(strategy: str, request: BacktestRequest):
             "calmar_ratio": perf.get("calmar_ratio", 0),
             
             # Additional analysis (Walk-forward & Regime)
-            "is_return": is_result.metrics.total_return * 100,
-            "oos_return": oos_result.metrics.total_return * 100,
-            "oos_degradation": (is_result.metrics.sharpe_ratio - oos_result.metrics.sharpe_ratio),
+            "is_return": float(is_return_avg) * 100,
+            "oos_return": float(oos_return_avg) * 100,
+            "oos_degradation": float(is_sharpe_avg - oos_sharpe_avg),
             "regime_drawdowns": regime_max_dd,
             "transaction_costs": sum([t.get("commission", 0) + t.get("slippage", 0) for t in result.trades])
         }
@@ -861,6 +907,19 @@ async def get_gold_price(
             candles.append(candle)
         
         current = candles[-1]["close"] if candles else 0
+        
+        # Hybrid Approach: Override delayed yfinance price with real-time MetalPriceAPI spot
+        try:
+            from src.paper_trading.live_inference import fetch_metalpriceapi_spot
+            spot = fetch_metalpriceapi_spot()
+            if spot is not None and spot > 0:
+                current = spot
+                # Optionally override the last candle's close so the chart syncs
+                if candles:
+                    candles[-1]["close"] = spot
+        except Exception as e:
+            logger.warning(f"Failed to fetch MetalPriceAPI spot for dashboard: {e}")
+            
         prev_close = candles[-2]["close"] if len(candles) > 1 else current
         change = current - prev_close
         change_pct = (change / prev_close * 100) if prev_close else 0
@@ -952,11 +1011,29 @@ async def get_gs_ratio(
                 "lower_boundary": round(float(dynamic_lower[i]), 4),
                 "signal": int(signals[i]),
             })
+        current_gold = data[-1]["gold"] if data else 0
+        current_silver = data[-1]["silver"] if data else 0
+        current_ratio = data[-1]["ratio"] if data else 0
+        
+        # Hybrid Override: Get real-time spot from MetalPriceAPI
+        try:
+            from src.paper_trading.live_inference import fetch_metalpriceapi_gs_spot
+            spot_gold, spot_silver = fetch_metalpriceapi_gs_spot()
+            if spot_gold and spot_silver:
+                current_gold = spot_gold
+                current_silver = spot_silver
+                current_ratio = round(spot_gold / spot_silver, 2)
+                if data:
+                    data[-1]["gold"] = current_gold
+                    data[-1]["silver"] = current_silver
+                    data[-1]["ratio"] = current_ratio
+        except Exception as e:
+            logger.warning(f"Failed to fetch MetalPriceAPI G/S spot: {e}")
 
         return {
-            "current_gold": data[-1]["gold"] if data else 0,
-            "current_silver": data[-1]["silver"] if data else 0,
-            "current_ratio": data[-1]["ratio"] if data else 0,
+            "current_gold": current_gold,
+            "current_silver": current_silver,
+            "current_ratio": current_ratio,
             "current_beta": data[-1]["beta"] if data else 0,
             "current_alpha": data[-1]["alpha"] if data else 0,
             "current_z_score": data[-1]["z_score"] if data else 0,

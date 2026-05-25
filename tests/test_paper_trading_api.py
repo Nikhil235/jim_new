@@ -40,7 +40,7 @@ from src.paper_trading.engine import (
     SignalType,
     TradeStatus,
 )
-from src.risk.manager import RiskManager, RiskLimits
+from src.risk.manager import RiskManager
 
 
 # ============================================================================
@@ -50,7 +50,9 @@ from src.risk.manager import RiskManager, RiskLimits
 @pytest.fixture
 def client():
     """Create a test client."""
-    return TestClient(app)
+    c = TestClient(app)
+    c.headers.update({"X-API-Key": "medallion_secret_key"})
+    return c
 
 
 @pytest.fixture
@@ -76,7 +78,19 @@ def engine(default_config):
 @pytest.fixture
 def risk_manager():
     """Create a risk manager."""
-    return RiskManager(100000.0, RiskLimits())
+    config = {
+        "risk": {
+            "kelly": {
+                "fraction": 0.25,
+                "max_position_pct": 0.10,
+            },
+            "circuit_breakers": {
+                "daily_loss_limit": 0.02,
+                "drawdown_stop": 0.15,
+            }
+        }
+    }
+    return RiskManager(config)
 
 
 @pytest.fixture
@@ -141,6 +155,15 @@ class TestStartEndpoint:
             "initial_capital": -1000.0,
         })
         assert response.status_code == 422
+
+    def test_start_security_unauthorized(self, client):
+        """Test starting paper trading without valid API key header returns 403."""
+        from fastapi.testclient import TestClient
+        unauth_client = TestClient(app)
+        response = unauth_client.post("/paper-trading/start", json={
+            "initial_capital": 100000.0,
+        })
+        assert response.status_code == 403
 
 
 # ============================================================================
@@ -297,7 +320,7 @@ class TestRiskReportEndpoint:
         assert "portfolio_summary" in data
         report = data["risk_report"]
         assert "current_equity" in report
-        assert "risk_limits" in report
+        assert "drawdown_stop" in report
 
 
 # ============================================================================

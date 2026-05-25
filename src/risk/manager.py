@@ -46,6 +46,7 @@ class RiskState:
     last_trade_pnls: list = field(default_factory=list)
     current_regime: str = "NORMAL"
     bars_since_regime_switch: int = 100  # Start high to not block initial trades
+    bars_since_last_trade: int = 100  # Start high to not block initial trades
 
 
 class RiskManager:
@@ -83,6 +84,7 @@ class RiskManager:
         self.consecutive_loss_limit = cb_cfg.get("consecutive_loss_limit", 3)
         self.consecutive_loss_reduction = cb_cfg.get("consecutive_loss_reduction", 0.25)
         self.cooldown_bars = cb_cfg.get("cooldown_bars", 5)
+        self.min_bars_between_trades = cb_cfg.get("min_bars_between_trades", 10)
         self.min_confidence = cb_cfg.get("min_confidence", 0.65)
 
         # State
@@ -97,6 +99,7 @@ class RiskManager:
 
     def _update_regime_tracking(self, regime: str) -> None:
         """Track regime switches and update cooldown counters."""
+        self.risk_state.bars_since_last_trade += 1
         if regime != self.risk_state.current_regime:
             logger.warning(
                 f"🔄 HMM REGIME CHANGE DECLARED: {self.risk_state.current_regime} ──> {regime}. Cool-down initiated!"
@@ -297,6 +300,12 @@ class RiskManager:
             logger.warning(f"⚠️ RISK BREAKER: {reason}")
             return False, f"REGIME_COOLDOWN: {self.risk_state.bars_since_regime_switch} bars"
 
+        # Minimum bars between trades
+        if self.risk_state.bars_since_last_trade < self.min_bars_between_trades:
+            reason = f"Minimum bars between trades active ({self.risk_state.bars_since_last_trade} bars since last trade < {self.min_bars_between_trades} bars limit)"
+            logger.warning(f"⚠️ RISK BREAKER: {reason}")
+            return False, f"COOLDOWN: {self.risk_state.bars_since_last_trade} bars"
+
         # Daily loss limit
         daily_loss_pct = abs(self.risk_state.daily_pnl) / portfolio_value if portfolio_value > 0 else 0
         if self.risk_state.daily_pnl < 0 and daily_loss_pct >= self.daily_loss_limit:
@@ -374,6 +383,7 @@ class RiskManager:
         self.risk_state.daily_pnl += pnl
         self.risk_state.trades_today += 1
         self.risk_state.last_trade_pnls.append(pnl)
+        self.risk_state.bars_since_last_trade = 0
 
         # Keep last 100 trades for rolling stats
         if len(self.risk_state.last_trade_pnls) > 100:

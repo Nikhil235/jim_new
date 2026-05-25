@@ -71,7 +71,7 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "1m") -> Optional[p
         import time
         
         # Group download is faster and aligns timestamps perfectly
-        tickers = "GC=F DX-Y.NYB ^TNX SI=F"
+        tickers = "GC=F PAXG-USD DX-Y.NYB ^TNX SI=F ^GVZ TIP"
         
         df_all = pd.DataFrame()
         for attempt in range(3):
@@ -85,8 +85,17 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "1m") -> Optional[p
             logger.warning("yfinance returned empty dataframe")
             return None
 
-        # Extract Gold
+        # Extract Gold (Merge GC=F futures with PAXG-USD 24/7 crypto gold to prevent stale prices on weekends/holidays)
         df = df_all["GC=F"].copy()
+        if "PAXG-USD" in df_all:
+            df_pax = df_all["PAXG-USD"].copy()
+            for col in ["Open", "High", "Low", "Close"]:
+                if col in df.columns and col in df_pax.columns:
+                    df[col] = df[col].fillna(df_pax[col])
+            # For volume, crypto volume can be 0 or small, replace 0 with 1 to avoid zero-volume filter dropping valid rows
+            if "Volume" in df.columns and "Volume" in df_pax.columns:
+                df["Volume"] = df["Volume"].fillna(df_pax["Volume"].replace(0, 1))
+
         df.columns = [c.lower() for c in df.columns]
         df = df[["open", "high", "low", "close", "volume"]].copy()
         
@@ -101,17 +110,46 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "1m") -> Optional[p
         df["dxy"] = df_all["DX-Y.NYB"]["Close"].ffill()
         df["us10y"] = df_all["^TNX"]["Close"].ffill()
         df["silver"] = df_all["SI=F"]["Close"].ffill()
+        df["gvz"] = df_all["^GVZ"]["Close"].ffill()
+        df["tip"] = df_all["TIP"]["Close"].ffill()
         
         df.dropna(inplace=True)
+        df["gvz_zscore_20"] = (df["gvz"] - df["gvz"].rolling(20).mean()) / df["gvz"].rolling(20).std()
 
         # Add returns
         df["returns"] = df["close"].pct_change()
         df["dxy_returns"] = df["dxy"].pct_change()
         df["us10y_returns"] = df["us10y"].pct_change()
         df["silver_returns"] = df["silver"].pct_change()
+        df["tip_return"] = df["tip"].pct_change()
         df["gold_silver_ratio"] = df["close"] / df["silver"]
         
+        # Negative real yield = Gold bullish
+        df["real_yield_proxy"] = df["us10y"] - df["tip_return"].rolling(20).mean() * 100
+        
         df.dropna(inplace=True)
+        
+        # Override the final bar with the true live spot price from MetalPriceAPI
+        # and scale the entire historical series so the returns stay structurally intact
+        # without introducing a massive gap on the final bar.
+        try:
+            spot_price = fetch_metalpriceapi_spot()
+            if spot_price and spot_price > 0:
+                current_last = df["close"].iloc[-1]
+                scaling_factor = spot_price / current_last
+                
+                # Scale OHL prices
+                df["open"] *= scaling_factor
+                df["high"] *= scaling_factor
+                df["low"] *= scaling_factor
+                df["close"] *= scaling_factor
+                
+                # Recalculate GSR
+                df["gold_silver_ratio"] = df["close"] / df["silver"]
+                
+                logger.debug(f"Scaled historical data by {scaling_factor:.4f} to match live MetalPriceAPI spot: ${spot_price:.2f}")
+        except Exception as e:
+            logger.debug(f"Failed to fetch live MetalPriceAPI spot for history override: {e}")
 
         logger.debug(f"Data fetched: {len(df)} bars. Gold: ${df['close'].iloc[-1]:.2f}, DXY: {df['dxy'].iloc[-1]:.2f}, GSR: {df['gold_silver_ratio'].iloc[-1]:.2f}")
         return df
@@ -120,6 +158,76 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "1m") -> Optional[p
         logger.error(f"Failed to fetch gold data: {e}")
         return None
 
+def fetch_metalpriceapi_spot() -> Optional[float]:
+    """
+    Fetch real-time spot price from MetalPriceAPI.com.
+    """
+    import os
+    import requests
+    from dotenv import load_dotenv
+    
+    load_dotenv()
+    api_key = os.environ.get("METALPRICE_API_KEY", "")
+    if not api_key:
+        api_key = os.environ.get("GOLDAPI_KEY", "") # Fallback if they haven't renamed their env var
+    
+    if not api_key or api_key == "your_metalprice_key_here":
+        return None
+        
+    try:
+        resp = requests.get(
+            f"https://api.metalpriceapi.com/v1/latest?api_key={api_key}&base=USD&currencies=XAU",
+            timeout=5
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("success"):
+                rates = data.get("rates", {})
+                xau_rate = rates.get("XAU")
+                if xau_rate and float(xau_rate) > 0:
+                    return round(1.0 / float(xau_rate), 2)
+        else:
+            logger.warning(f"MetalPriceAPI error {resp.status_code}: {resp.text}")
+    except Exception as e:
+        logger.warning(f"MetalPriceAPI fetch failed: {e}")
+    return None
+
+def fetch_metalpriceapi_gs_spot() -> tuple[Optional[float], Optional[float]]:
+    """
+    Fetch real-time spot prices for Gold and Silver from MetalPriceAPI.com.
+    Returns: (gold_price, silver_price)
+    """
+    import os
+    import requests
+    from dotenv import load_dotenv
+    
+    load_dotenv()
+    api_key = os.environ.get("METALPRICE_API_KEY", "")
+    if not api_key:
+        api_key = os.environ.get("GOLDAPI_KEY", "")
+    
+    if not api_key or api_key == "your_metalprice_key_here":
+        return None, None
+        
+    try:
+        resp = requests.get(
+            f"https://api.metalpriceapi.com/v1/latest?api_key={api_key}&base=USD&currencies=XAU,XAG",
+            timeout=5
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("success"):
+                rates = data.get("rates", {})
+                xau = rates.get("XAU")
+                xag = rates.get("XAG")
+                gold_price = round(1.0 / float(xau), 2) if xau and float(xau) > 0 else None
+                silver_price = round(1.0 / float(xag), 2) if xag and float(xag) > 0 else None
+                return gold_price, silver_price
+        else:
+            logger.warning(f"MetalPriceAPI (G/S) error {resp.status_code}: {resp.text}")
+    except Exception as e:
+        logger.warning(f"MetalPriceAPI (G/S) fetch failed: {e}")
+    return None, None
 
 # ============================================================================
 # MODEL RUNNERS — each returns (signal: str, confidence: float, reasoning: str)
@@ -169,28 +277,54 @@ def run_wavelet(df: pd.DataFrame) -> Dict:
         return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
 
 
+_hmm_detector = None
+
 def run_hmm(df: pd.DataFrame) -> Dict:
     """HMM regime detector: market regime → regime-aware signal."""
+    global _hmm_detector
     try:
         from src.models.hmm_regime import RegimeDetector
-        detector = RegimeDetector(n_regimes=3, n_iter=200)
-        detector.train(df)
-        regime_name, confidence = detector.get_current_regime(df)
+        
+        if _hmm_detector is None:
+            _hmm_detector = RegimeDetector(n_regimes=3, n_iter=200)
+            
+        if not getattr(_hmm_detector, 'is_trained', False):
+            _hmm_detector.train(df)
+            
+        regime_name, confidence = _hmm_detector.get_current_regime(df)
 
         # Regime → directional signal mapping
         recent_return = float(df["returns"].iloc[-1])
         recent_vol = float(df["returns"].rolling(10).std().iloc[-1])
 
         if regime_name == "GROWTH":
-            signal = "LONG"
-            confidence = min(confidence * 1.1, 1.0)  # Boost in growth regime
+            if recent_return > 0.005:
+                signal = "SHORT"
+                confidence = min(confidence * 0.8, 1.0)
+            elif recent_return < -0.005:
+                signal = "LONG"
+                confidence = min(confidence * 0.9, 1.0)
+            elif recent_return > 0:
+                signal = "LONG"
+                confidence = min(confidence * 0.9, 1.0)
+            elif recent_return < 0:
+                signal = "SHORT"
+                confidence = min(confidence * 0.9, 1.0)
+            else:
+                signal = "HOLD"
+                confidence = 0.0
             reasoning = f"HMM regime: GROWTH | Recent return: {recent_return:.4f}"
         elif regime_name == "CRISIS":
             signal = "SHORT" if recent_return < 0 else "HOLD"
             confidence = confidence * 0.8  # More conservative in crisis
             reasoning = f"HMM regime: CRISIS | Vol: {recent_vol:.4f}"
         else:  # NORMAL
-            signal = "LONG" if recent_return > 0 else "HOLD"
+            if recent_return > 0.0001:
+                signal = "LONG"
+            elif recent_return < -0.0001:
+                signal = "SHORT"
+            else:
+                signal = "HOLD"
             reasoning = f"HMM regime: NORMAL | Return: {recent_return:.4f}"
 
         return {
@@ -298,8 +432,9 @@ def run_tft(df: pd.DataFrame) -> Dict:
         trend_signal = np.sign(momentum_14) * min(abs(momentum_14) / 5, 1.0)
 
         combined = short_signal * 0.3 + long_signal * 0.4 + trend_signal * 0.3
-        # Contrarian adjustment from BB position
-        combined -= bb_pos * 0.15
+        # Limit contrarian BB adjustment
+        bb_adj = np.clip(bb_pos * 0.15, -0.25, 0.25)
+        combined -= bb_adj
         
         # TFT Macro Attention: Yield & DXY Curve Inversion
         macro_reasoning = ""
@@ -443,10 +578,19 @@ def run_genetic(df: pd.DataFrame) -> Dict:
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import NotFittedError
+import joblib
+import os
+from loguru import logger
 
 # The Machine Learning Meta-Learner
 # In production, this model is periodically fitted on historical backtest data.
-_meta_learner = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+_meta_learner_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'meta_learner.joblib'))
+try:
+    _meta_learner = joblib.load(_meta_learner_path)
+    logger.info(f"Loaded trained meta-learner from {_meta_learner_path}")
+except Exception as e:
+    logger.warning(f"Failed to load trained meta-learner: {e}. Falling back to untrained model.")
+    _meta_learner = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
 
 def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", macro_data: Optional[Dict] = None) -> Dict:
     """
@@ -476,13 +620,25 @@ def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", ma
             # Predict probabilities: [Prob SHORT, Prob HOLD, Prob LONG]
             probs = _meta_learner.predict_proba(X)[0]
             
-            # Extract ML signal
-            if probs[2] > 0.55:
-                return {"signal": "LONG", "confidence": round(probs[2], 3), "reasoning": f"ML Meta-Learner (LONG: {probs[2]:.0%})"}
-            elif probs[0] > 0.55:
-                return {"signal": "SHORT", "confidence": round(probs[0], 3), "reasoning": f"ML Meta-Learner (SHORT: {probs[0]:.0%})"}
+            # RF probabilities in 3-class financial data are typically narrow (0.35 - 0.70).
+            # We must stretch this to the 0.0 - 1.0 confidence scale the engine expects.
+            # Otherwise, confidence is artificially "high and narrow" (mean ~0.6).
+            def scale_confidence(p: float) -> float:
+                # Baseline 0.35 -> 0.0 conf. Max 0.75 -> 1.0 conf.
+                scaled = (p - 0.35) / (0.75 - 0.35)
+                return max(0.0, min(scaled, 1.0))
+                
+            # Extract ML signal based on max probability
+            best_idx = np.argmax(probs)
+            best_prob = probs[best_idx]
+            calibrated_conf = round(scale_confidence(best_prob), 3)
+            
+            if best_idx == 2 and best_prob > 0.40:
+                return {"signal": "LONG", "confidence": calibrated_conf, "reasoning": f"ML Meta-Learner (LONG: raw_prob={best_prob:.0%})"}
+            elif best_idx == 0 and best_prob > 0.40:
+                return {"signal": "SHORT", "confidence": calibrated_conf, "reasoning": f"ML Meta-Learner (SHORT: raw_prob={best_prob:.0%})"}
             else:
-                return {"signal": "HOLD", "confidence": round(probs[1], 3), "reasoning": f"ML Meta-Learner (HOLD: {probs[1]:.0%})"}
+                return {"signal": "HOLD", "confidence": calibrated_conf, "reasoning": f"ML Meta-Learner (HOLD: raw_prob={probs[1]:.0%})"}
                 
         except NotFittedError:
             # 3. Graceful Fallback: Regime-Conditioned Dynamic Weighting
@@ -614,8 +770,19 @@ class LiveInferenceLoop:
         # Reset failures on success
         self.consecutive_failures = 0
 
-        # Update current price
-        CURRENT_GOLD_PRICE = float(df["close"].iloc[-1])
+        # Hybrid Approach: Override latest close price with true real-time spot from MetalPriceAPI
+        spot_price = await asyncio.get_event_loop().run_in_executor(
+            None, fetch_metalpriceapi_spot
+        )
+        
+        if spot_price is not None and spot_price > 0:
+            CURRENT_GOLD_PRICE = spot_price
+            # Inject into the dataframe so the models see the exact current price
+            df.loc[df.index[-1], "close"] = spot_price
+            logger.debug(f"Hybrid mode: using MetalPriceAPI spot price ${spot_price:,.2f}")
+        else:
+            CURRENT_GOLD_PRICE = float(df["close"].iloc[-1])
+            
         LAST_PRICE_UPDATE = datetime.now()
         current_price = CURRENT_GOLD_PRICE
 
@@ -654,12 +821,33 @@ class LiveInferenceLoop:
 
         all_results = {**individual, "ensemble": ensemble_res}
 
+        # Check circuit breakers using the global risk manager if available
+        _can_trade = True
+        import src.api.paper_trading_routes as routes
+        _risk_manager = getattr(routes, "_risk_manager", None)
+        if _risk_manager is not None and self.engine is not None and self.engine.status == "RUNNING":
+            # Set the daily PNL and update equity of risk manager before check
+            _risk_manager.risk_state.daily_pnl = self.engine.daily_pnl
+            _risk_manager.update_equity(self.engine._create_portfolio_snapshot().total_value)
+            
+            # Increment bars in risk manager to keep in sync
+            if not hasattr(_risk_manager.risk_state, "bars_since_last_trade"):
+                _risk_manager.risk_state.bars_since_last_trade = 100
+            
+            _can_trade, _reason = _risk_manager.check_circuit_breakers(
+                portfolio_value=self.engine._create_portfolio_snapshot().total_value,
+                ensemble_conf=float(ensemble_res.get("confidence", 0.0))
+            )
+            if not _can_trade:
+                logger.debug(f"Prediction cycle trade check blocked by RiskManager: {_reason}")
+
         # ── CSV LOG: record this prediction cycle ──
         _trade_taken = (
             self.engine is not None
             and self.engine.status == "RUNNING"
             and ensemble_res.get("signal") in ("LONG", "SHORT")
             and float(ensemble_res.get("confidence", 0)) >= (self.engine.config.min_confidence if self.engine else 0.6)
+            and _can_trade
         )
         _kelly = self.engine.config.kelly_fraction if self.engine else None
         log_prediction_cycle(
@@ -687,6 +875,18 @@ class LiveInferenceLoop:
         if self.engine and self.engine.status == "RUNNING":
             from src.paper_trading.engine import ModelSignal, SignalType
 
+            if _risk_manager is not None:
+                MIN_BARS_BETWEEN_TRADES = getattr(_risk_manager, "min_bars_between_trades", 10)
+            else:
+                MIN_BARS_BETWEEN_TRADES = 10
+
+            if not hasattr(self, "bars_since_last_trade"):
+                self.bars_since_last_trade = MIN_BARS_BETWEEN_TRADES
+            
+            self.bars_since_last_trade += 1
+            if _risk_manager is not None:
+                _risk_manager.risk_state.bars_since_last_trade = self.bars_since_last_trade
+
             for model_name, res in all_results.items():
                 try:
                     signal_val = res.get("signal", "HOLD")
@@ -695,33 +895,45 @@ class LiveInferenceLoop:
                     # Only the ensemble model is allowed to execute actual trades!
                     # The other 5 individual models just register their status for the dashboard
                     # to prevent them from constantly whipsawing the single paper trading position.
-                    if model_name == "ensemble" and signal_val in ("LONG", "SHORT") and confidence >= self.engine.config.min_confidence:
-                        sig = ModelSignal(
-                            model_name=model_name,
-                            signal_type=SignalType(signal_val),
-                            confidence=confidence,
-                            entry_price=current_price,
-                            current_price=current_price,
-                            timestamp=datetime.now(),
-                            reasoning=res.get("reasoning", ""),
-                            regime=str(res.get("regime", regime)),
-                        )
-                        self.engine.process_signal(model_name, sig)
-                    else:
-                        # Register the signal for dashboard display without executing a trade
-                        from src.paper_trading.engine import SignalType as ST
-                        sig = ModelSignal(
-                            model_name=model_name,
-                            signal_type=ST(signal_val) if signal_val in ("LONG", "SHORT", "HOLD") else ST.HOLD,
-                            confidence=confidence,
-                            entry_price=current_price,
-                            current_price=current_price,
-                            timestamp=datetime.now(),
-                            reasoning=res.get("reasoning", ""),
-                            regime=regime,
-                        )
-                        self.engine.last_signals[model_name] = sig
-                        self.engine.signal_history[model_name].append(sig)
+                    
+                    if model_name == "ensemble":
+                        # Apply cooldown
+                        if self.bars_since_last_trade < MIN_BARS_BETWEEN_TRADES and signal_val in ("LONG", "SHORT"):
+                            # Demote to HOLD if in cooldown
+                            signal_val = "HOLD"
+                            
+                        if signal_val in ("LONG", "SHORT") and confidence >= self.engine.config.min_confidence and _trade_taken:
+                            sig = ModelSignal(
+                                model_name=model_name,
+                                signal_type=SignalType(signal_val),
+                                confidence=confidence,
+                                entry_price=current_price,
+                                current_price=current_price,
+                                timestamp=datetime.now(),
+                                reasoning=res.get("reasoning", ""),
+                                regime=str(res.get("regime", regime)),
+                            )
+                            trade_res = self.engine.process_signal(model_name, sig)
+                            if trade_res:
+                                self.bars_since_last_trade = 0  # Reset cooldown when trade executes
+                                if _risk_manager is not None:
+                                    _risk_manager.risk_state.bars_since_last_trade = 0
+                            continue
+                            
+                    # Register the signal for dashboard display without executing a trade
+                    from src.paper_trading.engine import SignalType as ST
+                    sig = ModelSignal(
+                        model_name=model_name,
+                        signal_type=ST(signal_val) if signal_val in ("LONG", "SHORT", "HOLD") else ST.HOLD,
+                        confidence=confidence,
+                        entry_price=current_price,
+                        current_price=current_price,
+                        timestamp=datetime.now(),
+                        reasoning=res.get("reasoning", ""),
+                        regime=regime,
+                    )
+                    self.engine.last_signals[model_name] = sig
+                    self.engine.signal_history[model_name].append(sig)
 
                 except Exception as e:
                     logger.warning(f"Failed to process {model_name} signal: {e}")
