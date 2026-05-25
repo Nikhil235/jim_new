@@ -85,7 +85,12 @@ class RiskManager:
         self.consecutive_loss_reduction = cb_cfg.get("consecutive_loss_reduction", 0.25)
         self.cooldown_bars = cb_cfg.get("cooldown_bars", 5)
         self.min_bars_between_trades = cb_cfg.get("min_bars_between_trades", 10)
-        self.min_confidence = cb_cfg.get("min_confidence", 0.65)
+        self.min_confidence = cb_cfg.get("min_confidence", 0.75)
+        
+        # Win-rate optimizations (Lever 2 & 3)
+        self.allowed_regimes = cb_cfg.get("allowed_regimes", ["NORMAL"])
+        self.time_filter_enabled = cb_cfg.get("time_filter_enabled", True)
+        self.high_liquidity_hours = cb_cfg.get("high_liquidity_hours", [(8, 11), (13, 16)])
 
         # State
         self.risk_state = RiskState()
@@ -292,6 +297,24 @@ class RiskManager:
         if ensemble_conf > 0 and ensemble_conf < self.min_confidence:
             logger.debug(f"🚫 CONFIDENCE GATE: {ensemble_conf:.3f} < {self.min_confidence:.3f}")
             return False, f"LOW_CONFIDENCE: {ensemble_conf:.3f}"
+
+        # Regime Filter: Only trade in permitted regimes (Lever 2)
+        allowed_regimes = getattr(self, "allowed_regimes", ["NORMAL"])
+        if self.risk_state.current_regime not in allowed_regimes:
+            reason = f"Regime filter blocked trade: Current regime is {self.risk_state.current_regime} (permitted: {allowed_regimes})"
+            logger.warning(f"⚠️ RISK BREAKER: {reason}")
+            return False, f"REGIME_FILTER: {self.risk_state.current_regime}"
+
+        # Time of Day Filter: London open (8-11 GMT) & NY open (13-16 GMT) (Lever 3)
+        if getattr(self, "time_filter_enabled", True):
+            now_gmt = datetime.utcnow()
+            gmt_hour = now_gmt.hour
+            high_liquidity = getattr(self, "high_liquidity_hours", [(8, 11), (13, 16)])
+            in_window = any(start <= gmt_hour < end for start, end in high_liquidity)
+            if not in_window:
+                reason = f"Time of Day filter blocked trade: GMT hour {gmt_hour} is outside high-liquidity windows {high_liquidity}"
+                logger.warning(f"⚠️ RISK BREAKER: {reason}")
+                return False, f"TIME_FILTER: {gmt_hour} GMT"
 
         # Regime switch cooldown: prevent entering new trades too close to transition
         cooldown_bars = self.cooldown_bars

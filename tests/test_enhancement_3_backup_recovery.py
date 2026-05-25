@@ -263,12 +263,12 @@ class TestBackupManager:
     def test_generate_backup_path(self):
         """Test backup path generation"""
         manager = BackupManager()
-        date = datetime(2026, 5, 14)
         path = manager._generate_backup_path(BackupTarget.QUESTDB, "backup_001")
         
         assert "backup_001" in path
         assert "questdb" in path
-        assert "2026/05/14" in path
+        current_date_str = datetime.utcnow().strftime("%Y/%m/%d")
+        assert current_date_str in path
 
 
 # ============================================================================

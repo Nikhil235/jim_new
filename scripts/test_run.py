@@ -27,7 +27,7 @@ def simulate_1000_dollars():
 
     # 0. Stop any existing engine first
     try:
-        requests.post(f"{BASE_URL}/paper-trading/stop", headers=headers)
+        requests.post(f"{BASE_URL}/paper-trading/stop", headers=headers, timeout=10.0)
         time.sleep(1)
     except Exception:
         pass
@@ -42,11 +42,12 @@ def simulate_1000_dollars():
                 "kelly_fraction": 0.25,
                 "max_position_pct": 0.10,
                 "max_daily_loss_pct": 0.05,
-                "min_confidence": 0.42,
+                "min_confidence": 0.75,
                 "commission_per_trade": 0.0,
                 "slippage_pct": 0.0,
             },
             headers=headers,
+            timeout=10.0,
         )
         data = start_resp.json()
         print(f"   OK: {data.get('message', 'Started')}")
@@ -78,6 +79,12 @@ def simulate_1000_dollars():
     losses = 0
     trades_taken = 0
 
+    # Pre-train HMM model once before the simulation loop using the initial slice to ensure it is fully ready
+    df_init = df_full.iloc[:start_idx].copy()
+    assert isinstance(df_init, pd.DataFrame), "df_init must be a DataFrame"
+    print("\n[HMM PRE-TRAINING] Training Hidden Markov Model on initial historical slice...")
+    run_hmm(df_init)
+
     print("\n[STEP 3] Preparing NLP Sentiment Proxy...")
     print("   Note: Using dynamic price-action proxy for historical NLP to avoid network spam and static bias.")
 
@@ -94,9 +101,8 @@ def simulate_1000_dollars():
         
         bars_since_last_trade += 1
         
-        # Progress indicator every 100 bars
-        if (step + 1) % 100 == 0:
-            print(f"   [Progress] Processed {step + 1}/{sim_length} bars...")
+        # Verbose progress indicator
+        print(f"   [Step {step}] Price: ${current_price:.2f} | Bars since trade: {bars_since_last_trade}")
 
         # Dynamically generate NLP proxy to avoid permanent bias (Macro inversion proxy)
         recent_ret = float(df_slice["returns"].iloc[-5:].mean())
@@ -107,13 +113,17 @@ def simulate_1000_dollars():
         else:
             nlp_res = {"signal": "HOLD", "confidence": 0.0, "reasoning": "Proxy: Neutral"}
 
-        # Run models silently (NLP is reused to prevent network spam)
-        wavelet_res = run_wavelet(df_slice)
-        hmm_res = run_hmm(df_slice)
-        lstm_res = run_lstm(df_slice)
-        tft_res = run_tft(df_slice)
-        genetic_res = run_genetic(df_slice)
+        # Run models silently on a bounded lookback slice to optimize performance
+        df_slice_model = df_slice.iloc[-150:]
+        assert isinstance(df_slice_model, pd.DataFrame), "df_slice_model must be a DataFrame"
         
+        # print("     Running models...")
+        wavelet_res = run_wavelet(df_slice_model)
+        hmm_res = run_hmm(df_slice_model)
+        lstm_res = run_lstm(df_slice_model)
+        tft_res = run_tft(df_slice_model)
+        genetic_res = run_genetic(df_slice_model)
+
         regime = hmm_res.get("regime", "NORMAL")
         macro_data = {
             "dxy_momentum": float(df_slice["dxy_returns"].iloc[-3:].sum() * 100) if "dxy_returns" in df_slice.columns else 0.0,
@@ -135,7 +145,7 @@ def simulate_1000_dollars():
         if bars_since_last_trade < MIN_BARS_BETWEEN_TRADES:
             trade_taken = False
         else:
-            trade_taken = direction in ["LONG", "SHORT"] and float(conf) >= 0.42
+            trade_taken = direction in ["LONG", "SHORT"] and float(conf) >= 0.75
         
         log_prediction_cycle(
             price=current_price, regime=regime,
@@ -147,17 +157,24 @@ def simulate_1000_dollars():
             continue
             
         # Post the signal to engine
-        resp = requests.post(
-            f"{BASE_URL}/paper-trading/signal",
-            json={
-                "model_name": "ensemble", "signal_type": direction,
-                "confidence": float(conf), "price": current_price,
-                "regime": regime, "reasoning": reason,
-            },
-            headers=headers,
-        )
-        
-        result = resp.json()
+        print(f"     [POST] Sending {direction} signal to API...")
+        try:
+            resp = requests.post(
+                f"{BASE_URL}/paper-trading/signal",
+                json={
+                    "model_name": "ensemble", "signal_type": direction,
+                    "confidence": float(conf), "price": current_price,
+                    "regime": regime, "reasoning": reason,
+                },
+                headers=headers,
+                timeout=10.0,
+            )
+            resp.raise_for_status()
+            result = resp.json()
+        except Exception as e:
+            print(f"     [POST ERROR] Failed to send {direction} signal: {e}")
+            continue
+            
         executed = result.get("trade_executed", False)
         
         if executed:
@@ -167,36 +184,59 @@ def simulate_1000_dollars():
             qty = trade_info.get("quantity", 0)
             print(f"   [TRADE] Opened {direction} {qty:.4f} oz @ ${current_price:,.2f} (Conf: {conf:.3f})")
             
-            # Simulate 1 step lookahead for exit
-            if current_idx + 1 < len(df_full):
-                next_price = float(df_full["close"].iloc[current_idx + 1])
-            else:
-                next_price = current_price
-                
-            requests.post(
-                f"{BASE_URL}/paper-trading/signal",
-                json={
-                    "model_name": "ensemble", "signal_type": "CLOSE",
-                    "confidence": 0.90, "price": next_price,
-                    "regime": regime, "reasoning": "Simulated Exit",
-                },
-                headers=headers,
-            )
+            # Simulate 8 bars of holding (Lever 4 validation)
+            HOLD_PERIOD = 8
+            for i in range(1, HOLD_PERIOD):
+                idx = current_idx + i
+                p = float(df_full["close"].iloc[idx]) if idx < len(df_full) else current_price
+                print(f"     [HOLD] Posting hold bar {i} price: ${p:.2f}")
+                try:
+                    requests.post(
+                        f"{BASE_URL}/paper-trading/signal",
+                        json={
+                            "model_name": "ensemble", "signal_type": "HOLD",
+                            "confidence": 0.0, "price": p,
+                            "regime": regime, "reasoning": f"Holding Bar {i}",
+                        },
+                        headers=headers,
+                        timeout=10.0,
+                    )
+                except Exception as e:
+                    print(f"     [HOLD ERROR] Failed to send HOLD bar {i}: {e}")
             
-            expected = "UP" if (direction == "LONG" and next_price > current_price) or (direction == "SHORT" and next_price < current_price) else "DOWN"
+            # Exit at the 8th bar
+            exit_idx = current_idx + HOLD_PERIOD
+            exit_price = float(df_full["close"].iloc[exit_idx]) if exit_idx < len(df_full) else current_price
+            print(f"     [CLOSE] Posting simulated exit price: ${exit_price:.2f}")
+            try:
+                exit_resp = requests.post(
+                    f"{BASE_URL}/paper-trading/signal",
+                    json={
+                        "model_name": "ensemble", "signal_type": "CLOSE",
+                        "confidence": 0.90, "price": exit_price,
+                        "regime": regime, "reasoning": "Simulated Exit after Minimum Hold",
+                    },
+                    headers=headers,
+                    timeout=10.0,
+                )
+                exit_resp.raise_for_status()
+            except Exception as e:
+                print(f"     [CLOSE ERROR] Failed to send CLOSE signal: {e}")
+            
+            expected = "UP" if (direction == "LONG" and exit_price > current_price) or (direction == "SHORT" and exit_price < current_price) else "DOWN"
             if expected == "UP":
                 wins += 1
-                print(f"           -> WIN  | Exited @ ${next_price:,.2f}")
+                print(f"           -> WIN  | Exited @ ${exit_price:,.2f}")
             else:
                 losses += 1
-                print(f"           -> LOSS | Exited @ ${next_price:,.2f}")
+                print(f"           -> LOSS | Exited @ ${exit_price:,.2f}")
 
     # 4. Final Summary
     print(f"\n{'==='*20}")
     print("  FINAL SIMULATION RESULTS")
     print(f"{'==='*20}")
 
-    perf = requests.get(f"{BASE_URL}/paper-trading/performance").json()
+    perf = requests.get(f"{BASE_URL}/paper-trading/performance", timeout=10.0).json()
 
     initial = 1000.0
     final_value = perf.get("total_value", initial)
@@ -218,7 +258,7 @@ def simulate_1000_dollars():
     print(f"  Max Drawdown:      {max_dd:.2f}%")
     print(f"  Total Trades:      {num_trades}")
 
-    trades_resp = requests.get(f"{BASE_URL}/paper-trading/trades?limit=50").json()
+    trades_resp = requests.get(f"{BASE_URL}/paper-trading/trades?limit=50", timeout=10.0).json()
     if trades_resp:
         print(f"\n  {'- '*28}")
         print(f"  {'#':<4} {'Type':<6} {'Entry':>9} {'Exit':>9} {'P&L':>10} {'Result'}")

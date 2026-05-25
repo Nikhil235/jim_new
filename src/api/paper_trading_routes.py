@@ -217,9 +217,9 @@ class TradingQueueWorker:
                         self.queue.task_done()
                         continue
 
-                    # 1. Risk checks
+                    # 1. Risk checks (only check for new entries: LONG or SHORT)
                     signal_type = item.signal.signal_type
-                    if _risk_manager is not None and signal_type != SignalType.CLOSE:
+                    if _risk_manager is not None and signal_type in (SignalType.LONG, SignalType.SHORT):
                         can_trade, reason = _risk_manager.check_circuit_breakers(
                             portfolio_value=_paper_trading_engine._create_portfolio_snapshot().total_value,
                             ensemble_conf=item.signal.confidence
@@ -668,7 +668,7 @@ async def inject_signal(request: Request, signal_request: SignalInjectionRequest
         # so background queue worker task is never executed. Bypass queue worker in tests.
         from src.api.security import is_testing
         if is_testing:
-            if _risk_manager is not None and signal_type != SignalType.CLOSE:
+            if _risk_manager is not None and signal_type in (SignalType.LONG, SignalType.SHORT):
                 can_trade, reason = _risk_manager.check_circuit_breakers(
                     portfolio_value=_paper_trading_engine._create_portfolio_snapshot().total_value,
                     ensemble_conf=signal_request.confidence

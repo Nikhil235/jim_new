@@ -137,7 +137,8 @@ class PaperTradingConfig:
     slippage_pct: float = 0.01             # Typical bid-ask spread for gold (1 bps)
     
     # Signal configuration
-    min_confidence: float = 0.6            # Min confidence to trade
+    min_confidence: float = 0.75            # Min confidence to trade
+    min_holding_bars: int = 8               # Min holding period (bars) before exiting/flipping position
     # Dynamic weights: regime-conditional base weights (adapted at runtime)
     # These are starting weights per regime; the DynamicWeightAdjuster
     # further adapts them based on each model's rolling Sharpe ratio.
@@ -316,6 +317,10 @@ class PaperTradingEngine:
             if self.status != "RUNNING":
                 return None
             
+            # Automatically update price inside engine to match incoming signal (Lever 4)
+            if signal.current_price > 0:
+                self.update_price(signal.current_price, signal.timestamp)
+
             # Store signal
             self.last_signals[model_name] = signal
             self.signal_history[model_name].append(signal)
@@ -369,6 +374,17 @@ class PaperTradingEngine:
                 if signal.signal_type == SignalType.CLOSE or \
                    (self.current_position.signal_type == SignalType.LONG and signal.signal_type == SignalType.SHORT) or \
                    (self.current_position.signal_type == SignalType.SHORT and signal.signal_type == SignalType.LONG):
+                    
+                    # Enforce minimum holding period (Lever 4)
+                    bars_held = getattr(self.current_position, "bars_held", 0)
+                    min_hold = getattr(self.config, "min_holding_bars", 8)
+                    if bars_held < min_hold:
+                        logger.info(
+                            f"Hold period block: {bars_held} bars < {min_hold} min holding bars. "
+                            f"Ignoring exit/flip signal for trade {self.current_position.trade_id}."
+                        )
+                        return None
+                        
                     closed_trade = self._close_position(signal.timestamp, signal.current_price)
                     if signal.signal_type == SignalType.CLOSE:
                         return closed_trade
@@ -396,6 +412,12 @@ class PaperTradingEngine:
         # Update position P&L if open
         if self.current_position and self.current_position.status == TradeStatus.OPEN:
             trade = self.current_position
+            # Increment bars_held only if the bar's timestamp has advanced (prevent duplicate counts)
+            last_ts = getattr(trade, "last_bar_timestamp", None)
+            if last_ts != timestamp:
+                trade.bars_held = getattr(trade, "bars_held", 0) + 1
+                trade.last_bar_timestamp = timestamp
+                
             pnl, pnl_pct = self._calculate_pnl(
                 trade.signal_type,
                 trade.entry_price,

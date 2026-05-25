@@ -197,14 +197,27 @@ class SchemaManager:
             return False
 
     def _exec_sql(self, sql: str) -> Optional[dict]:
-        """Execute SQL via QuestDB HTTP API."""
-        try:
-            url = f"http://{self.host}:{self.http_port}/exec?query={urllib.parse.quote(sql.strip())}"
-            with urllib.request.urlopen(url, timeout=15) as resp:
-                return json.loads(resp.read().decode())
-        except Exception as e:
-            logger.error(f"QuestDB SQL exec failed: {e}")
-            return None
+        """Execute SQL via QuestDB HTTP API with retries for robust startup behavior."""
+        import time
+        retries = 3
+        delay = 1.0
+        last_exception = None
+        
+        for attempt in range(retries):
+            try:
+                url = f"http://{self.host}:{self.http_port}/exec?query={urllib.parse.quote(sql.strip())}"
+                with urllib.request.urlopen(url, timeout=15) as resp:
+                    return json.loads(resp.read().decode())
+            except Exception as e:
+                last_exception = e
+                if attempt < retries - 1:
+                    logger.warning(f"QuestDB SQL exec attempt {attempt+1}/{retries} failed ({e}), retrying in {delay}s...")
+                    time.sleep(delay)
+                    delay *= 2
+                    
+        logger.error(f"QuestDB SQL exec failed after {retries} attempts: {last_exception}")
+        return None
+
 
     def ensure_table(self, table_name: str) -> bool:
         """Create a single table if it doesn't exist.

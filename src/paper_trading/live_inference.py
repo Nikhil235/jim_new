@@ -160,74 +160,115 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "1m") -> Optional[p
 
 def fetch_metalpriceapi_spot() -> Optional[float]:
     """
-    Fetch real-time spot price from MetalPriceAPI.com.
+    Fetch real-time spot price for Gold from the free Gold-API.com,
+    with fallback to MetalPriceAPI if needed.
     """
     import os
     import requests
     from dotenv import load_dotenv
-    
-    load_dotenv()
-    api_key = os.environ.get("METALPRICE_API_KEY", "")
-    if not api_key:
-        api_key = os.environ.get("GOLDAPI_KEY", "") # Fallback if they haven't renamed their env var
-    
-    if not api_key or api_key == "your_metalprice_key_here":
-        return None
-        
+
+    # 1. Try free Gold-API.com first (unlimited, no key required)
     try:
-        resp = requests.get(
-            f"https://api.metalpriceapi.com/v1/latest?api_key={api_key}&base=USD&currencies=XAU",
-            timeout=5
-        )
+        resp = requests.get("https://api.gold-api.com/price/XAU", timeout=5)
         if resp.status_code == 200:
             data = resp.json()
-            if data.get("success"):
-                rates = data.get("rates", {})
-                xau_rate = rates.get("XAU")
-                if xau_rate and float(xau_rate) > 0:
-                    return round(1.0 / float(xau_rate), 2)
-        else:
-            logger.warning(f"MetalPriceAPI error {resp.status_code}: {resp.text}")
+            price = data.get("price")
+            if price and float(price) > 0:
+                logger.debug(f"Fetched real-time gold spot price from Gold-API.com: ${price:.2f}")
+                return round(float(price), 2)
     except Exception as e:
-        logger.warning(f"MetalPriceAPI fetch failed: {e}")
-    return None
+        logger.warning(f"Gold-API.com fetch failed: {e}")
 
-def fetch_metalpriceapi_gs_spot() -> tuple[Optional[float], Optional[float]]:
-    """
-    Fetch real-time spot prices for Gold and Silver from MetalPriceAPI.com.
-    Returns: (gold_price, silver_price)
-    """
-    import os
-    import requests
-    from dotenv import load_dotenv
-    
+    # 2. Fallback to MetalPriceAPI
     load_dotenv()
     api_key = os.environ.get("METALPRICE_API_KEY", "")
     if not api_key:
         api_key = os.environ.get("GOLDAPI_KEY", "")
     
-    if not api_key or api_key == "your_metalprice_key_here":
-        return None, None
-        
+    if api_key and api_key != "your_metalprice_key_here":
+        try:
+            resp = requests.get(
+                f"https://api.metalpriceapi.com/v1/latest?api_key={api_key}&base=USD&currencies=XAU",
+                timeout=5
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("success"):
+                    rates = data.get("rates", {})
+                    xau_rate = rates.get("XAU")
+                    if xau_rate and float(xau_rate) > 0:
+                        return round(1.0 / float(xau_rate), 2)
+            else:
+                logger.warning(f"MetalPriceAPI error {resp.status_code}: {resp.text}")
+        except Exception as e:
+            logger.warning(f"MetalPriceAPI fetch failed: {e}")
+            
+    return None
+
+def fetch_metalpriceapi_gs_spot() -> tuple[Optional[float], Optional[float]]:
+    """
+    Fetch real-time spot prices for Gold and Silver from Gold-API.com,
+    with fallback to MetalPriceAPI if needed.
+    Returns: (gold_price, silver_price)
+    """
+    import os
+    import requests
+    from dotenv import load_dotenv
+
+    # 1. Try free Gold-API.com first (unlimited, no key required)
     try:
-        resp = requests.get(
-            f"https://api.metalpriceapi.com/v1/latest?api_key={api_key}&base=USD&currencies=XAU,XAG",
-            timeout=5
-        )
-        if resp.status_code == 200:
-            data = resp.json()
-            if data.get("success"):
-                rates = data.get("rates", {})
-                xau = rates.get("XAU")
-                xag = rates.get("XAG")
-                gold_price = round(1.0 / float(xau), 2) if xau and float(xau) > 0 else None
-                silver_price = round(1.0 / float(xag), 2) if xag and float(xag) > 0 else None
-                return gold_price, silver_price
-        else:
-            logger.warning(f"MetalPriceAPI (G/S) error {resp.status_code}: {resp.text}")
+        r_gold = requests.get("https://api.gold-api.com/price/XAU", timeout=5)
+        r_silver = requests.get("https://api.gold-api.com/price/XAG", timeout=5)
+        
+        gold_price = None
+        silver_price = None
+        
+        if r_gold.status_code == 200:
+            data = r_gold.json()
+            price = data.get("price")
+            if price and float(price) > 0:
+                gold_price = round(float(price), 2)
+                
+        if r_silver.status_code == 200:
+            data = r_silver.json()
+            price = data.get("price")
+            if price and float(price) > 0:
+                silver_price = round(float(price), 2)
+                
+        if gold_price is not None or silver_price is not None:
+            logger.debug(f"Fetched real-time spot prices from Gold-API.com: Gold=${gold_price}, Silver=${silver_price}")
+            return gold_price, silver_price
     except Exception as e:
-        logger.warning(f"MetalPriceAPI (G/S) fetch failed: {e}")
+        logger.warning(f"Gold-API.com (G/S) fetch failed: {e}")
+
+    # 2. Fallback to MetalPriceAPI
+    load_dotenv()
+    api_key = os.environ.get("METALPRICE_API_KEY", "")
+    if not api_key:
+        api_key = os.environ.get("GOLDAPI_KEY", "")
+        
+    if api_key and api_key != "your_metalprice_key_here":
+        try:
+            resp = requests.get(
+                f"https://api.metalpriceapi.com/v1/latest?api_key={api_key}&base=USD&currencies=XAU,XAG",
+                timeout=5
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("success"):
+                    rates = data.get("rates", {})
+                    xau = rates.get("XAU")
+                    xag = rates.get("XAG")
+                    gold_price = round(1.0 / float(xau), 2) if xau and float(xau) > 0 else None
+                    silver_price = round(1.0 / float(xag), 2) if xag and float(xag) > 0 else None
+                    return gold_price, silver_price
+            else:
+                logger.warning(f"MetalPriceAPI (G/S) error {resp.status_code}: {resp.text}")
+        except Exception as e:
+            logger.warning(f"MetalPriceAPI (G/S) fetch failed: {e}")
+            
     return None, None
+
 
 # ============================================================================
 # MODEL RUNNERS — each returns (signal: str, confidence: float, reasoning: str)
@@ -244,10 +285,13 @@ def run_wavelet(df: pd.DataFrame) -> Dict:
 
         try:
             import pywt
-            coeffs = pywt.wavedec(prices, "db4", level=5)
-            # Zero out detail coefficients to denoise
-            coeffs[1:] = [np.zeros_like(v) for v in coeffs[1:]]
-            trend = pywt.waverec(coeffs, "db4")
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                coeffs = pywt.wavedec(prices, "db4", level=5)
+                # Zero out detail coefficients to denoise
+                coeffs[1:] = [np.zeros_like(v) for v in coeffs[1:]]
+                trend = pywt.waverec(coeffs, "db4")
             confidence = 0.75
         except ImportError:
             # Proxy if pywt is unavailable
@@ -785,6 +829,9 @@ class LiveInferenceLoop:
             
         LAST_PRICE_UPDATE = datetime.now()
         current_price = CURRENT_GOLD_PRICE
+
+        if self.engine and self.engine.status == "RUNNING":
+            self.engine.update_price(current_price, datetime.now())
 
         logger.info(f"[Inference #{self.iteration}] Gold @ ${current_price:.2f} — running 6 models...")
 
