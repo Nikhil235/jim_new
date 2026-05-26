@@ -34,32 +34,36 @@ from loguru import logger
 # per market regime, inspired by real multi-model quant allocations.
 
 REGIME_BASE_WEIGHTS: Dict[str, Dict[str, float]] = {
+    # Weights redistribute to the 6 base models ONLY.
+    # Ensemble is set to 0.0 because it already aggregates all model
+    # outputs internally — giving it a dynamic weight would double-count.
+    # The Ensemble's confidence passes through process_signal() unscaled.
     "GROWTH": {
-        "wavelet":  0.25,   
-        "hmm":      0.15,   
-        "lstm":     0.10,   
-        "tft":      0.0,   
-        "genetic":  0.0,   
-        "nlp":      0.0,   
-        "ensemble": 0.50,   
+        "wavelet":  0.36,   # Best denoiser in trending markets — highest allocation
+        "hmm":      0.14,   # Regime detection useful but less critical in growth
+        "lstm":     0.17,   # Temporal momentum captures growth trends
+        "tft":      0.11,   # Multi-horizon attention adds diversity
+        "genetic":  0.08,   # Rule-based voting as contrarian check
+        "nlp":      0.04,   # Sentiment is a weak lagging signal for gold
+        "ensemble": 0.10,   # Meta output reserve — blended aggregator confidence
     },
     "NORMAL": {
-        "wavelet":  0.35,   
-        "hmm":      0.25,   
-        "lstm":     0.10,   
-        "tft":      0.0,   
-        "genetic":  0.0,   
-        "nlp":      0.0,   
-        "ensemble": 0.30,   
+        "wavelet":  0.30,   # Denoising shines in noisy/normal markets
+        "hmm":      0.20,   # Regime awareness keeps positioning correct
+        "lstm":     0.15,   # EMA/MACD proxy captures mean-reversion
+        "tft":      0.10,   # RSI/BB proxy provides multi-scale signal
+        "genetic":  0.10,   # SMA crossover rules useful in ranging markets
+        "nlp":      0.05,   # Minimal — gold sentiment is noisy in normal regime
+        "ensemble": 0.10,   # Meta output reserve — blended aggregator confidence
     },
     "CRISIS": {
-        "wavelet":  0.15,   
-        "hmm":      0.45,   
-        "lstm":     0.0,   
-        "tft":      0.0,   
-        "genetic":  0.0,   
-        "nlp":      0.0,   
-        "ensemble": 0.40,   
+        "wavelet":  0.21,   # Denoising partially overwhelmed by crisis noise
+        "hmm":      0.26,   # Regime detection prevents catastrophic losses
+        "lstm":     0.09,   # Momentum models whipsaw in crisis — reduce
+        "tft":      0.06,   # Multi-scale RSI less reliable in crisis
+        "genetic":  0.12,   # Breakout detection valuable in volatile markets
+        "nlp":      0.06,   # Fear-driven headlines can precede continuation moves
+        "ensemble": 0.10,   # Meta output reserve — blended aggregator confidence (constant)
     },
 }
 

@@ -151,14 +151,17 @@ class PaperTradingConfig:
     # Dynamic weights: regime-conditional base weights (adapted at runtime)
     # These are starting weights per regime; the DynamicWeightAdjuster
     # further adapts them based on each model's rolling Sharpe ratio.
+    # NOTE: Ensemble gets 0.10 as "meta output reserve" — a constant allocation
+    # for the blended aggregator confidence. Its confidence still passes through
+    # process_signal() unscaled to avoid double-counting.
     signal_weights: Dict[str, float] = field(default_factory=lambda: {
         "wavelet": 0.30,   # Denoising — best in noisy/normal markets
-        "hmm":     0.30,   # Regime detection — critical during transitions
-        "lstm":    0.05,   # Reduced complexity
-        "tft":     0.05,   # Reduced complexity
-        "genetic": 0.0,    # Disabled
-        "nlp":     0.0,    # Disabled
-        "ensemble": 0.30,  # Meta-learner
+        "hmm":     0.20,   # Regime detection — critical during transitions
+        "lstm":    0.15,   # Temporal momentum proxy (EMA/MACD)
+        "tft":     0.10,   # Multi-scale RSI/BB proxy
+        "genetic": 0.10,   # Rule-based voting (SMA/momentum/breakout)
+        "nlp":     0.05,   # FinBERT sentiment (lagging for gold)
+        "ensemble": 0.10,  # Meta output reserve — blended aggregator confidence
     })
     use_dynamic_weights: bool = True       # Enable regime-adaptive weighting
     
@@ -362,8 +365,24 @@ class PaperTradingEngine:
                 return None
     
             # --- Dynamic Weight Adjustment ---
-            # Get current dynamic weights based on regime + recent performance
-            if self.config.use_dynamic_weights:
+            # Get current dynamic weights based on regime + recent performance.
+            # IMPORTANT: The Ensemble meta-learner bypasses dynamic weighting
+            # because it already aggregates all 6 model signals internally.
+            # Applying a weight multiplier to it would double-count.
+            if model_name == "ensemble":
+                # Ensemble confidence passes through UNSCALED
+                adjusted_confidence = signal.confidence
+                
+                # Session quality scoring: Boost during first 30 mins of NY session (13:00-13:30 GMT)
+                now_gmt = datetime.utcnow()
+                if now_gmt.hour == 13 and 0 <= now_gmt.minute <= 30:
+                    adjusted_confidence = min(adjusted_confidence * 1.15, 1.0)
+                    
+                logger.debug(
+                    f"{model_name} | regime={signal.regime} | "
+                    f"conf={adjusted_confidence:.2f} (ensemble bypass — no weight scaling)"
+                )
+            elif self.config.use_dynamic_weights:
                 current_signals_map = {
                     name: sig.signal_type.value
                     for name, sig in self.last_signals.items()

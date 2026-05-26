@@ -1,7 +1,7 @@
 {
   "D:\\AI\\Jim\\main.py": {
-    "mtime": 1779780488.686126,
-    "ast_hash": "3d6098c7bc82b4398b38c09ba17c2f83",
+    "mtime": 1779782117.8386445,
+    "ast_hash": "ee4e2c862ab5148cdfa7c7681f54695a",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\package.json": {
@@ -369,11 +369,6 @@
     "ast_hash": "a062b42e7fab120283bd854cfa104d76",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\best_hybrid_run.py": {
-    "mtime": 1779731247.7789857,
-    "ast_hash": "43f94b62d597900e97eca77f807a0eb4",
-    "semantic_hash": ""
-  },
   "D:\\AI\\Jim\\scripts\\build_execution_engine.sh": {
     "mtime": 1778748216.9544132,
     "ast_hash": "fbde4b2d6bebe345faec9e880bfc55ac",
@@ -405,8 +400,8 @@
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\scripts\\live_trader.py": {
-    "mtime": 1779780650.1353543,
-    "ast_hash": "ab55f292bb5caf151ba4fc5cf41c74d3",
+    "mtime": 1779799803.2362165,
+    "ast_hash": "5a35e74911e42ba4db8d573bee18cc76",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\scripts\\run_backups.py": {
@@ -470,8 +465,8 @@
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\api\\paper_trading_routes.py": {
-    "mtime": 1779714264.5069351,
-    "ast_hash": "fb312c5b811791ad3467c8fa79f8207f",
+    "mtime": 1779800496.2507813,
+    "ast_hash": "031ce6eb82a21ea2ec07f99b212cf14e",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\api\\security.py": {
@@ -725,13 +720,13 @@
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\paper_trading\\engine.py": {
-    "mtime": 1779714073.532512,
-    "ast_hash": "ce27b39034b715fa26d1dfe86c71c672",
+    "mtime": 1779800438.2350132,
+    "ast_hash": "0786e4fb0539aaa2eb93eb9608ec756c",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\paper_trading\\live_inference.py": {
-    "mtime": 1779714011.771877,
-    "ast_hash": "897fa4212d9f51c82556a1d86ae57577",
+    "mtime": 1779820898.2257614,
+    "ast_hash": "ad9fcfcaba3a5bbbc26c80469a8566ae",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\paper_trading\\prediction_logger.py": {
@@ -765,8 +760,8 @@
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\risk\\manager.py": {
-    "mtime": 1779713941.4278083,
-    "ast_hash": "d1a25dd59a23aa59133f99aaab78e57e",
+    "mtime": 1779799390.0476308,
+    "ast_hash": "9e262576ad004f3fd475fe956bb313ee",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\risk\\meta_labeler.py": {
@@ -805,13 +800,13 @@
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\utils\\gpu.py": {
-    "mtime": 1778790862.3938792,
-    "ast_hash": "18e6a7b197decd4c41367cde48e54a71",
+    "mtime": 1779781946.1849098,
+    "ast_hash": "28401dad227bbca5bbf985f898a41c0e",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\utils\\gpu_models.py": {
-    "mtime": 1779721815.5917673,
-    "ast_hash": "0b8b3c9facc0c0640e3116d70db385b0",
+    "mtime": 1779781957.6727896,
+    "ast_hash": "1458f2bb684910bd7e1441dbeb166b8c",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\src\\utils\\infra.py": {
@@ -1100,8 +1095,8 @@
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\configs\\base.yaml": {
-    "mtime": 1779702747.5473797,
-    "ast_hash": "51aad2e6b1ddb9cf97e4524e377e9628",
+    "mtime": 1779799980.9339397,
+    "ast_hash": "a2225b80dab18eb46ab9670f114f7fb1",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\dashboard\\index.html": {
@@ -1122,391 +1117,6 @@
   "D:\\AI\\Jim\\docker\\prometheus.yml": {
     "mtime": 1778748216.9533966,
     "ast_hash": "3e8d1880e16fe5ba4d9b4c2f75f53972",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\DATA_RETENTION_GUIDE.md": {
-    "mtime": 1778778854.9231288,
-    "ast_hash": "2cf7ba06abe16a47f77ce4368b466875",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\DATA_RETENTION_POLICY.md": {
-    "mtime": 1778778854.924096,
-    "ast_hash": "9ee1afd0a740b35d0b18aefaf11ce28d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\ENSEMBLE_EXPLANATION.md": {
-    "mtime": 1779456922.8477652,
-    "ast_hash": "10e3c57de39a2210127dced685cccab1",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\FORMULAS.md": {
-    "mtime": 1778748216.953998,
-    "ast_hash": "604eb6ac81f8fd0177e5a6f04472c226",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\HEALTH_MONITORING_GUIDE.md": {
-    "mtime": 1778778854.9246006,
-    "ast_hash": "33a08038d57ac87f7c6bedb40cd3f752",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHASE_1_INFRASTRUCTURE.md": {
-    "mtime": 1778748216.9544132,
-    "ast_hash": "4537df2dcffefc6dc52fdcdf1f0cd001",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHASE_2.5_API.md": {
-    "mtime": 1778748216.9544132,
-    "ast_hash": "cb4c0d931ff9ac0632e8b3b0d210008d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHASE_2_DATA.md": {
-    "mtime": 1778748216.9544132,
-    "ast_hash": "070a21a7fd33ef0d4d7b5b17a620c9f6",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHASE_3_MODELING.md": {
-    "mtime": 1778769698.8014588,
-    "ast_hash": "6be9c40ecc305a8aab76f0951293c6f4",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHASE_4_RISK.md": {
-    "mtime": 1778748216.9544132,
-    "ast_hash": "67e47ab55a374a7b621f93858f695211",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHASE_5_BACKTESTING.md": {
-    "mtime": 1778748216.9544132,
-    "ast_hash": "b6356f68074e5df624009673a37abc61",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHASE_6B_REST_API_DOCS.md": {
-    "mtime": 1778778854.9246006,
-    "ast_hash": "174afa5236112c0126cc50bf23774408",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHASE_6_DEPLOYMENT.md": {
-    "mtime": 1778748216.9544132,
-    "ast_hash": "8005476094aa5bc60c482927dc6ea5aa",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHASE_7_CULTURE.md": {
-    "mtime": 1778748216.9544132,
-    "ast_hash": "42e9f403e9415389e8580f23d5c520e4",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs\\PHILOSOPHY.md": {
-    "mtime": 1778748216.9544132,
-    "ast_hash": "37fa20924f788fd9687e2c1774e646b1",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\A_TO_Z_MINI_MEDALLION_GUIDE.md": {
-    "mtime": 1778827413.6449125,
-    "ast_hash": "618d99754460ad6239216bab122e52ff",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\CLEANUP_RECOMMENDATIONS.md": {
-    "mtime": 1778748216.949044,
-    "ast_hash": "4ac5091f82d4b7fbe48f1791711e2c3d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\DATA_RETENTION_POLICY.md": {
-    "mtime": 1778769698.7831635,
-    "ast_hash": "149eaaba2adfb73487671db6269013a7",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\DELIVERABLES_SUMMARY.md": {
-    "mtime": 1778769698.783767,
-    "ast_hash": "fde67c95396aeb96b575d8f117d3f764",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\DEPLOYMENT_GUIDE.md": {
-    "mtime": 1779698405.9471993,
-    "ast_hash": "10005ae31fa58d8bb1871fd13da6abba",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\DOCUMENTATION_INDEX.md": {
-    "mtime": 1778769698.7846484,
-    "ast_hash": "3ff08a69d9013e54a06f780a711e714c",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\ENHANCEMENT_OPPORTUNITIES_ANALYSIS.md": {
-    "mtime": 1778769698.7856882,
-    "ast_hash": "a16684744287ad392ee0f6165908af08",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\ENHANCEMENT_ROADMAP.md": {
-    "mtime": 1778769698.7862034,
-    "ast_hash": "d5969de4825ae23cbdadcbbf58a50276",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\ENHANCEMENT_SUMMARY.md": {
-    "mtime": 1778769698.7867208,
-    "ast_hash": "25a65ac21cbec7f2d681f59c9321197d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\FILE_STRUCTURE.md": {
-    "mtime": 1778748216.9495616,
-    "ast_hash": "ef97e6613839c9f4af21321cd6b2e49d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\FINAL_SUMMARY.md": {
-    "mtime": 1778769698.787246,
-    "ast_hash": "4a439789e080298661994bdd6e2e2db9",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\FINAL_TODOS_SUMMARY.md": {
-    "mtime": 1778769698.7877657,
-    "ast_hash": "5d0cb111604c708fef2b6a3407a509c7",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\GPU_ACCELERATION_AND_REST_API.md": {
-    "mtime": 1778748216.9500797,
-    "ast_hash": "a3a4fcac5d0aee5493b083cd8e6e32b3",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\GUIDE_INDEX.md": {
-    "mtime": 1778778854.915632,
-    "ast_hash": "5198a09cd289fa50be358124b2101179",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\LIVE_DAEMON_TESTING_LOG.md": {
-    "mtime": 1778769698.7882855,
-    "ast_hash": "6f53961dc2bb86ff1ac43e37137b48ae",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\OPERATIONAL_PROCEDURES.md": {
-    "mtime": 1778769698.7882855,
-    "ast_hash": "d27bb924264b6e1f1d47411ceef09584",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\OPERATIONS_RUNBOOKS.md": {
-    "mtime": 1778769698.7888,
-    "ast_hash": "d506d664e094cc2115774fb4fa0ae88f",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_2_SCHEDULER_TESTING_COMPLETE.md": {
-    "mtime": 1778769698.7893138,
-    "ast_hash": "f40c2fe2ba6863c9fe8d0c874489825d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_3_IMPLEMENTATION_PLAN.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "294715a33875ee9449be911302656760",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_3_KICKOFF_SUMMARY.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "9a4d3d263c5bfb0e027ee54f45bd840c",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_3_PROGRESS_TRACKING.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "55c0cc5a8ec2935b6cfaee1382474975",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_3_WEEK_1_EXECUTION_REPORT.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "552e6abd3a80b8f8947f839199ebe6da",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_4_IMPLEMENTATION_COMPLETE.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "c1aebc6d93e47c812609df0c35b29ae2",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_4_TESTING_GUIDE.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "8758677b5c14e27baa5f1713ee2cf3a5",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_4_TESTING_INTEGRATION_COMPLETE.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "e1f91a7775d63a6836cbfbbfc5f05f60",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_5_COMPLETE_SUMMARY.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "c58d7bf8d047363409c270b12956be91",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_5_IMPLEMENTATION_PLAN.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "232e364e041be882529468a002dbffe9",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_5_PROGRESS_TRACKING.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "483d8a49670288e7f2d4065c54e41e85",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_5_WEEK1_COMPLETION.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "6c037fdce5765db628214548951fe58c",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_5_WEEK2_COMPLETION_SUMMARY.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "a0e858cc811e1ec6e9f8a2ca88cb367d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6B_COMPLETION_REPORT.md": {
-    "mtime": 1778778854.9161448,
-    "ast_hash": "b91b855e7f28c99bbe9b06cbf727a937",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6B_COMPLETION_VERIFIED.md": {
-    "mtime": 1778778854.916653,
-    "ast_hash": "2a801d55b7186179380b50d86fc9471d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6B_FINAL_SUMMARY.md": {
-    "mtime": 1778778854.917171,
-    "ast_hash": "920e7f21e4b7787be0fa65dd62b6028d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6B_PROJECT_STATUS.md": {
-    "mtime": 1778778854.917171,
-    "ast_hash": "22746d7a0f2e087dfddef964c35d9f3d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6B_QUICK_API_REFERENCE.md": {
-    "mtime": 1778790862.3894043,
-    "ast_hash": "2fd0edc9c85a8743554c6d1893475354",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6C_ENHANCEMENTS_3_11_STRATEGY.md": {
-    "mtime": 1778778854.9182067,
-    "ast_hash": "4d5fab6300b1b37cd7d0632f9faf0a57",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6C_ENHANCEMENT_2_PLAN.md": {
-    "mtime": 1778778854.9187303,
-    "ast_hash": "05e5942ffc15ffad2dd1e402bbd74b2d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6C_KICKOFF.md": {
-    "mtime": 1778778854.9192502,
-    "ast_hash": "4b5b2025765d9af6817e9509468cd975",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6_PAPER_TRADING_ENGINE_COMPLETE.md": {
-    "mtime": 1778778854.9192502,
-    "ast_hash": "30a034ac3214ccab1c1e5d6722f34051",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6_PAPER_TRADING_PLAN.md": {
-    "mtime": 1778778854.9192502,
-    "ast_hash": "e33f5d0058f78ffaae0c24a77c745076",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PHASE_6_UNIT_TESTS_COMPLETE.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "e62ccb5ff1f976184a5a2edc2b4cfc71",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PRODUCTION_MONITORING.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "e5f11f965ecad0d11cd2b3364de1c8b8",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PROJECT_STATUS.md": {
-    "mtime": 1778778854.9192502,
-    "ast_hash": "625edd5f2c174def5bdb1771c6143ca5",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\project_summary.md": {
-    "mtime": 1778599014.4865112,
-    "ast_hash": "4d7874c2b298c915310fe4eef4543879",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\PROJECT_SUMMARY_UPDATED.md": {
-    "mtime": 1779270151.5768702,
-    "ast_hash": "1ae8ebd308cf6fe72cb01c2d89fbc273",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\project_walkthrough.md": {
-    "mtime": 1778771675.2284448,
-    "ast_hash": "5ae9d085dfd555d5f36110595e761731",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\QUICK_REFERENCE.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "d921af1996a941282025fc2c5b2d3710",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\QUICK_START_LIVE.md": {
-    "mtime": 1778790862.3902297,
-    "ast_hash": "c0db865719b095ab1ad25386eb4131b3",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\QUICK_START_PIPELINE.md": {
-    "mtime": 1778769698.7898328,
-    "ast_hash": "f2dee187ef5bcd2ba2bc8a9d96053f3a",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\README.md": {
-    "mtime": 1778778854.9192502,
-    "ast_hash": "eab5eda21fdd593d5da4f807abc07f9e",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\README_FOR_YOUR_FRIEND.md": {
-    "mtime": 1778778854.9192502,
-    "ast_hash": "78c8fde3b2e8c995fe871df5b8b92a77",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\ROADMAP.md": {
-    "mtime": 1778769698.7977877,
-    "ast_hash": "316a3d9ecbc0a73b4938f2113ec5872f",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\SCHEDULER_TEST_REPORT.md": {
-    "mtime": 1778769698.7977877,
-    "ast_hash": "cd86a257f12f653d64528badd94d531a",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\SESSION_2_COMPLETION.md": {
-    "mtime": 1778748216.950595,
-    "ast_hash": "03442616e96b7780d5a50f8a2b944f32",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\SESSION_3_COMPLETION_CHECKLIST.md": {
-    "mtime": 1778769698.7977877,
-    "ast_hash": "4a24f1a1a729c285d9ce4fd50dda3927",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\SESSION_3_OPERATIONS_COMPLETE.md": {
-    "mtime": 1778769698.7977877,
-    "ast_hash": "a9dd9891097cbd4f80d2b8b29e15b14b",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\START_HERE_SESSION2.md": {
-    "mtime": 1778748216.950595,
-    "ast_hash": "017d9b4153ead8ef27fca1b2f266010f",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\STUDY_GUIDE.md": {
-    "mtime": 1778771675.2215312,
-    "ast_hash": "5ae9d085dfd555d5f36110595e761731",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\STUDY_GUIDE_FOR_YOU.md": {
-    "mtime": 1778752119.779918,
-    "ast_hash": "9969624de9d47cec6f408f93e6262eab",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\TODOS_COMPLETION_AND_ENHANCEMENTS.md": {
-    "mtime": 1778769698.7992947,
-    "ast_hash": "699b889e10a57c71c7a28280998635c9",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\TROUBLESHOOTING_GUIDE.md": {
-    "mtime": 1778769698.8000028,
-    "ast_hash": "d440da33961546877d8938e3c42851f0",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\docs_archive\\VISUALIZATION_GUIDE.md": {
-    "mtime": 1778778854.9192502,
-    "ast_hash": "bf62a6a99c33bd1efa2a39da8001feb9",
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\JIM\\docker-compose.yml": {
@@ -1624,11 +1234,6 @@
     "ast_hash": "031ddf2b9336544522d32be387d85e9c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\docs\\Ensemble_Explanation.pdf": {
-    "mtime": 1779457133.9076126,
-    "ast_hash": "31512f4016b4e2fb624b4dce26b26d91",
-    "semantic_hash": ""
-  },
   "D:\\AI\\Jim\\clerk-react\\public\\favicon.svg": {
     "mtime": 1778599960.7025414,
     "ast_hash": "098c888910dd3b64d291f1f0dc9e7033",
@@ -1665,8 +1270,63 @@
     "semantic_hash": ""
   },
   "D:\\AI\\Jim\\dashboard\\src\\pages\\LiveTrading.jsx": {
-    "mtime": 1779781296.5130446,
-    "ast_hash": "076be3dac9f030ad97e452ca16dcd13e",
+    "mtime": 1779800503.30627,
+    "ast_hash": "5bb23a2ea8075768fc55326041fcce49",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\check file\\adx_regime_detector.py": {
+    "mtime": 1779774826.0,
+    "ast_hash": "f1427753dd42e9db7d917c2a269e57af",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\check file\\circuit_breaker.py": {
+    "mtime": 1779774826.0,
+    "ast_hash": "ce109ea125704a3189cf6e5499e62263",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\check file\\live_trader_integration.py": {
+    "mtime": 1779774826.0,
+    "ast_hash": "6e46386c3eb28003a23e733d68613296",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\check file\\silver_feed_adapter.py": {
+    "mtime": 1779774826.0,
+    "ast_hash": "e6143ba516249159ccdb6f37caea1af5",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\check file\\trailing_stop.py": {
+    "mtime": 1779774826.0,
+    "ast_hash": "d8c88abeef915313fb8620072f6188bb",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\check file\\walk_forward_backtester.py": {
+    "mtime": 1779774826.0,
+    "ast_hash": "31a5175ef14b07764707be9197a199d6",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\src\\paper_trading\\kalman_hedge.py": {
+    "mtime": 1779794341.4098077,
+    "ast_hash": "501e6c64b7fb5a47cc2eb0adeda600d0",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\src\\paper_trading\\silver_feed_adapter.py": {
+    "mtime": 1779795183.9718862,
+    "ast_hash": "f4a89c38f69b678430ed4e358235ea91",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\src\\risk\\economic_calendar.py": {
+    "mtime": 1779794226.909901,
+    "ast_hash": "bcaa06fd0dacdeaea0ad261a8cee1500",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\PROJECT_SUMMARY.md": {
+    "mtime": 1779786954.249044,
+    "ast_hash": "7dfbd51f0487d0dee5d476d5e5a3cf61",
+    "semantic_hash": ""
+  },
+  "D:\\AI\\Jim\\query_output.txt": {
+    "mtime": 1779819886.0712066,
+    "ast_hash": "eff0b45c9146777b07aafa7555a8c2c6",
     "semantic_hash": ""
   }
 }

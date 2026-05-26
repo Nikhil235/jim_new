@@ -72,15 +72,18 @@ features:
 
 # --- Models ---
 models:
-  # Signal weights for paper trading (must sum to ~1.0)
+  # Signal weights for paper trading (must sum to 1.0)
+  # NOTE: Ensemble gets 0.10 as "meta output reserve" — a constant allocation
+  # for the blended aggregator confidence across all regimes.
+  # These are NORMAL regime defaults; dynamic_weights.py adjusts per regime.
   signal_weights:
-    wavelet: 0.15
-    hmm: 0.15
+    wavelet: 0.30
+    hmm: 0.20
     lstm: 0.15
-    tft: 0.15
-    genetic: 0.15
-    nlp: 0.10
-    ensemble: 0.15
+    tft: 0.10
+    genetic: 0.10
+    nlp: 0.05
+    ensemble: 0.10
 
   wavelet:
     family: "db4"                # Daubechies-4 (optimal for financial series)

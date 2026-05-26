@@ -274,47 +274,22 @@ def fetch_metalpriceapi_gs_spot() -> tuple[Optional[float], Optional[float]]:
 # MODEL RUNNERS — each returns (signal: str, confidence: float, reasoning: str)
 # ============================================================================
 
+_wavelet_model = None
+
 def run_wavelet(df: pd.DataFrame) -> Dict:
-    """Wavelet denoiser signal: trend direction from denoised price series."""
+    """Wavelet denoiser signal: uses the real WaveletDenoiser class."""
+    global _wavelet_model
     try:
-        prices = df["close"].values
+        from src.models.wavelet import WaveletDenoiser
 
-        # Need at least 32 samples (2^5 for 5-level decomposition)
-        if len(prices) < 32:
-            return {"signal": "HOLD", "confidence": 0.0, "reasoning": "Insufficient data"}
+        if _wavelet_model is None:
+            _wavelet_model = WaveletDenoiser(wavelet="db4", levels=5, threshold_method="bayesshrink")
 
-        try:
-            import pywt
-            import warnings
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                coeffs = pywt.wavedec(prices, "db4", level=5)
-                # Zero out detail coefficients to denoise
-                coeffs[1:] = [np.zeros_like(v) for v in coeffs[1:]]
-                trend = pywt.waverec(coeffs, "db4")
-            confidence = 0.75
-        except ImportError:
-            # Proxy if pywt is unavailable
-            trend = pd.Series(prices).rolling(window=10).mean().bfill().values
-            confidence = 0.5
+        if not _wavelet_model.is_trained:
+            _wavelet_model.train(df)
 
-        # Signal: compare last 3 denoised values to determine trend
-        if len(trend) >= 3:
-            slope = (trend[-1] - trend[-3]) / (abs(trend[-3]) + 1e-8)
-            if slope > 0.0001:
-                signal = "LONG"
-                reasoning = f"Wavelet trend slope +{slope:.4f} → uptrend detected"
-            elif slope < -0.0001:
-                signal = "SHORT"
-                reasoning = f"Wavelet trend slope {slope:.4f} → downtrend detected"
-            else:
-                signal = "HOLD"
-                reasoning = f"Wavelet trend flat (slope={slope:.6f})"
-        else:
-            signal = "HOLD"
-            reasoning = "Insufficient trend data"
-
-        return {"signal": signal, "confidence": round(confidence, 3), "reasoning": reasoning}
+        result = _wavelet_model.generate_signal(df)
+        return result.to_dict()
 
     except Exception as e:
         logger.warning(f"Wavelet model error: {e}")
@@ -324,296 +299,98 @@ def run_wavelet(df: pd.DataFrame) -> Dict:
 _hmm_detector = None
 
 def run_hmm(df: pd.DataFrame) -> Dict:
-    """HMM regime detector: market regime → regime-aware signal."""
+    """HMM regime detector: uses the real RegimeDetector.generate_signal()."""
     global _hmm_detector
     try:
         from src.models.hmm_regime import RegimeDetector
-        
+
         if _hmm_detector is None:
             _hmm_detector = RegimeDetector(n_regimes=3, n_iter=200)
-            
+
         if not getattr(_hmm_detector, 'is_trained', False):
             _hmm_detector.train(df)
-            
-        regime_name, confidence = _hmm_detector.get_current_regime(df)
 
-        # Regime → directional signal mapping
-        recent_return = float(df["returns"].iloc[-1])
-        recent_vol = float(df["returns"].rolling(10).std().iloc[-1])
-
-        if regime_name == "GROWTH":
-            if recent_return > 0.005:
-                signal = "SHORT"
-                confidence = min(confidence * 0.8, 1.0)
-            elif recent_return < -0.005:
-                signal = "LONG"
-                confidence = min(confidence * 0.9, 1.0)
-            elif recent_return > 0:
-                signal = "LONG"
-                confidence = min(confidence * 0.9, 1.0)
-            elif recent_return < 0:
-                signal = "SHORT"
-                confidence = min(confidence * 0.9, 1.0)
-            else:
-                signal = "HOLD"
-                confidence = 0.0
-            reasoning = f"HMM regime: GROWTH | Recent return: {recent_return:.4f}"
-        elif regime_name == "CRISIS":
-            signal = "SHORT" if recent_return < 0 else "HOLD"
-            confidence = confidence * 0.8  # More conservative in crisis
-            reasoning = f"HMM regime: CRISIS | Vol: {recent_vol:.4f}"
-        else:  # NORMAL
-            if recent_return > 0.0001:
-                signal = "LONG"
-            elif recent_return < -0.0001:
-                signal = "SHORT"
-            else:
-                signal = "HOLD"
-            reasoning = f"HMM regime: NORMAL | Return: {recent_return:.4f}"
-
-        return {
-            "signal": signal,
-            "confidence": round(float(confidence), 3),
-            "regime": regime_name,
-            "reasoning": reasoning,
-        }
+        result = _hmm_detector.generate_signal(df)
+        output = result.to_dict()
+        # Ensure regime is always in the output for downstream consumers
+        if "regime" not in output or not output["regime"]:
+            output["regime"] = "NORMAL"
+        return output
 
     except Exception as e:
         logger.warning(f"HMM model error: {e}")
         return {"signal": "HOLD", "confidence": 0.0, "regime": "UNKNOWN", "reasoning": f"Error: {str(e)[:80]}"}
 
 
+_lstm_model = None
+
 def run_lstm(df: pd.DataFrame) -> Dict:
-    """LSTM temporal model: sequence-based price direction prediction."""
+    """LSTM temporal model: uses the real LSTMTemporalModel class."""
+    global _lstm_model
     try:
-        # LSTM requires significant training time — use a lightweight proxy
-        # that captures sequential momentum with exponential weighting
-        closes = df["close"].values
-        returns = df["returns"].values
+        from src.models.lstm_temporal import LSTMTemporalModel
 
-        # Exponentially weighted momentum (approximates LSTM's temporal weighting)
-        alpha = 0.15
-        ew_return = returns[-1]
-        for r in reversed(returns[-20:-1]):
-            ew_return = alpha * ew_return + (1 - alpha) * r
+        if _lstm_model is None:
+            _lstm_model = LSTMTemporalModel(
+                hidden_size=128, num_layers=3, sequence_length=100,
+                epochs=50, patience=8,
+            )
 
-        # Acceleration (2nd derivative)
-        if len(returns) >= 5:
-            accel = np.mean(np.diff(returns[-5:]))
-        else:
-            accel = 0.0
+        if not _lstm_model.is_trained:
+            _lstm_model.train(df)
 
-        # MACD-style signal
-        ema_fast = pd.Series(closes).ewm(span=8).mean().iloc[-1]
-        ema_slow = pd.Series(closes).ewm(span=21).mean().iloc[-1]
-        macd = ema_fast - ema_slow
-
-        # Macro Leading Indicators (DXY and US10Y)
-        macro_adjustment = 0.0
-        if "dxy_returns" in df.columns and "us10y_returns" in df.columns:
-            # Gold is inversely correlated to both DXY and Treasury Yields
-            dxy_momentum = df["dxy_returns"].iloc[-3:].sum() * 100
-            yield_momentum = df["us10y_returns"].iloc[-3:].sum() * 100
-            
-            # If DXY spikes OR Yields spike -> Strong Bearish pressure for Gold
-            macro_adjustment = (dxy_momentum + yield_momentum) * -0.3 
-            
-        # Combine signals
-        score = np.sign(ew_return) * 0.4 + np.sign(macd) * 0.3 + np.sign(accel) * 0.1 + macro_adjustment
-        confidence = min(abs(score) * 0.8 + 0.3, 0.92)
-
-        if score > 0.3:
-            signal = "LONG"
-        elif score < -0.3:
-            signal = "SHORT"
-        else:
-            signal = "HOLD"
-
-        return {
-            "signal": signal,
-            "confidence": round(float(confidence), 3),
-            "reasoning": f"LSTM-proxy: MACD={macd:.2f}, MacroDrag={macro_adjustment:.2f}, score={score:.2f}",
-        }
+        result = _lstm_model.generate_signal(df)
+        return result.to_dict()
 
     except Exception as e:
         logger.warning(f"LSTM model error: {e}")
         return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
 
 
+_tft_model = None
+
 def run_tft(df: pd.DataFrame) -> Dict:
-    """TFT forecaster: multi-scale attention-based signal."""
+    """TFT forecaster: uses the real TFTForecaster class."""
+    global _tft_model
     try:
-        closes = df["close"].values
-        returns = df["returns"].values
-        highs = df["high"].values if "high" in df.columns else closes
-        lows = df["low"].values if "low" in df.columns else closes
+        from src.models.tft_forecaster import TFTForecaster
 
-        # Multi-window RSI (approximates TFT's multi-horizon attention)
-        def rsi(series, period=14):
-            delta = np.diff(series)
-            gain = np.where(delta > 0, delta, 0)
-            loss = np.where(delta < 0, -delta, 0)
-            avg_gain = np.mean(gain[-period:]) + 1e-10
-            avg_loss = np.mean(loss[-period:]) + 1e-10
-            rs = avg_gain / avg_loss
-            return 100 - 100 / (1 + rs)
+        if _tft_model is None:
+            _tft_model = TFTForecaster(
+                d_model=64, n_heads=4, n_layers=2,
+                sequence_length=60, epochs=40, patience=6,
+            )
 
-        rsi_14 = rsi(closes, 14)
-        rsi_7 = rsi(closes, 7)
+        if not _tft_model.is_trained:
+            _tft_model.train(df)
 
-        # ATR-normalized momentum
-        atr = np.mean(np.abs(highs[-14:] - lows[-14:]))
-        momentum_14 = (closes[-1] - closes[-14]) / (atr + 1e-8)
-
-        # Bollinger band position
-        bb_mean = np.mean(closes[-20:])
-        bb_std = np.std(closes[-20:])
-        bb_pos = (closes[-1] - bb_mean) / (2 * bb_std + 1e-8)  # -1 to 1
-
-        # TFT attention-inspired weighting across time scales
-        short_signal = np.sign(rsi_7 - 50) * (abs(rsi_7 - 50) / 50)
-        long_signal = np.sign(rsi_14 - 50) * (abs(rsi_14 - 50) / 50)
-        trend_signal = np.sign(momentum_14) * min(abs(momentum_14) / 5, 1.0)
-
-        combined = short_signal * 0.3 + long_signal * 0.4 + trend_signal * 0.3
-        # Limit contrarian BB adjustment
-        bb_adj = np.clip(bb_pos * 0.15, -0.25, 0.25)
-        combined -= bb_adj
-        
-        # TFT Macro Attention: Yield & DXY Curve Inversion
-        macro_reasoning = ""
-        if "dxy_returns" in df.columns and "us10y_returns" in df.columns:
-            dxy_roc = df["dxy_returns"].iloc[-5:].mean() * 1000
-            yield_roc = df["us10y_returns"].iloc[-5:].mean() * 1000
-            
-            if dxy_roc > 1.5 or yield_roc > 1.5:
-                combined -= 0.4 # Severe bearish override
-                macro_reasoning = f" (MACRO FEAR: DXY/US10Y Spiking)"
-            elif dxy_roc < -1.5 or yield_roc < -1.5:
-                combined += 0.4 # Severe bullish override
-                macro_reasoning = f" (MACRO GREED: DXY/US10Y Dropping)"
-
-        # Gold-Silver Ratio adjustment (Investopedia)
-        if "gold_silver_ratio" in df.columns:
-            gs_ratio = df["gold_silver_ratio"].iloc[-1]
-            if gs_ratio > 85:
-                combined -= 0.15
-                macro_reasoning += f" (GSR High: {gs_ratio:.1f})"
-            elif gs_ratio < 75:
-                combined += 0.15
-                macro_reasoning += f" (GSR Low: {gs_ratio:.1f})"
-
-        confidence = min(abs(combined) * 0.9 + 0.25, 0.94)
-
-        if combined > 0.2:
-            signal = "LONG"
-        elif combined < -0.2:
-            signal = "SHORT"
-        else:
-            signal = "HOLD"
-
-        return {
-            "signal": signal,
-            "confidence": round(float(confidence), 3),
-            "reasoning": f"TFT-proxy: RSI14={rsi_14:.1f}, RSI7={rsi_7:.1f}, BB_pos={bb_pos:.2f}, score={combined:.3f}{macro_reasoning}",
-        }
+        result = _tft_model.generate_signal(df)
+        return result.to_dict()
 
     except Exception as e:
         logger.warning(f"TFT model error: {e}")
         return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
 
 
+_genetic_model = None
+
 def run_genetic(df: pd.DataFrame) -> Dict:
-    """Genetic algorithm: evolved rule-based signal voting."""
+    """Genetic algorithm: uses the real GeneticAlgorithm class with evolved rules."""
+    global _genetic_model
     try:
-        closes = df["close"].values
-        returns = df["returns"].values
+        from src.models.genetic_algorithm import GeneticAlgorithm
 
-        votes = []
-        reasons = []
+        if _genetic_model is None:
+            _genetic_model = GeneticAlgorithm(
+                population_size=100, generations=50,
+                n_rules_per_chromosome=8,
+            )
 
-        # Rule 1: SMA crossover (evolved: 10/30)
-        if len(closes) >= 30:
-            sma10 = np.mean(closes[-10:])
-            sma30 = np.mean(closes[-30:])
-            if sma10 > sma30 * 1.001:
-                votes.append(1)
-                reasons.append(f"SMA10>{sma30:.0f}")
-            elif sma10 < sma30 * 0.999:
-                votes.append(-1)
-                reasons.append(f"SMA10<{sma30:.0f}")
-            else:
-                votes.append(0)
+        if not _genetic_model.is_trained:
+            _genetic_model.train(df)
 
-        # Rule 2: Momentum rule (evolved: 5-day return threshold)
-        if len(returns) >= 5:
-            mom5 = np.sum(returns[-5:])
-            if mom5 > 0.008:
-                votes.append(1)
-                reasons.append(f"Mom5d=+{mom5:.3f}")
-            elif mom5 < -0.008:
-                votes.append(-1)
-                reasons.append(f"Mom5d={mom5:.3f}")
-            else:
-                votes.append(0)
-
-        # Rule 3: Volume-weighted return (evolved)
-        if "volume" in df.columns and len(df) >= 10:
-            recent = df.iloc[-10:]
-            vwap_ret = np.average(recent["returns"], weights=recent["volume"] + 1)
-            if vwap_ret > 0.001:
-                votes.append(1)
-                reasons.append(f"VWAP_ret=+{vwap_ret:.4f}")
-            elif vwap_ret < -0.001:
-                votes.append(-1)
-                reasons.append(f"VWAP_ret={vwap_ret:.4f}")
-            else:
-                votes.append(0)
-
-        # Rule 4: High-Low range expansion (volatility breakout)
-        if len(closes) >= 20:
-            range_now = df["high"].iloc[-1] - df["low"].iloc[-1] if "high" in df.columns else 0
-            range_avg = (df["high"] - df["low"]).iloc[-20:].mean() if "high" in df.columns else 1
-            if range_now > range_avg * 1.3 and returns[-1] > 0:
-                votes.append(1)
-                reasons.append("breakout_up")
-            elif range_now > range_avg * 1.3 and returns[-1] < 0:
-                votes.append(-1)
-                reasons.append("breakout_dn")
-            else:
-                votes.append(0)
-
-        # Rule 5: Recent reversal detection
-        if len(returns) >= 3:
-            if returns[-3] < -0.005 and returns[-2] < -0.003 and returns[-1] > 0.002:
-                votes.append(1)
-                reasons.append("reversal_long")
-            elif returns[-3] > 0.005 and returns[-2] > 0.003 and returns[-1] < -0.002:
-                votes.append(-1)
-                reasons.append("reversal_short")
-            else:
-                votes.append(0)
-
-        if not votes:
-            return {"signal": "HOLD", "confidence": 0.0, "reasoning": "No rules fired"}
-
-        score = np.mean(votes)
-        # Confidence = agreement among rules
-        agreement = abs(score)
-        confidence = min(agreement * 0.85 + 0.20, 0.90)
-
-        if score > 0.2:
-            signal = "LONG"
-        elif score < -0.2:
-            signal = "SHORT"
-        else:
-            signal = "HOLD"
-
-        return {
-            "signal": signal,
-            "confidence": round(float(confidence), 3),
-            "reasoning": f"Genetic ({len([v for v in votes if v != 0])}/{len(votes)} rules): " + ", ".join(reasons[:3]),
-        }
+        result = _genetic_model.generate_signal(df)
+        return result.to_dict()
 
     except Exception as e:
         logger.warning(f"Genetic model error: {e}")
@@ -666,9 +443,7 @@ def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", ma
             
             # RF probabilities in 3-class financial data are typically narrow (0.35 - 0.70).
             # We must stretch this to the 0.0 - 1.0 confidence scale the engine expects.
-            # Otherwise, confidence is artificially "high and narrow" (mean ~0.6).
             def scale_confidence(p: float) -> float:
-                # Baseline 0.35 -> 0.0 conf. Max 0.75 -> 1.0 conf.
                 scaled = (p - 0.35) / (0.75 - 0.35)
                 return max(0.0, min(scaled, 1.0))
                 
@@ -677,24 +452,54 @@ def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", ma
             best_prob = probs[best_idx]
             calibrated_conf = round(scale_confidence(best_prob), 3)
             
-            if best_idx == 2 and best_prob > 0.40:
-                return {"signal": "LONG", "confidence": calibrated_conf, "reasoning": f"ML Meta-Learner (LONG: raw_prob={best_prob:.0%})"}
-            elif best_idx == 0 and best_prob > 0.40:
-                return {"signal": "SHORT", "confidence": calibrated_conf, "reasoning": f"ML Meta-Learner (SHORT: raw_prob={best_prob:.0%})"}
+            # Model agreement guardrail: count directional votes from base models
+            longs = sum(1 for m in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp"]
+                       if individual_signals.get(m, {}).get("signal") == "LONG")
+            shorts = sum(1 for m in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp"]
+                        if individual_signals.get(m, {}).get("signal") == "SHORT")
+            
+            # If 4+ models agree on a direction, the meta-learner must agree or output HOLD
+            strong_agreement = None
+            if longs >= 4:
+                strong_agreement = "LONG"
+            elif shorts >= 4:
+                strong_agreement = "SHORT"
+            
+            # Raised threshold from 0.40 to 0.50 — 0.40 is barely above random (0.33)
+            if best_idx == 2 and best_prob > 0.50:
+                ml_signal = "LONG"
+            elif best_idx == 0 and best_prob > 0.50:
+                ml_signal = "SHORT"
             else:
-                return {"signal": "HOLD", "confidence": calibrated_conf, "reasoning": f"ML Meta-Learner (HOLD: raw_prob={probs[1]:.0%})"}
+                ml_signal = "HOLD"
+            
+            # Agreement override: if strong consensus exists and ML disagrees, defer to consensus
+            if strong_agreement and ml_signal != "HOLD" and ml_signal != strong_agreement:
+                logger.debug(f"ML signal {ml_signal} overridden by {strong_agreement} model agreement ({longs}L/{shorts}S)")
+                ml_signal = "HOLD"
+                calibrated_conf = calibrated_conf * 0.5  # Penalize conflicting signal
+            
+            return {"signal": ml_signal, "confidence": calibrated_conf,
+                    "reasoning": f"ML Meta-Learner ({ml_signal}: raw_prob={best_prob:.0%}, agreement={longs}L/{shorts}S)"}
                 
         except NotFittedError:
             # 3. Graceful Fallback: Regime-Conditioned Dynamic Weighting
+            # NLP weight reduced from 0.25/0.30 → 0.10/0.15 to prevent single-model dominance
             weights = {
-                "wavelet": 0.10, "hmm": 0.10, "lstm": 0.15, 
-                "tft": 0.20, "genetic": 0.20, "nlp": 0.25
+                "wavelet": 0.15, "hmm": 0.15, "lstm": 0.20, 
+                "tft": 0.20, "genetic": 0.20, "nlp": 0.10
             }
             
             if regime in ("HIGH_VOLATILITY", "CRASH", "CRISIS"):
-                weights.update({"wavelet": 0.25, "hmm": 0.20, "tft": 0.05, "lstm": 0.05, "genetic": 0.15, "nlp": 0.30})
+                weights.update({"wavelet": 0.25, "hmm": 0.20, "tft": 0.10, "lstm": 0.10, "genetic": 0.15, "nlp": 0.20})
             elif regime in ("LOW_VOLATILITY", "TRENDING", "GROWTH"):
                 weights.update({"wavelet": 0.10, "hmm": 0.10, "tft": 0.25, "lstm": 0.25, "genetic": 0.15, "nlp": 0.15})
+
+            # Cap any single model's confidence to prevent outlier dominance
+            # If one model is > 2x the mean confidence, clamp it
+            confs = [float(individual_signals.get(m, {}).get("confidence", 0.0)) for m in weights]
+            mean_conf = np.mean(confs) if confs else 0.5
+            conf_cap = max(mean_conf * 2.0, 0.70)
 
             signal_scores = {"LONG": 0.0, "SHORT": 0.0, "HOLD": 0.0}
             total_weight = sum(weights.values())
@@ -702,7 +507,7 @@ def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", ma
             for model, w in weights.items():
                 sig = individual_signals.get(model, {})
                 s = sig.get("signal", "HOLD")
-                c = float(sig.get("confidence", 0.0))
+                c = min(float(sig.get("confidence", 0.0)), conf_cap)  # Apply cap
                 signal_scores[s] += w * c
 
             for k in signal_scores: signal_scores[k] /= total_weight
