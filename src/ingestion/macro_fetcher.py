@@ -138,25 +138,46 @@ class MacroFetcher:
         """Fetch Federal Reserve Economic Data (FRED)."""
         api_key = self.fred_config.get("api_key", "")
         series_list = self.fred_config.get("series", list(self.FRED_SERIES.keys()))
-        if not api_key or api_key in ("", "${FRED_API_KEY}", "your_fred_api_key_here"):
-            logger.warning("FRED API key not configured — skipping FRED data")
-            return {}
-        try:
-            from fredapi import Fred
-        except ImportError:
-            logger.warning("fredapi not installed — pip install fredapi")
-            return {}
-        fred = Fred(api_key=api_key)
+        
+        has_api_key = api_key and api_key not in ("${FRED_API_KEY}", "your_fred_api_key_here")
+        
         fred_data = {}
         logger.info(f"Fetching {len(series_list)} series from FRED...")
+        
+        if has_api_key:
+            try:
+                from fredapi import Fred
+                fred = Fred(api_key=api_key)
+                for series_id in series_list:
+                    try:
+                        data = fred.get_series(series_id)
+                        if data is not None and len(data) > 0:
+                            fred_data[series_id] = data
+                            logger.info(f"  ✅ {series_id} (API): {len(data)} observations")
+                    except Exception as e:
+                        logger.error(f"  ❌ {series_id} (API): {e}")
+                return fred_data
+            except ImportError:
+                logger.warning("fredapi not installed, falling back to public CSV method")
+        else:
+            logger.info("FRED API key not configured, using public CSV method")
+            
+        # Fallback to public CSV method
         for series_id in series_list:
             try:
-                data = fred.get_series(series_id)
-                if data is not None and len(data) > 0:
+                url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+                df = pd.read_csv(url, index_col=0, parse_dates=True)
+                
+                if df is not None and not df.empty:
+                    df[series_id] = pd.to_numeric(df[series_id], errors='coerce')
+                    df = df.dropna()
+                    
+                    data = df[series_id]
                     fred_data[series_id] = data
-                    logger.info(f"  ✅ {series_id}: {len(data)} observations")
+                    logger.info(f"  ✅ {series_id} (CSV): {len(data)} observations")
             except Exception as e:
-                logger.error(f"  ❌ {series_id}: {e}")
+                logger.error(f"  ❌ {series_id} (CSV): {e}")
+                
         return fred_data
 
     def fred_to_dataframe(self, fred_data: Dict[str, pd.Series]) -> pd.DataFrame:

@@ -54,3 +54,9 @@ Thumbs.db
 # MLflow
 mlruns/
 mlartifacts/
+
+# AI Coding Agents
+.agents/
+.claude/
+.codex/
+.cursor/

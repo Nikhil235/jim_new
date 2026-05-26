@@ -11,6 +11,9 @@ import subprocess
 from loguru import logger
 from typing import Dict, Optional, List
 
+# Cache so detect_gpu() is only computed once per process
+_gpu_info_cache: Optional[Dict] = None
+
 
 def _detect_hardware_gpu_via_nvidiasmi() -> Dict:
     """
@@ -50,6 +53,10 @@ def detect_gpu() -> Dict:
             - cusignal_available: bool
             - compute_capability: List[str] (CUDA compute capability per GPU)
     """
+    global _gpu_info_cache
+    if _gpu_info_cache is not None:
+        return _gpu_info_cache
+
     info = {
         "gpu_available": False,
         "device_count": 0,
@@ -69,6 +76,14 @@ def detect_gpu() -> Dict:
     # Check PyTorch CUDA
     try:
         import torch
+        # Force lazy CUDA initialization before checking availability.
+        # Without this, torch.cuda.is_available() can return False on
+        # first call in some environments (Windows subprocess, etc).
+        if hasattr(torch.cuda, 'init'):
+            try:
+                torch.cuda.init()
+            except Exception:
+                pass  # init() can fail if truly no GPU; that's fine
         if torch.cuda.is_available():
             info["gpu_available"] = True
             info["device_count"] = torch.cuda.device_count()
@@ -91,9 +106,9 @@ def detect_gpu() -> Dict:
                 f"Memory: {sum(info['device_memory_gb']):.1f}GB total"
             )
         else:
-            logger.warning("PyTorch CUDA not available — falling back to CPU")
+            logger.info("PyTorch CUDA not available - running on CPU (normal if no NVIDIA GPU)")
     except ImportError:
-        logger.warning("PyTorch not installed")
+        logger.info("PyTorch not installed - running on CPU")
     except Exception as e:
         logger.warning(f"GPU detection failed: {e}")
 
@@ -131,6 +146,7 @@ def detect_gpu() -> Dict:
     except ImportError:
         logger.debug("cuSignal not available — using SciPy (CPU) fallback")
 
+    _gpu_info_cache = info
     return info
 
 

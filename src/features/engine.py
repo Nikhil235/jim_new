@@ -93,10 +93,12 @@ class FeatureEngine:
         features = self._add_volatility_features(features)
         features = self._add_momentum_features(features)
         features = self._add_price_level_features(features)
+        features = features.copy()
 
         # Volume-based features
         if "volume" in features.columns:
             features = self._add_volume_features(features)
+            features = features.copy()
 
         # --- Phase 2 new feature groups ---
         features = self._add_mtf_features(features)
@@ -104,15 +106,19 @@ class FeatureEngine:
         features = self._add_intraday_seasonality(features)
         features = self._add_lag_features(features)
         features = self._add_distribution_features(features)
+        features = features.copy()
+
         features = self._add_microstructure_proxies(features)
         features = self._add_regime_features(features)
         features = self._add_event_proximity_features(features)
         features = self._add_candlestick_features(features)
+        features = features.copy()
 
         # Cross-asset features (if macro data available)
         if macro:
             features = self._add_cross_asset_features(features, macro)
             features = self._add_cross_asset_enhanced(features, macro)
+            features = features.copy()
 
         # Alternative data features
         if alt_data:
@@ -120,9 +126,11 @@ class FeatureEngine:
             features = self._add_cot_features(features, alt_data)
             features = self._add_google_trends_features(features, alt_data)
             features = self._add_sentiment_features(features, alt_data)
+            features = features.copy()
 
         # Target Labels
         features = self._add_target_labels(features)
+        features = features.copy()
 
         # Smart NaN handling: don't let alt data (shorter history) eliminate all rows
         # 1. Forward-fill alt data columns (COT, ETF, trends, sentiment) — they are weekly/sparse/daily

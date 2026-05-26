@@ -20,9 +20,12 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 import asyncio
+import os
 import numpy as np
 from loguru import logger
 from src.models.rl_execution_agent import get_rl_agent
+from src.paper_trading.silver_feed_adapter import SilverFeedAdapter
+from src.paper_trading.kalman_hedge import KalmanHedgeEngine
 from src.paper_trading.dynamic_weights import (
     get_weight_adjuster, DynamicWeightAdjuster, REGIME_BASE_WEIGHTS
 )
@@ -94,6 +97,12 @@ class TradeExecution:
     confidence: float = 0.0
     trailing_stop: Optional[float] = None
     high_water_mark: Optional[float] = None
+    
+    # Silver Hedge tracking
+    silver_quantity: float = 0.0
+    silver_entry_price: float = 0.0
+    silver_exit_price: Optional[float] = None
+    silver_pnl: float = 0.0
     
     def __repr__(self):
         return f"Trade({self.trade_id}) {self.model_name} {self.signal_type.value} @ {self.entry_price:.2f}"
@@ -216,6 +225,15 @@ class PaperTradingEngine:
         self.health_monitor: Optional[HealthMonitor] = None
         self.performance_monitor: Optional[ModelPerformanceMonitor] = None
         
+        # Silver Feed and Kalman Hedge
+        self.silver_feed = SilverFeedAdapter(
+            goldapi_key=os.getenv("GOLDAPI_KEY", ""),
+            metalpriceapi_key=os.getenv("METALPRICEAPI_KEY", ""),
+            fetch_interval_s=30
+        )
+        self.kalman_hedge = KalmanHedgeEngine()
+        self.current_beta = 1.0
+        
         logger.info(
             f"Paper Trading Engine initialized with ${self.config.initial_capital:,.0f} capital | "
             f"Dynamic weights: {'ON' if self.config.use_dynamic_weights else 'OFF'}"
@@ -231,6 +249,8 @@ class PaperTradingEngine:
         self.started_at = datetime.now()
         self.day_started_at = datetime.now()
         self.daily_pnl = 0.0
+        
+        self.silver_feed.start()
         
         logger.info("Paper trading started")
         return {
@@ -256,6 +276,8 @@ class PaperTradingEngine:
         
         self.status = "STOPPED"
         self.stopped_at = datetime.now()
+        
+        self.silver_feed.stop()
         
         logger.info(f"Paper trading stopped. Final P&L: ${self.get_total_pnl():.2f}")
         return {
@@ -294,6 +316,10 @@ class PaperTradingEngine:
                     "confidence": self.last_signals[model].confidence if model in self.last_signals else 0.0,
                     "signal_count": len(self.signal_history[model]),
                 } for model in self.config.signal_weights.keys()
+            },
+            "silver": {
+                "beta": self.current_beta,
+                "feed_status": self.silver_feed.feed_status()
             }
         }
     
@@ -349,10 +375,15 @@ class PaperTradingEngine:
                 model_weight = dynamic_weights.get(model_name, 0.10)
                 
                 # Scale confidence by model's dynamic weight relative to average
-                # A model with 2× average weight gets a confidence boost
                 avg_weight = 1.0 / len(dynamic_weights) if dynamic_weights else 0.14
                 weight_multiplier = model_weight / avg_weight
                 adjusted_confidence = signal.confidence * weight_multiplier
+                
+                # Session quality scoring: Boost during first 30 mins of NY session (13:00-13:30 GMT)
+                now_gmt = datetime.utcnow()
+                if now_gmt.hour == 13 and 0 <= now_gmt.minute <= 30:
+                    adjusted_confidence *= 1.15
+                    
                 adjusted_confidence = min(adjusted_confidence, 1.0)  # Cap at 1.0
                 
                 logger.debug(
@@ -367,6 +398,13 @@ class PaperTradingEngine:
             if not self._check_risk_limits():
                 logger.warning("Risk limits exceeded, skipping trade")
                 return None
+                
+            # --- Correlation Guard ---
+            # Block new Gold entries if a Silver hedge leg is actively open
+            if self.position_sizes.get("XAGUSD", 0) != 0 and signal.signal_type in (SignalType.LONG, SignalType.SHORT):
+                if not self.current_position or self.current_position.status != TradeStatus.OPEN:
+                    logger.warning("Correlation Guard: XAGUSD hedge active. Blocking new Gold entry.")
+                    return None
             
             # Check if position already open
             if self.current_position and self.current_position.status == TradeStatus.OPEN:
@@ -409,6 +447,12 @@ class PaperTradingEngine:
         Returns:
             Updated portfolio snapshot
         """
+        # --- Kalman Hedge Update ---
+        # Strictly use T-1 (previous) prices to avoid look-ahead bias
+        prev = self.silver_feed.previous
+        if prev.is_valid():
+            self.current_beta = self.kalman_hedge.update(x_price=prev.xag, y_price=prev.xau)
+            
         # Update position P&L if open
         if self.current_position and self.current_position.status == TradeStatus.OPEN:
             trade = self.current_position
@@ -447,7 +491,24 @@ class PaperTradingEngine:
                 volatility=0.02, # Approx daily volatility 
                 confidence=trade.confidence
             )
-            trailing_pct = rl_params["trailing_stop_pct"]
+            
+            # ATR-based activation logic (using 1% price as proxy for 1xATR)
+            atr_proxy = price * 0.01 
+            profit_margin = (hwm - trade.entry_price) if trade.signal_type == SignalType.LONG else (trade.entry_price - hwm)
+            
+            # Trailing Stop Phases
+            if profit_margin >= atr_proxy:
+                # Phase 3: Trailing (Profit > 1.0x ATR)
+                trailing_pct = rl_params["trailing_stop_pct"]
+            elif profit_margin >= (atr_proxy * 0.5):
+                # Phase 2: Breakeven Jump (Profit > 0.5x ATR)
+                # Move stop to exactly the entry price (breakeven) to protect capital
+                trailing_pct = 0.00  
+                hwm = trade.entry_price 
+            else:
+                # Phase 1: Fixed Risk (Profit < 0.5x ATR)
+                trailing_pct = 0.02  # Fixed 2% stop before breakeven jump
+                hwm = trade.entry_price  # Anchor to entry price so it acts as a fixed stop
             
             if trade.signal_type == SignalType.LONG:
                 trade.trailing_stop = hwm * (1 - trailing_pct)
@@ -503,6 +564,28 @@ class PaperTradingEngine:
         # Apply slippage
         trade.slippage = self._calculate_slippage(signal.entry_price)
         
+        # --- Execute Silver Hedge ---
+        hedge_size = self.kalman_hedge.get_hedge_size(size, self.current_beta, signal.regime)
+        if hedge_size > 0:
+            latest_silver = self.silver_feed.latest
+            silver_price = latest_silver.xag if latest_silver.is_valid() else 30.0
+            
+            trade.silver_quantity = hedge_size
+            trade.silver_entry_price = silver_price
+            
+            hedge_value = hedge_size * silver_price
+            trade.commission += self._calculate_commission(hedge_value)
+            trade.slippage += self._calculate_slippage(silver_price)
+            
+            if signal.signal_type == SignalType.LONG:
+                self.position_sizes["XAGUSD"] = -hedge_size # SHORT hedge
+                self.portfolio.current_cash -= hedge_value
+            else:
+                self.position_sizes["XAGUSD"] = hedge_size # LONG hedge
+                self.portfolio.current_cash += hedge_value
+                
+            logger.info(f"Silver Hedge Executed: {hedge_size:.2f} oz @ ${silver_price:.2f} (β={self.current_beta:.2f})")
+        
         # Update portfolio
         if signal.signal_type == SignalType.LONG:
             self.position_sizes["XAUUSD"] = size
@@ -542,14 +625,44 @@ class PaperTradingEngine:
         trade.exit_price = exit_price
         trade.exit_time = timestamp
         
-        # Calculate P&L
+        # Calculate P&L for Gold
         pnl, pnl_pct = self._calculate_pnl(
             trade.signal_type,
             trade.entry_price,
             exit_price,
             trade.quantity
         )
-        trade.pnl = pnl - trade.commission - trade.slippage
+        trade.pnl = pnl
+        
+        # Calculate P&L for Silver Hedge
+        if trade.silver_quantity > 0:
+            latest_silver = self.silver_feed.latest
+            silver_exit = latest_silver.xag if latest_silver.is_valid() else 30.0
+            trade.silver_exit_price = silver_exit
+            
+            # Hedge direction is opposite of Gold
+            hedge_type = SignalType.SHORT if trade.signal_type == SignalType.LONG else SignalType.LONG
+            silver_pnl, _ = self._calculate_pnl(
+                hedge_type, 
+                trade.silver_entry_price, 
+                silver_exit, 
+                trade.silver_quantity
+            )
+            trade.silver_pnl = silver_pnl
+            trade.pnl += silver_pnl
+            
+            # Close Silver leg in position tracker
+            self.position_sizes["XAGUSD"] = 0
+            
+            # Adjust cash for closing silver
+            hedge_val = trade.silver_quantity * silver_exit
+            if hedge_type == SignalType.LONG:
+                self.portfolio.current_cash += hedge_val
+            else:
+                self.portfolio.current_cash -= hedge_val
+                
+        # Finalize trade P&L (Gold + Silver - Costs)
+        trade.pnl = trade.pnl - trade.commission - trade.slippage
         trade.pnl_pct = (trade.pnl / trade.position_value) * 100 if trade.position_value > 0 else 0
         
         trade.status = TradeStatus.CLOSED

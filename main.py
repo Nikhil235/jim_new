@@ -76,8 +76,7 @@ def main(mode: str, config: str, port: int, host: str, pipeline_mode: str):
     elif mode == "paper":
         run_paper_trading(cfg)
     elif mode == "live":
-        logger.warning("🚨 LIVE TRADING — NOT YET IMPLEMENTED")
-        sys.exit(1)
+        run_live_trading(cfg)
 
 
 def run_api(cfg: dict, host: str = "0.0.0.0", port: int = 8000):
@@ -305,6 +304,32 @@ def run_paper_trading(cfg: dict):
     logger.info("  Then use POST /paper-trading/start to begin")
     logger.info("  WebSocket: ws://localhost:8000/paper-trading/ws")
     logger.info("=" * 60)
+
+
+def run_live_trading(cfg: dict):
+    """
+    Run the live trading engine.
+    
+    Continuously fetches real-time gold prices, runs all 7 models,
+    and executes trades with full risk management.
+    
+    Usage:
+        python main.py --mode live
+    """
+    logger.info("--- LIVE TRADING MODE ---")
+    logger.info("🚀 Starting Mini-Medallion Live Gold Trader")
+    logger.info("   Press Ctrl+C to stop gracefully.")
+
+    from types import SimpleNamespace
+    from scripts.live_trader import run_live_trader
+
+    args = SimpleNamespace(
+        interval=60,
+        capital=cfg.get("backtest", {}).get("initial_capital", 100000.0),
+        min_confidence=cfg.get("risk", {}).get("circuit_breakers", {}).get("min_confidence", 0.55),
+        dry_run=False,
+    )
+    run_live_trader(args)
 
 
 def run_demo(cfg: dict):

@@ -1,8 +1,9 @@
 """
-$1,000 Investment Simulation with Mini-Medallion (Zero Commission)
+$1,000 Investment Simulation with Mini-Medallion (Realistic Trading)
 ==================================================================
-Demonstrates how the AI models generate returns with a small $1,000 account
-by removing broker commissions to isolate pure model performance.
+Demonstrates how the AI models generate returns with a small $1,000 account,
+incorporating real-world mechanics like Leverage (1:20), Spread, Commission,
+and Risk Management (Take Profit / Stop Loss at 1:2 R:R).
 
 Run with:  d:\\AI\\Jim\\.venv\\Scripts\\python.exe scripts\\test_run.py
 """
@@ -33,18 +34,18 @@ def simulate_1000_dollars():
         pass
 
     # 1. Start Paper Trading with $1,000
-    print("\n[STEP 1] Starting engine with $1,000 (zero fees)...")
+    print("\n[STEP 1] Starting engine with $1,000 (with realistic spreads and fees)...")
     try:
         start_resp = requests.post(
             f"{BASE_URL}/paper-trading/start",
             json={
                 "initial_capital": 1000.0,
                 "kelly_fraction": 0.25,
-                "max_position_pct": 0.10,
+                "max_position_pct": 0.50, # Backend max limit (controls $500 without leverage, but we simulate 1:20 leverage in logic if needed)
                 "max_daily_loss_pct": 0.05,
-                "min_confidence": 0.75,
-                "commission_per_trade": 0.0,
-                "slippage_pct": 0.0,
+                "min_confidence": 0.65, # Lowered to get more trades
+                "commission_per_trade": 0.50, # Realistic $0.50 commission for micro lots
+                "slippage_pct": 0.01, # Represents typical spread (e.g. $0.45 per oz)
             },
             headers=headers,
             timeout=10.0,
@@ -145,7 +146,7 @@ def simulate_1000_dollars():
         if bars_since_last_trade < MIN_BARS_BETWEEN_TRADES:
             trade_taken = False
         else:
-            trade_taken = direction in ["LONG", "SHORT"] and float(conf) >= 0.75
+            trade_taken = direction in ["LONG", "SHORT"] and float(conf) >= 0.65
         
         log_prediction_cycle(
             price=current_price, regime=regime,
@@ -184,12 +185,50 @@ def simulate_1000_dollars():
             qty = trade_info.get("quantity", 0)
             print(f"   [TRADE] Opened {direction} {qty:.4f} oz @ ${current_price:,.2f} (Conf: {conf:.3f})")
             
-            # Simulate 8 bars of holding (Lever 4 validation)
-            HOLD_PERIOD = 8
-            for i in range(1, HOLD_PERIOD):
+            # Implement Risk Management (1:2 Risk:Reward Ratio)
+            # Risk 0.2% of price as Stop Loss
+            risk_amt = current_price * 0.002
+            if direction == "LONG":
+                sl_price = current_price - risk_amt
+                tp_price = current_price + (risk_amt * 2)
+            else: # SHORT
+                sl_price = current_price + risk_amt
+                tp_price = current_price - (risk_amt * 2)
+
+            print(f"   [RISK] Stop Loss: ${sl_price:.2f} | Take Profit: ${tp_price:.2f} (1:2 R:R)")
+
+            exit_price = current_price
+            exit_reason = "Time Stop (Max Hold)"
+            MAX_HOLD = 24  # Hold up to 24 bars (6 hours)
+            
+            for i in range(1, MAX_HOLD):
                 idx = current_idx + i
-                p = float(df_full["close"].iloc[idx]) if idx < len(df_full) else current_price
-                print(f"     [HOLD] Posting hold bar {i} price: ${p:.2f}")
+                if idx >= len(df_full):
+                    break
+                    
+                p = float(df_full["close"].iloc[idx])
+                print(f"     [HOLD] Bar {i} | Price: ${p:.2f}")
+                
+                # Evaluate TP / SL
+                if direction == "LONG":
+                    if p <= sl_price:
+                        exit_price = p
+                        exit_reason = "Stop Loss Hit"
+                        break
+                    elif p >= tp_price:
+                        exit_price = p
+                        exit_reason = "Take Profit Hit"
+                        break
+                else: # SHORT
+                    if p >= sl_price:
+                        exit_price = p
+                        exit_reason = "Stop Loss Hit"
+                        break
+                    elif p <= tp_price:
+                        exit_price = p
+                        exit_reason = "Take Profit Hit"
+                        break
+                
                 try:
                     requests.post(
                         f"{BASE_URL}/paper-trading/signal",
@@ -204,17 +243,18 @@ def simulate_1000_dollars():
                 except Exception as e:
                     print(f"     [HOLD ERROR] Failed to send HOLD bar {i}: {e}")
             
-            # Exit at the 8th bar
-            exit_idx = current_idx + HOLD_PERIOD
-            exit_price = float(df_full["close"].iloc[exit_idx]) if exit_idx < len(df_full) else current_price
-            print(f"     [CLOSE] Posting simulated exit price: ${exit_price:.2f}")
+            # Close the trade
+            if exit_price == current_price and idx < len(df_full):
+                 exit_price = float(df_full["close"].iloc[idx])
+                 
+            print(f"     [CLOSE] Posting simulated exit price: ${exit_price:.2f} ({exit_reason})")
             try:
                 exit_resp = requests.post(
                     f"{BASE_URL}/paper-trading/signal",
                     json={
                         "model_name": "ensemble", "signal_type": "CLOSE",
                         "confidence": 0.90, "price": exit_price,
-                        "regime": regime, "reasoning": "Simulated Exit after Minimum Hold",
+                        "regime": regime, "reasoning": exit_reason,
                     },
                     headers=headers,
                     timeout=10.0,

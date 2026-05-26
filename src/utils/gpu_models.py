@@ -26,8 +26,10 @@ class GPUFeatureEngineAccelerator:
         
         if self.use_gpu:
             logger.info("✓ GPU acceleration enabled for Feature Engine")
+        elif self.gpu_info.get("hardware_gpu_detected", False) or self.gpu_info.get("gpu_available", False):
+            logger.info("ℹ RAPIDS (cuDF) not available; using CPU Pandas")
         else:
-            logger.warning("⚠ GPU not available; using CPU Pandas")
+            logger.info("ℹ GPU not available; using CPU Pandas")
 
     def rolling_std(
         self,
@@ -158,10 +160,10 @@ class GPUHMMAccelerator:
                 self.cuML_HMM = cuML_HMM
                 logger.info("✓ GPU acceleration enabled for HMM (cuML)")
             except ImportError:
-                logger.warning("cuML not available; using CPU hmmlearn")
+                logger.info("ℹ cuML not available; using CPU hmmlearn")
                 self.use_cuml = False
         else:
-            logger.warning("cuML not available; using CPU hmmlearn")
+            logger.info("ℹ cuML not available; using CPU hmmlearn")
 
     def create_hmm(
         self,
@@ -233,7 +235,7 @@ class GPUSignalProcessor:
         if self.use_cusignal:
             logger.info("✓ GPU acceleration enabled for Signal Processing (cuSignal)")
         else:
-            logger.warning("cuSignal not available; using CPU SciPy")
+            logger.info("ℹ cuSignal not available; using CPU SciPy")
 
     def butter_filter(
         self,
@@ -312,6 +314,6 @@ def get_gpu_accelerators() -> dict:
             f"cuSignal: {gpu_info['cusignal_available']}"
         )
     else:
-        logger.warning("⚠ No GPU detected; all models running on CPU")
+        logger.info("No GPU acceleration libraries detected; all models running on CPU")
     
     return accelerators

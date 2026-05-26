@@ -126,7 +126,13 @@ class DataQualityMonitor:
         median_diff = time_diffs.median()
         median_seconds = median_diff.total_seconds() if hasattr(median_diff, 'total_seconds') else float(median_diff)
 
-        gap_threshold = pd.Timedelta(hours=self.max_gap_hours)
+        # Dynamic gap threshold based on the data's native resolution
+        # For daily data, holidays can cause gaps up to 4 days (96h).
+        # We use a multiplier of 4.5 to safely account for these long holiday weekends.
+        base_threshold = pd.Timedelta(hours=self.max_gap_hours)
+        dynamic_threshold = median_diff * 4.5
+        gap_threshold = max(base_threshold, dynamic_threshold)
+
         gaps = time_diffs[time_diffs > gap_threshold]
 
         trading_gaps = []
@@ -140,8 +146,9 @@ class DataQualityMonitor:
             trading_gaps.append({"timestamp": str(gap_idx), "gap_hours": gap_val.total_seconds() / 3600})
 
         if trading_gaps:
+            threshold_hrs = gap_threshold.total_seconds() / 3600
             self._add_alert("warning", source, "gap",
-                            f"{len(trading_gaps)} gap(s) > {self.max_gap_hours}h in trading hours")
+                            f"{len(trading_gaps)} gap(s) > {threshold_hrs:.1f}h in trading hours")
 
         return {"gaps_found": len(trading_gaps), "trading_gaps": trading_gaps[:10], "median_interval_seconds": median_seconds}
 
@@ -157,7 +164,9 @@ class DataQualityMonitor:
         z_scores = (returns - mean) / std
         outliers = z_scores[z_scores.abs() > self.outlier_zscore]
         if len(outliers) > 0:
-            self._add_alert("warning", source, "outlier", f"{len(outliers)} outlier(s) |Z| > {self.outlier_zscore}")
+            pct_outliers = len(outliers) / len(df)
+            severity = "warning" if pct_outliers > 0.01 else "info"
+            self._add_alert(severity, source, "outlier", f"{len(outliers)} outlier(s) |Z| > {self.outlier_zscore}")
         return {
             "outliers_found": len(outliers), "threshold_zscore": self.outlier_zscore,
             "return_stats": {

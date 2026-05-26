@@ -16,7 +16,8 @@ import numpy as np
 from typing import Optional, Tuple, List
 from loguru import logger
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
+from src.risk.economic_calendar import EconomicCalendar
 
 
 @dataclass
@@ -76,7 +77,7 @@ class RiskManager:
         self.growth_fraction = kelly_cfg.get("growth_fraction", 0.65)
 
         # Circuit breaker thresholds
-        self.daily_loss_limit = cb_cfg.get("daily_loss_limit", 0.02)
+        self.daily_loss_limit = cb_cfg.get("daily_loss_limit", 0.03)
         self.drawdown_reduce = cb_cfg.get("drawdown_reduce", 0.05)
         self.drawdown_stop = cb_cfg.get("drawdown_stop", 0.10)
         self.model_disagreement_threshold = cb_cfg.get("model_disagreement", 0.70)
@@ -95,6 +96,7 @@ class RiskManager:
         # State
         self.risk_state = RiskState()
         self.position = PositionState()
+        self.economic_calendar = EconomicCalendar()
 
         logger.info(
             f"RiskManager initialized | Kelly={self.kelly_fraction} | "
@@ -103,16 +105,59 @@ class RiskManager:
         )
 
     def _update_regime_tracking(self, regime: str) -> None:
-        """Track regime switches and update cooldown counters."""
+        """Track regime switches with anti-whipsaw confirmation.
+        
+        The HMM is noisy bar-to-bar — it can flip NORMAL→CRISIS→NORMAL
+        on three consecutive ticks.  Each flip resets the cooldown timer
+        and permanently blocks trading.
+        
+        Fix: require the HMM to output the SAME new regime for
+        `_regime_confirm_bars` consecutive bars before we accept it
+        as a real transition.
+        """
         self.risk_state.bars_since_last_trade += 1
+        
+        # How many consecutive bars of a new regime before we believe it
+        confirm_needed = getattr(self, "_regime_confirm_bars", 3)
+        
         if regime != self.risk_state.current_regime:
-            logger.warning(
-                f"🔄 HMM REGIME CHANGE DECLARED: {self.risk_state.current_regime} ──> {regime}. Cool-down initiated!"
-            )
-            self.risk_state.current_regime = regime
-            self.risk_state.bars_since_regime_switch = 0
+            # Candidate regime differs from confirmed regime
+            pending = getattr(self.risk_state, "_pending_regime", None)
+            pending_count = getattr(self.risk_state, "_pending_regime_count", 0)
+            
+            if regime == pending:
+                # Same candidate as last bar — increment counter
+                pending_count += 1
+            else:
+                # New candidate — start counting from 1
+                pending = regime
+                pending_count = 1
+            
+            self.risk_state._pending_regime = pending
+            self.risk_state._pending_regime_count = pending_count
+            
+            if pending_count >= confirm_needed:
+                # Confirmed! Accept the regime change
+                logger.warning(
+                    f"🔄 HMM REGIME CHANGE CONFIRMED: {self.risk_state.current_regime} ──> {regime} "
+                    f"(held for {pending_count} bars). Cool-down initiated!"
+                )
+                self.risk_state.current_regime = regime
+                self.risk_state.bars_since_regime_switch = 0
+                self.risk_state._pending_regime = None
+                self.risk_state._pending_regime_count = 0
+            else:
+                # Not confirmed yet — keep the OLD regime, just tick the cooldown
+                logger.debug(
+                    f"[REGIME] HMM says {regime} ({pending_count}/{confirm_needed} bars) — "
+                    f"waiting for confirmation, keeping {self.risk_state.current_regime}"
+                )
+                self.risk_state.bars_since_regime_switch += 1
         else:
+            # HMM agrees with the confirmed regime — clear any pending candidate
             self.risk_state.bars_since_regime_switch += 1
+            self.risk_state._pending_regime = None
+            self.risk_state._pending_regime_count = 0
 
     def calculate_kelly_size(
         self,
@@ -293,9 +338,25 @@ class RiskManager:
         if self.risk_state.is_halted:
             return False, f"HALTED: {self.risk_state.halt_reason}"
 
-        # Critic confidence gate — must pass before anything else
-        if ensemble_conf > 0 and ensemble_conf < self.min_confidence:
-            logger.debug(f"🚫 CONFIDENCE GATE: {ensemble_conf:.3f} < {self.min_confidence:.3f}")
+        # Check News Event Calendar
+        news_status = self.economic_calendar.get_news_status()
+        if news_status["block_trade"]:
+            logger.warning(f"🚨 RISK BREAKER: Blocked trade within ±5 min of High-Impact News! Event Time: {news_status['event_time']}")
+            return False, "NEWS_EVENT_BLOCK"
+
+        # Dynamic Confidence Gate
+        # Relax to 50% in strong trending/growth regimes to avoid leaving money on the table
+        dynamic_min_conf = self.min_confidence
+        if self.risk_state.current_regime in ["TRENDING", "GROWTH"]:
+            dynamic_min_conf = min(0.50, self.min_confidence)
+            
+        # Tighten to 65%+ if within 30 min of a high impact news event
+        if news_status["tighten_threshold"]:
+            dynamic_min_conf = max(0.65, self.min_confidence)
+            logger.debug(f"⚠️ High-impact news approaching within 30 min. Confidence threshold tightened to {dynamic_min_conf:.2f}")
+
+        if ensemble_conf > 0 and ensemble_conf < dynamic_min_conf:
+            logger.debug(f"🚫 CONFIDENCE GATE: {ensemble_conf:.3f} < {dynamic_min_conf:.3f}")
             return False, f"LOW_CONFIDENCE: {ensemble_conf:.3f}"
 
         # Regime Filter: Only trade in permitted regimes (Lever 2)

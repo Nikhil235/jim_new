@@ -96,14 +96,16 @@ class COTParser:
     def _download_and_parse_txt(self, url: str) -> Optional[pd.DataFrame]:
         """Download and parse a CFTC plain text COT file."""
         import urllib.request
-        with urllib.request.urlopen(url, timeout=30) as resp:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        with urllib.request.urlopen(req, timeout=30) as resp:
             content = resp.read().decode("utf-8", errors="replace")
         return self._parse_cot_content(content)
 
     def _download_and_parse_zip(self, url: str) -> Optional[pd.DataFrame]:
         """Download and parse a CFTC zip archive COT file."""
         import urllib.request
-        with urllib.request.urlopen(url, timeout=60) as resp:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        with urllib.request.urlopen(req, timeout=60) as resp:
             zip_data = resp.read()
         with zipfile.ZipFile(io.BytesIO(zip_data)) as zf:
             # Find the futures-only file inside the zip
@@ -267,6 +269,32 @@ class SentimentScorer:
         self.raw_dir = PROJECT_ROOT / "data" / "raw"
         self.raw_dir.mkdir(parents=True, exist_ok=True)
 
+    def _fetch_yahoo_rss_headlines(self) -> List[dict]:
+        """Fetch gold-related headlines from Yahoo Finance RSS."""
+        import urllib.request
+        import xml.etree.ElementTree as ET
+        
+        headlines = []
+        try:
+            req = urllib.request.Request('https://feeds.finance.yahoo.com/rss/2.0/headline?s=GC=F&region=US&lang=en-US', headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                xml_data = resp.read()
+                
+            root = ET.fromstring(xml_data)
+            for item in root.findall('.//item'):
+                title = item.find('title').text
+                pub_date_node = item.find('pubDate')
+                
+                if title and pub_date_node is not None:
+                    date_str = pd.to_datetime(pub_date_node.text).strftime("%Y-%m-%d")
+                    headlines.append({"title": title, "date": date_str})
+                    
+        except Exception as e:
+            logger.error(f"  Yahoo RSS fetch failed: {e}")
+            
+        logger.info(f"  Yahoo RSS fetched {len(headlines)} headlines")
+        return headlines
+
     def fetch_and_score(self, days_back: int = 7) -> pd.DataFrame:
         """Fetch recent gold news from NewsAPI and score sentiment.
 
@@ -276,15 +304,18 @@ class SentimentScorer:
         Returns:
             DataFrame with daily sentiment scores.
         """
-        if not self.api_key or self.api_key in ("", "${NEWSAPI_KEY}", "your_newsapi_key_here"):
-            logger.warning("NewsAPI key not configured — using synthetic sentiment")
-            return self.generate_synthetic_sentiment()
-
+        has_api_key = self.api_key and self.api_key not in ("", "${NEWSAPI_KEY}", "your_newsapi_key_here")
+        
         try:
-            headlines = self._fetch_newsapi_headlines(days_back)
+            if has_api_key:
+                headlines = self._fetch_newsapi_headlines(days_back)
+            else:
+                logger.info("NewsAPI key not configured, using public Yahoo Finance RSS")
+                headlines = self._fetch_yahoo_rss_headlines()
+
             if not headlines:
-                logger.warning("No headlines from NewsAPI — using synthetic")
-                return self.generate_synthetic_sentiment()
+                logger.warning("No headlines fetched — using synthetic")
+                return self.generate_synthetic_sentiment(days=365)
 
             # Group headlines by date and score each day
             daily_scores = []
@@ -300,7 +331,7 @@ class SentimentScorer:
                 daily_scores.append({
                     **scores,
                     "date": date,
-                    "source": "newsapi",
+                    "source": "newsapi" if has_api_key else "yahoo_rss",
                 })
 
             if daily_scores:
@@ -308,13 +339,20 @@ class SentimentScorer:
                 df.index = pd.to_datetime(df["date"])
                 df.index.name = "timestamp"
                 df = df.drop(columns=["date"])
-                logger.info(f"NewsAPI sentiment: {len(df)} days scored, {sum(s['article_count'] for s in daily_scores)} articles")
+                
+                # Pad history with synthetic data to ensure long enough lookback
+                if len(df) < 365:
+                    synth = self.generate_synthetic_sentiment(days=365)
+                    synth = synth[synth.index < df.index.min()]
+                    df = pd.concat([synth, df])
+                    
+                logger.info(f"Sentiment: {len(df)} days scored (including synthetic padding)")
                 return df
 
         except Exception as e:
-            logger.error(f"NewsAPI fetch failed: {e}")
+            logger.error(f"Sentiment fetch failed: {e}")
 
-        return self.generate_synthetic_sentiment()
+        return self.generate_synthetic_sentiment(days=365)
 
     def _fetch_newsapi_headlines(self, days_back: int) -> List[dict]:
         """Fetch gold-related headlines from NewsAPI."""

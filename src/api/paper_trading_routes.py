@@ -117,6 +117,9 @@ class TradeHistoryResponse(BaseModel):
     entry_price: float
     exit_price: Optional[float]
     quantity: float
+    silver_quantity: float = 0.0
+    silver_entry_price: Optional[float] = None
+    silver_exit_price: Optional[float] = None
     entry_time: str
     exit_time: Optional[str]
     pnl: float
@@ -531,6 +534,9 @@ async def get_trade_history(
                 entry_price=t.entry_price,
                 exit_price=t.exit_price,
                 quantity=t.quantity,
+                silver_quantity=t.silver_quantity,
+                silver_entry_price=t.silver_entry_price,
+                silver_exit_price=t.silver_exit_price,
                 entry_time=t.entry_time.isoformat(),
                 exit_time=t.exit_time.isoformat() if t.exit_time else None,
                 pnl=t.pnl,

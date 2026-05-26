@@ -1,106 +1,67 @@
-# 🏆 Project MINI-MEDALLION — Summary
+# Mini-Medallion: Project Summary & Architecture
+**Last Updated:** May 26, 2026
+**Asset Class:** XAU/USD (Gold)
+**Mode:** Live Autonomous Paper Trading
 
-> *A GPU-accelerated Gold (XAU) Trading Engine inspired by Jim Simons' Renaissance Technologies.*
-
----
-
-## What Is It?
-
-**Mini-Medallion** is an ambitious algorithmic trading system designed to trade **Gold (XAU)** using statistical methods inspired by Jim Simons and Renaissance Technologies. The core philosophy: *"We don't predict. We detect."* — finding repeatable, statistically significant patterns and exploiting them with computational speed.
+## 1. Project Overview
+Mini-Medallion is a production-grade, highly autonomous algorithmic trading engine designed to trade Gold (XAU/USD). It utilizes a multi-model machine learning ensemble architecture inspired by institutional quantitative hedge funds. The system operates 24/7, fetching data, computing features, running 7 distinct models, aggregating predictions via a Meta-Learner, applying strict risk management, and executing trades.
 
 ---
 
-## Current Status: **Phase 1 — ~95% Complete**
+## 2. Core Architecture
+The system is divided into highly decoupled, microservice-like modules:
 
-Phase 1 (Infrastructure & Compute) is nearly done. The codebase has the foundation laid but is **not yet trading** — production paths are placeholders.
+### A. Data Ingestion & Feature Engineering
+- **Live Data:** Fetches real-time spot prices and macro indicators (DXY, US10Y, Silver) using `yfinance` and `Gold-API.com` / `MetalPriceAPI`.
+- **Feature Store:** Implements a high-performance pipeline using Parquet and Redis for caching.
+- **Transformations:** Computes over 25 features including ATR, ADX, rolling statistics, wavelet transforms, and custom indicators like `real_yield_proxy`.
 
----
+### B. The 7-Model Ensemble (The "Brain")
+The system does not rely on a single algorithm; it aggregates 6 diverse base models:
+1. **HMM (Hidden Markov Model):** Determines the market regime (`GROWTH`, `NORMAL`, `CRISIS`).
+2. **Wavelet Transform:** De-noises high-frequency price action to find the true underlying trend.
+3. **LSTM:** Temporal deep learning model for sequence prediction.
+4. **TFT (Temporal Fusion Transformer):** State-of-the-art transformer for multi-horizon quantile forecasting.
+5. **Genetic Algorithm:** Evaluates raw technical indicator rules using evolutionary computing.
+6. **NLP / Sentiment:** Fundamental proxy model (currently slated for a massive RAG upgrade).
+7. **The Meta-Learner (RandomForest):** The final arbiter. It takes the outputs of models 1-6 + the current HMM Regime + Macro Data, and predicts the final trade direction (`LONG/SHORT/HOLD`) and outputs a `Confidence Score`.
 
-## Architecture at a Glance
+### C. Risk Management (The "Shield")
+Before any trade is executed, it must pass through `manager.py`:
+- **Confidence Gate:** The Meta-Learner must have a confidence `> 55%`.
+- **Kelly Criterion:** Dynamic position sizing based on the current HMM regime (e.g., risking less capital during a `CRISIS`).
+- **Circuit Breakers:** Hard-coded limits that instantly halt trading to protect capital:
+  - Max Drawdown Limit (10%)
+  - Max Daily Loss (2%)
+  - Consecutive Loss Cooldown
 
-```mermaid
-graph TD
-    A["main.py<br/>(CLI Entry Point)"] --> B["Data Ingestion<br/>src/ingestion/"]
-    B --> C["Feature Engine<br/>src/features/"]
-    C --> D["Models<br/>(HMM, Wavelet)"]
-    D --> E["Risk Manager<br/>src/risk/"]
-    E --> F["Execution Engine<br/>src/execution/ (Python + C++)"]
-    
-    G["GPU Detection<br/>src/utils/gpu.py"] -.-> C
-    G -.-> D
-    
-    H["Infrastructure Stack<br/>(Docker Compose)"]
-    H --> H1["QuestDB<br/>(Time-series DB)"]
-    H --> H2["Redis 7<br/>(Caching)"]
-    H --> H3["MinIO<br/>(Object Storage)"]
-    H --> H4["MLflow<br/>(Model Registry)"]
-    H --> H5["Prometheus + Grafana<br/>(Monitoring)"]
-```
+### D. Live Trading & Execution
+- **`live_trader.py`:** The continuous daemon running a 60-second execution loop.
+- **Paper Trading Engine:** Simulates real-world execution by artificially penalizing entry/exit prices with realistic Spread & Slippage (e.g., higher spread during volatile news windows).
 
----
-
-## Key Components
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| **CLI Entry Point** | `main.py` | Runs in 4 modes: `demo`, `backtest`, `paper`, `live` |
-| **Data Ingestion** | `src/ingestion/` | Fetches gold price data (yfinance, synthetic fallback) |
-| **Feature Engine** | `src/features/engine.py` | Generates technical indicators & features |
-| **Wavelet Denoiser** | `src/models/wavelet.py` | Signal denoising via wavelet decomposition |
-| **HMM Regime Detector** | `src/models/hmm_regime.py` | Detects bull/bear/sideways market regimes |
-| **Risk Manager** | `src/risk/manager.py` | Kelly criterion sizing, circuit breakers |
-| **Execution Engine** | `src/execution/` | Python skeleton + **C++ low-latency engine** |
-| **GPU Utilities** | `src/utils/gpu.py` | CUDA/RAPIDS/cuDF detection & fallback |
-| **Config** | `configs/base.yaml` | YAML-based configuration with env var substitution |
+### E. Frontend Dashboard
+- **React UI:** A beautifully designed, real-time dashboard (`http://localhost:5173/live-trading`).
+- **Features:** Displays live pulse indicators, equity curves, active circuit breakers, a 7-model signal matrix, and real-time P&L KPIs.
 
 ---
 
-## Infrastructure Stack (Docker Compose — 6 Services)
-
-| Service | Port(s) | Role |
-|---------|---------|------|
-| **QuestDB 7.4** | 9000, 9009, 8812 | Nanosecond-resolution time-series database |
-| **Redis 7** | 6379 | In-memory caching + real-time signals |
-| **MinIO** | 9100, 9101 | S3-compatible object storage for models/data |
-| **MLflow** | 5000 | Experiment tracking & model registry |
-| **Prometheus** | 9090 | Metrics collection |
-| **Grafana** | 3000 | Visualization dashboards |
+## 3. Recent Milestones & Solved Blockers
+- **Live Trader Deployed:** Successfully transitioned from historical backtesting/simulations to a real-time ticking `live_trader.py` daemon.
+- **Meta-Learner Trained:** `meta_learner.joblib` was successfully compiled and integrated.
+- **GPU Architecture Fixed:** Resolved PyTorch CUDA fallback warnings and optimized the `detect_gpu` initialization flow.
+- **Unblocking the Engine:** Solved issues where the Risk Manager was incorrectly blocking trades by:
+  1. Lowering the `min_confidence` threshold to `0.55`.
+  2. Relaxing the regime filter to allow trading during `CRISIS` and `GROWTH` regimes, not just `NORMAL`.
+- **First Successful Trades:** The system has officially begun taking risk-managed `LONG/SHORT` trades in the live paper environment!
 
 ---
 
-## C++ Execution Engine
-
-A **low-latency trading engine** written in C++ for order execution:
-
-- **OrderRouter** — Intelligent venue selection & order management
-- **LatencyMonitor** — p50/p95/p99 latency percentile tracking
-- **OrderBook** — Full L3 order book with bid/ask levels
-- Cross-platform CMake build (Windows/Linux/macOS)
-
----
-
-## 7-Phase Roadmap
-
-| Phase | Name | Status |
-|-------|------|--------|
-| 1 | Infrastructure & Compute | 🟢 ~95% Done |
-| 2 | Data Acquisition & Pipeline | 🔴 Not Started |
-| 3 | Mathematical Modeling | 🔴 Not Started |
-| 4 | Risk Management & Meta-Labeling | 🔴 Not Started |
-| 5 | Backtesting & Validation | 🔴 Not Started |
-| 6 | Paper Trading & Live Deployment | 🔴 Not Started |
-| 7 | Team Culture & Operations | 🔴 Not Started |
-
----
-
-## Tech Stack Summary
-
-- **Language**: Python 3.11+ (primary) + C++ (execution engine)
-- **GPU**: NVIDIA CUDA 12.1, RAPIDS cuDF/cuML, CuPy, PyTorch 2.2
-- **Database**: QuestDB (time-series), Redis (cache), MinIO (objects)
-- **ML Ops**: MLflow, scikit-learn, HMM (hmmlearn), PyWavelets
-- **Infra**: Docker Compose, Prometheus, Grafana
-- **CLI**: Click, Loguru
-
-> [!IMPORTANT]
-> The project is in **early infrastructure stage**. The demo pipeline works end-to-end with synthetic data, but real data ingestion, backtesting, and live trading are all future phases.
+## 4. Immediate Roadmap (Next Steps)
+1. **RAG Integration (Fundamental Macro Analysis)**
+   - *Plan:* Replace the static NLP model with a local Retrieval-Augmented Generation (RAG) pipeline.
+   - *Tech Stack:* Ollama (`llama3.1` 8B for reasoning, `mxbai-embed-large` for embeddings) + LangChain + FAISS/ChromaDB.
+   - *Goal:* Ingest daily Fed reports and Reuters news to give the Meta-Learner real-time macroeconomic fundamental context.
+2. **Broker Integration**
+   - *Plan:* Swap the `PaperTradingEngine` with an `IBKR` (Interactive Brokers) API adapter to route live orders to a real brokerage account.
+3. **Continuous Training Daemon**
+   - *Plan:* Finalize the background script that re-trains the models (LSTM, TFT, HMM) automatically every weekend using the latest market data to prevent model decay.

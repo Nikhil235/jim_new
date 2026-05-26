@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users, Database, Menu, X, ArrowRightLeft, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, BarChart3, BrainCircuit, ShieldCheck, Wallet, Server, Zap, GitBranch, FlaskConical, Activity, FileText, Users, Database, Menu, X, ArrowRightLeft, TrendingUp, Radio } from 'lucide-react';
 import Overview from './pages/Overview';
 import MarketData from './pages/MarketData';
 import Models from './pages/Models';
@@ -13,6 +13,7 @@ import PaperTrading from './pages/PaperTrading';
 import PredictionLog from './pages/PredictionLog';
 import Operations from './pages/Operations';
 import GoldSilverRatio from './pages/GoldSilverRatio';
+import LiveTrading from './pages/LiveTrading';
 
 const navItems = [
   { section: 'Trading' },
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/portfolio', icon: Wallet, label: 'Portfolio' },
   { path: '/backtest', icon: FlaskConical, label: 'Backtesting' },
   { path: '/paper-trading', icon: FileText, label: 'Paper Trading' },
+  { path: '/live-trading', icon: Radio, label: 'Live Trading' },
   { path: '/prediction-log', icon: Database, label: 'Prediction Log' },
   { section: 'System' },
   { path: '/execution', icon: Zap, label: 'Execution Engine' },
@@ -124,6 +126,7 @@ function DashboardShell() {
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/backtest" element={<Backtesting />} />
           <Route path="/paper-trading" element={<PaperTrading />} />
+          <Route path="/live-trading" element={<LiveTrading />} />
           <Route path="/prediction-log" element={<PredictionLog />} />
           <Route path="/execution" element={<Execution />} />
           <Route path="/infra" element={<Infrastructure />} />
