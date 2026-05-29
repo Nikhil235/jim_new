@@ -1,5 +1,5 @@
 # Mini-Medallion: Project Summary & Architecture
-**Last Updated:** May 26, 2026
+**Last Updated:** May 29, 2026
 **Asset Class:** XAU/USD (Gold)
 **Mode:** Live Autonomous Paper Trading
 
@@ -12,6 +12,7 @@ Mini-Medallion is a production-grade, highly autonomous algorithmic trading engi
 The system is divided into highly decoupled, microservice-like modules:
 
 ### A. Data Ingestion & Feature Engineering
+- **Automated Data System:** Incremental, smart-syncing gold data pipeline that manages missing values, multiple timeframes (Minute, Hourly, Daily), and multi-format storage (SQLite, Parquet, CSV).
 - **Live Data:** Fetches real-time spot prices and macro indicators (DXY, US10Y, Silver) using `yfinance` and `Gold-API.com` / `MetalPriceAPI`.
 - **Feature Store:** Implements a high-performance pipeline using Parquet and Redis for caching.
 - **Transformations:** Computes over 25 features including ATR, ADX, rolling statistics, wavelet transforms, and custom indicators like `real_yield_proxy`.
@@ -36,23 +37,27 @@ Before any trade is executed, it must pass through `manager.py`:
   - Consecutive Loss Cooldown
 
 ### D. Live Trading & Execution
-- **`live_trader.py`:** The continuous daemon running a 60-second execution loop.
+- **`live_trader.py`:** The continuous daemon running a 60-second execution loop via CLI.
+- **API Server (`main.py --mode api`):** Fast-API backend running the exact same trading engine in memory, exposing endpoints and WebSockets for real-time frontend integration.
 - **Paper Trading Engine:** Simulates real-world execution by artificially penalizing entry/exit prices with realistic Spread & Slippage (e.g., higher spread during volatile news windows).
 
 ### E. Frontend Dashboard
 - **React UI:** A beautifully designed, real-time dashboard (`http://localhost:5173/live-trading`).
 - **Features:** Displays live pulse indicators, equity curves, active circuit breakers, a 7-model signal matrix, and real-time P&L KPIs.
 
+### F. Developer Tooling & Ecosystem
+- **Graphify:** Automated codebase knowledge graph integration to instantly map architectural changes and identify module relationships.
+- **Unified Dependencies:** Streamlined, CPU-first dependency management with clear options for CUDA-accelerated deployment.
+
 ---
 
 ## 3. Recent Milestones & Solved Blockers
-- **Live Trader Deployed:** Successfully transitioned from historical backtesting/simulations to a real-time ticking `live_trader.py` daemon.
-- **Meta-Learner Trained:** `meta_learner.joblib` was successfully compiled and integrated.
+- **Graphify Integration:** Integrated local and CI/CD pipelines to automatically build a knowledge graph of the codebase structure on every commit.
+- **Gold Data Automation:** Replaced static CSVs with a robust, incremental SQLite/Parquet syncing engine that auto-updates on startup.
+- **Documentation Cleanup:** Consolidated sprawling setup guides into concise `GRAPHIFY.md`, `GOLD_DATA.md`, and a unified `requirements.txt`.
+- **Live UI Connection:** Correctly aligned the backend API (`LiveInferenceLoop`) with the Dashboard UI WebSockets for real-time trade monitoring.
 - **GPU Architecture Fixed:** Resolved PyTorch CUDA fallback warnings and optimized the `detect_gpu` initialization flow.
-- **Unblocking the Engine:** Solved issues where the Risk Manager was incorrectly blocking trades by:
-  1. Lowering the `min_confidence` threshold to `0.55`.
-  2. Relaxing the regime filter to allow trading during `CRISIS` and `GROWTH` regimes, not just `NORMAL`.
-- **First Successful Trades:** The system has officially begun taking risk-managed `LONG/SHORT` trades in the live paper environment!
+- **Unblocking the Engine:** Solved issues where the Risk Manager was incorrectly blocking trades by adjusting the `min_confidence` threshold to `0.55` and relaxing the regime filter.
 
 ---
 
