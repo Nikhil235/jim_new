@@ -1,1332 +1,1372 @@
 {
-  "D:\\AI\\Jim\\main.py": {
-    "mtime": 1779782117.8386445,
+  "E:\\PRO\\JIMxNik\\jim_new\\main.py": {
+    "mtime": 1779816891.8906305,
     "ast_hash": "ee4e2c862ab5148cdfa7c7681f54695a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\package.json": {
-    "mtime": 1779468613.36316,
-    "ast_hash": "4f293e9b4a7e06378a4f11e052ad233a",
+  "E:\\PRO\\JIMxNik\\jim_new\\package.json": {
+    "mtime": 1779517853.0448022,
+    "ast_hash": "a06f94c446696241caf902752c8d1e0d",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\run_jim.ps1": {
-    "mtime": 1779558008.475404,
-    "ast_hash": "623c74ef7bed3168f11cf4e349e54eb0",
+  "E:\\PRO\\JIMxNik\\jim_new\\run_jim.ps1": {
+    "mtime": 1779816888.8804865,
+    "ast_hash": "bde0c1e6740e0f419d755e7f6d4c60d2",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scratch_check_volume.py": {
-    "mtime": 1779682259.281922,
-    "ast_hash": "e7d238930f868eea5d075f18e70b1f54",
+  "E:\\PRO\\JIMxNik\\jim_new\\scratch_check_volume.py": {
+    "mtime": 1779717418.921947,
+    "ast_hash": "35bdea8e9ba2b94fe85afe9f2b2ad3ec",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scratch_check_yf.py": {
-    "mtime": 1779682056.6758244,
-    "ast_hash": "1659980ca35ceb25616497c2f0e88214",
+  "E:\\PRO\\JIMxNik\\jim_new\\scratch_check_yf.py": {
+    "mtime": 1779717418.921947,
+    "ast_hash": "4a26242b7968f74863afbd58b1ebe019",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scratch_crypto_gold.py": {
-    "mtime": 1779682218.601779,
-    "ast_hash": "6fa3a7a75824e91ca9315499e3ad326d",
+  "E:\\PRO\\JIMxNik\\jim_new\\scratch_crypto_gold.py": {
+    "mtime": 1779717418.921947,
+    "ast_hash": "444c9c336b925f43926319a465307a6a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scratch_delay.py": {
-    "mtime": 1779713245.47324,
-    "ast_hash": "077401299f18acaca8262b63d1940cb0",
+  "E:\\PRO\\JIMxNik\\jim_new\\scratch_delay.py": {
+    "mtime": 1779717418.921947,
+    "ast_hash": "7fb3bf5a6005afe57dbda443ed32fe54",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scratch_ffill.py": {
-    "mtime": 1779682343.3676748,
-    "ast_hash": "ab604aef9436df56458d76d83cad7f75",
+  "E:\\PRO\\JIMxNik\\jim_new\\scratch_ffill.py": {
+    "mtime": 1779717418.9229467,
+    "ast_hash": "537387d631a1a73bf587d21aaf62ab90",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scratch_merge.py": {
-    "mtime": 1779682285.0301325,
-    "ast_hash": "b9ed672a9685619373c907eb51a58e05",
+  "E:\\PRO\\JIMxNik\\jim_new\\scratch_merge.py": {
+    "mtime": 1779717418.9229467,
+    "ast_hash": "22f4b1cfd847509e138e0281a73b81ac",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scratch_missing.py": {
-    "mtime": 1779682308.3107765,
-    "ast_hash": "b24a782e181026bf3096e6be49a49bcb",
+  "E:\\PRO\\JIMxNik\\jim_new\\scratch_missing.py": {
+    "mtime": 1779717418.9234507,
+    "ast_hash": "9d6e99f7f4ceb0aeb3d93811a5f98ddf",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\.claude\\settings.json": {
-    "mtime": 1779779898.1320813,
-    "ast_hash": "5d6ecd96cf065b16e8bb9fbf5d7d8f0d",
+  "E:\\PRO\\JIMxNik\\jim_new\\check file\\adx_regime_detector.py": {
+    "mtime": 1779816891.812816,
+    "ast_hash": "5441911bb4ef674b7c735bb30162cf58",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\.codex\\hooks.json": {
-    "mtime": 1779779898.3535361,
-    "ast_hash": "7aed330841c82310e514511427c69f33",
+  "E:\\PRO\\JIMxNik\\jim_new\\check file\\circuit_breaker.py": {
+    "mtime": 1779816891.812816,
+    "ast_hash": "bf2301e93cd9b886709ba8667ead7fb3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\clerk-react\\package.json": {
-    "mtime": 1779183713.726305,
-    "ast_hash": "d45080afbf62b62fed1dfe6f9337ba93",
+  "E:\\PRO\\JIMxNik\\jim_new\\check file\\live_trader_integration.py": {
+    "mtime": 1779816891.812816,
+    "ast_hash": "795b5acb4a860720bed58ae88d6037e7",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\clerk-react\\src\\counter.js": {
-    "mtime": 1778599960.574332,
-    "ast_hash": "e912f4cce4554f6e6f95dd1029347f06",
+  "E:\\PRO\\JIMxNik\\jim_new\\check file\\silver_feed_adapter.py": {
+    "mtime": 1779816891.812816,
+    "ast_hash": "f14452fa48efe9aa01d66fc015273fa0",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\clerk-react\\src\\main.js": {
-    "mtime": 1778599960.586007,
-    "ast_hash": "418c269962fd608ceaeb3951d2bb93d0",
+  "E:\\PRO\\JIMxNik\\jim_new\\check file\\trailing_stop.py": {
+    "mtime": 1779816891.8138163,
+    "ast_hash": "df730475bb485a7107e60c022379a96e",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\eslint.config.js": {
-    "mtime": 1779261112.916841,
-    "ast_hash": "62e86f824bb63b14363d6fcfefda759b",
+  "E:\\PRO\\JIMxNik\\jim_new\\check file\\walk_forward_backtester.py": {
+    "mtime": 1779816891.8138163,
+    "ast_hash": "3b336b6bdf9799c2f197f293ecb0aefc",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\package.json": {
-    "mtime": 1779514057.8834927,
-    "ast_hash": "7244bcf7f48bb48e245c1821c7781c0e",
+  "E:\\PRO\\JIMxNik\\jim_new\\clerk-react\\package.json": {
+    "mtime": 1779517853.0284724,
+    "ast_hash": "c70856ec5fedfb9ca291790c0147004b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\postcss.config.js": {
-    "mtime": 1779183101.3423438,
-    "ast_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0",
+  "E:\\PRO\\JIMxNik\\jim_new\\clerk-react\\src\\counter.js": {
+    "mtime": 1779517853.0299807,
+    "ast_hash": "39173d97b16c06465466580d8d73fbaf",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\tailwind.config.js": {
-    "mtime": 1779183095.8754537,
-    "ast_hash": "563a64ecd2fc3e30630a0252b9a1c42b",
+  "E:\\PRO\\JIMxNik\\jim_new\\clerk-react\\src\\main.js": {
+    "mtime": 1779517853.0299807,
+    "ast_hash": "5aeaccbc9da460757a52a8589a970bd1",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\vercel.json": {
-    "mtime": 1779284554.7173002,
-    "ast_hash": "61bd31a2b0ac08f10f13c932b32d6ca1",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\eslint.config.js": {
+    "mtime": 1779517853.0309937,
+    "ast_hash": "192e57e160067a06e58847fec4808e86",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\vite.config.js": {
-    "mtime": 1778599960.5942175,
-    "ast_hash": "88439104b3c207f17d33ef3160e3b080",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\package.json": {
+    "mtime": 1779717418.916338,
+    "ast_hash": "2c46cd5989aabad55d4b08d10d2557ec",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\.vercel\\project.json": {
-    "mtime": 1779263868.4933336,
-    "ast_hash": "a48382a0fb6e6b03bed4ae0051867103",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\postcss.config.js": {
+    "mtime": 1779517853.03199,
+    "ast_hash": "5b84f4567208c7c747079c0477373231",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\App.jsx": {
-    "mtime": 1779781320.2544627,
-    "ast_hash": "1acdbc1ee04eb3f3536a2741a3202505",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\tailwind.config.js": {
+    "mtime": 1779517853.0386858,
+    "ast_hash": "b03236e59ca4ace33d09bb71f75b320f",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\main.jsx": {
-    "mtime": 1779605373.9409938,
-    "ast_hash": "294c972051e832cd4622796abc3a3c9e",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\vercel.json": {
+    "mtime": 1779517853.0386858,
+    "ast_hash": "0db7ccb3aff36e97aa469126e9e17f99",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\data\\api.js": {
-    "mtime": 1779696747.9249403,
-    "ast_hash": "ee576b7ce29650488f4d61ca1d686484",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\vite.config.js": {
+    "mtime": 1779517853.0386858,
+    "ast_hash": "199e1221ae03d6974fdc8b5e23787b98",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\data\\mockData.js": {
-    "mtime": 1779279847.723673,
-    "ast_hash": "289037ddd6081d8c65ff05d335c7ee7f",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\App.jsx": {
+    "mtime": 1779816891.814816,
+    "ast_hash": "51d454f1db884b50507e89c097c5332b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\data\\useApi.js": {
-    "mtime": 1779260986.8015585,
-    "ast_hash": "6701b9369b7320e3272168121dda8eee",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\main.jsx": {
+    "mtime": 1779717418.917842,
+    "ast_hash": "6e28b9dd8fbdb32c4c370bbe0323e626",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\Backtesting.jsx": {
-    "mtime": 1779547915.6515048,
-    "ast_hash": "2c199c618d9a8d7aec54b3f68ec31a59",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\data\\api.js": {
+    "mtime": 1779816888.877982,
+    "ast_hash": "a1784c70c525f2cfe5eb5d33cc61dc77",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\Execution.jsx": {
-    "mtime": 1779260926.8707173,
-    "ast_hash": "fa586ed69f4310f440db21cde4e484f9",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\data\\mockData.js": {
+    "mtime": 1779517853.034441,
+    "ast_hash": "e56c3e0130ca73057899e502972044ba",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\GoldSilverRatio.jsx": {
-    "mtime": 1779601812.761769,
-    "ast_hash": "1467ce2e8750815b8e2ac2bd7d6926be",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\data\\useApi.js": {
+    "mtime": 1779517853.034441,
+    "ast_hash": "9956c06c41b01adf50e1e6ccb0dd09ce",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\Infrastructure.jsx": {
-    "mtime": 1779260939.1023679,
-    "ast_hash": "5ca31a1dcb49a768b7f4d3a76b52a49b",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\Backtesting.jsx": {
+    "mtime": 1779717418.917842,
+    "ast_hash": "1dbfc4f51e744e432dd902d4d893c6dc",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\MarketData.jsx": {
-    "mtime": 1779550294.7393856,
-    "ast_hash": "a798e127f793875ec07fd12580ae582f",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\Execution.jsx": {
+    "mtime": 1779517853.034441,
+    "ast_hash": "0ae58a7383876a65f0d50e47045a76cf",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\Models.jsx": {
-    "mtime": 1779547919.686175,
-    "ast_hash": "85b5b25743cf3a28563661cdc10d200a",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\GoldSilverRatio.jsx": {
+    "mtime": 1779717418.917842,
+    "ast_hash": "5b3dba63910cf44b820ce36659cc10af",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\Operations.jsx": {
-    "mtime": 1779260888.6423643,
-    "ast_hash": "54c7a7adc65ce16978f2bb86ebd06805",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\Infrastructure.jsx": {
+    "mtime": 1779517853.034441,
+    "ast_hash": "0921ba241092311afb210584b168c9ae",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\Overview.jsx": {
-    "mtime": 1779539433.398191,
-    "ast_hash": "ce257e0160a835cd7391765f75516e70",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\LiveTrading.jsx": {
+    "mtime": 1779816891.814816,
+    "ast_hash": "c4be607cca6a8f16a0160f67d7bcbe33",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\PaperTrading.jsx": {
-    "mtime": 1779543700.8218002,
-    "ast_hash": "0b71aad6a49d0d4ed889b609f70a418d",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\MarketData.jsx": {
+    "mtime": 1779717418.9188466,
+    "ast_hash": "3afc963af46e898116845b7854bdc147",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\Portfolio.jsx": {
-    "mtime": 1779260954.2642355,
-    "ast_hash": "5b3718d82c8ba23311687a240584e4dc",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\Models.jsx": {
+    "mtime": 1779717418.9188466,
+    "ast_hash": "eabc3d6f1716e50436f51c82b967cf49",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\PredictionLog.jsx": {
-    "mtime": 1779547917.665431,
-    "ast_hash": "f54248a2298acbccbaea0592ed4d2f64",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\Operations.jsx": {
+    "mtime": 1779517853.036652,
+    "ast_hash": "7e92eaee365c50bf931e08ed87e5b811",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\RiskManagement.jsx": {
-    "mtime": 1779261056.134612,
-    "ast_hash": "45af94a97f55673f0609213b76f3d510",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\Overview.jsx": {
+    "mtime": 1779717418.9188466,
+    "ast_hash": "7872e2ae63b282a50580c82321f6dafd",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\utils\\smi.js": {
-    "mtime": 1779556528.9699385,
-    "ast_hash": "a9d364889e8f8bd4b2b3009ce6a02306",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\PaperTrading.jsx": {
+    "mtime": 1779717418.9199464,
+    "ast_hash": "d3269e7869cd34329380c134e4238948",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\data\\pipeline_health.json": {
-    "mtime": 1778769698.8009515,
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\Portfolio.jsx": {
+    "mtime": 1779517853.036652,
+    "ast_hash": "459a5e2410f0b3c5fe5bf0648844b2fd",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\PredictionLog.jsx": {
+    "mtime": 1779899543.3538222,
+    "ast_hash": "3da00bab7ee11a5d5bdfc345a6d109c4",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\pages\\RiskManagement.jsx": {
+    "mtime": 1779517853.038166,
+    "ast_hash": "5b133ae132cc666a8813f2ff83599a86",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\src\\utils\\smi.js": {
+    "mtime": 1779717418.9209464,
+    "ast_hash": "ab07deed715255f2797b8f9963b5c429",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\data\\pipeline_health.json": {
+    "mtime": 1779517853.0396938,
     "ast_hash": "494f0801faa0e1773a95682282982232",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\examples\\paper_trading_api_client.py": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\DataBase\\gold_metadata.json": {
+    "mtime": 1779722950.8234093,
+    "ast_hash": "5f71ec7a0aba71a84c8899bf0e88aaab",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\examples\\paper_trading_api_client.py": {
+    "mtime": 1779517853.0437977,
     "ast_hash": "631bc4c8a620e52060e7bd87fe4e0c10",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\main.py": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\main.py": {
+    "mtime": 1779517852.9971068,
     "ast_hash": "f4b9672ae2a3271d39afdb8a94845cdd",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\scripts\\benchmark_gpu.py": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\scripts\\benchmark_gpu.py": {
+    "mtime": 1779517852.9991858,
     "ast_hash": "a062b42e7fab120283bd854cfa104d76",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\scripts\\build_execution_engine.sh": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\scripts\\build_execution_engine.sh": {
+    "mtime": 1779517852.9991858,
     "ast_hash": "fbde4b2d6bebe345faec9e880bfc55ac",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\scripts\\check_infrastructure.py": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\scripts\\check_infrastructure.py": {
+    "mtime": 1779517852.9991858,
     "ast_hash": "90de9638835049b411c0be55bd5931a3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\scripts\\deploy.sh": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\scripts\\deploy.sh": {
+    "mtime": 1779517853.0001774,
     "ast_hash": "921fb4d49fd49af83de0b755cde2f840",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\scripts\\teardown.sh": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\scripts\\teardown.sh": {
+    "mtime": 1779517853.0001774,
     "ast_hash": "ab66ba5f45f483e2432cb83ff23c67e8",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\__init__.py": {
-    "mtime": 1778595807.218024,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\__init__.py": {
+    "mtime": 1779517853.0001774,
     "ast_hash": "f58de0d5881125ea5b229d65821cfa37",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\engine.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\engine.py": {
+    "mtime": 1779517853.0027492,
     "ast_hash": "7d00b72a342155c5d93c2a99fd62bf99",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\__init__.py": {
-    "mtime": 1778595807.218024,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\__init__.py": {
+    "mtime": 1779517853.0001774,
     "ast_hash": "74c1b31dcdb37576e93438183f0fd08c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\cpp\\include\\latency_monitor.h": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\cpp\\include\\latency_monitor.h": {
+    "mtime": 1779517853.0017376,
     "ast_hash": "21fc9d12762ba84d17b9393915cb147e",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\cpp\\include\\order_book.h": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\cpp\\include\\order_book.h": {
+    "mtime": 1779517853.0017376,
     "ast_hash": "f7bb8386a16fdca693452879ac60b53a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\cpp\\include\\order_router.h": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\cpp\\include\\order_router.h": {
+    "mtime": 1779517853.0017376,
     "ast_hash": "85e32c7ec88c1165afc512000af2e199",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\cpp\\src\\latency_monitor.cpp": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\cpp\\src\\latency_monitor.cpp": {
+    "mtime": 1779517853.0017376,
     "ast_hash": "811c3b288dc0bcd408f56fee4433a43f",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\cpp\\src\\main.cpp": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\cpp\\src\\main.cpp": {
+    "mtime": 1779517853.0027492,
     "ast_hash": "3316968699344f2d6a1220db75b078b3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\cpp\\src\\order_book.cpp": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\cpp\\src\\order_book.cpp": {
+    "mtime": 1779517853.0027492,
     "ast_hash": "32daab2087289727774fb1e53c4008b9",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\cpp\\src\\order_router.cpp": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\cpp\\src\\order_router.cpp": {
+    "mtime": 1779517853.0027492,
     "ast_hash": "59b6f8995f9333d3201d34d7b6b11669",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\features\\engine.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\features\\engine.py": {
+    "mtime": 1779517853.0038817,
     "ast_hash": "df7962ca6d4d7b4c9420da482ba0ee20",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\features\\__init__.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\features\\__init__.py": {
+    "mtime": 1779517853.0027492,
     "ast_hash": "8100c2a66c85e9f7640e60888385b89b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\ingestion\\gold_fetcher.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\ingestion\\gold_fetcher.py": {
+    "mtime": 1779517853.0038817,
     "ast_hash": "2a6cc935b9206456aef8ddf10194e35a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\ingestion\\__init__.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\ingestion\\__init__.py": {
+    "mtime": 1779517853.0038817,
     "ast_hash": "1f522ec4c41607dae261c8cf81777fcf",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\risk\\manager.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\risk\\manager.py": {
+    "mtime": 1779517853.0038817,
     "ast_hash": "06173828b7b0b2139c48aa37e92910f1",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\risk\\__init__.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\risk\\__init__.py": {
+    "mtime": 1779517853.0038817,
     "ast_hash": "65377e3785370e8db87b98ba58755fe0",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\utils\\config.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\utils\\config.py": {
+    "mtime": 1779517853.0048878,
     "ast_hash": "ef2cc555279f82695d8c850d6826f7a9",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\utils\\gpu.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\utils\\gpu.py": {
+    "mtime": 1779517853.0048878,
     "ast_hash": "fba162c7d31312deec0f2d740d6c8171",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\utils\\infra.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\utils\\infra.py": {
+    "mtime": 1779517853.0048878,
     "ast_hash": "111faf6f1db507e3ec64fe44b90a4dbc",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\utils\\logger.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\utils\\logger.py": {
+    "mtime": 1779517853.0048878,
     "ast_hash": "2e48309b0d377f91d27fa3bece438fe1",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\utils\\__init__.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\utils\\__init__.py": {
+    "mtime": 1779517853.0048878,
     "ast_hash": "567d5b629f732ce1d5c1f394a57bf7ee",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\tests\\test_core.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\tests\\test_core.py": {
+    "mtime": 1779517853.006271,
     "ast_hash": "bec88471d1d49c21e403b082df5147af",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\tests\\test_infrastructure_integration.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\tests\\test_infrastructure_integration.py": {
+    "mtime": 1779517853.006271,
     "ast_hash": "aad95a7f84c6b4e3b7431ce22b5f5a55",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\tests\\__init__.py": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\tests\\__init__.py": {
+    "mtime": 1779517853.006271,
     "ast_hash": "5bd26c3ca236b2081ff6b4a37168217d",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\backfill_historical.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\backfill_historical.py": {
+    "mtime": 1779517853.0483098,
     "ast_hash": "baba2f602aa48b3ec280ad4289346163",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\benchmark_gpu.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\benchmark_gpu.py": {
+    "mtime": 1779517853.0483098,
     "ast_hash": "a062b42e7fab120283bd854cfa104d76",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\build_execution_engine.sh": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\build_execution_engine.sh": {
+    "mtime": 1779517853.0483098,
     "ast_hash": "fbde4b2d6bebe345faec9e880bfc55ac",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\check_infrastructure.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\check_infrastructure.py": {
+    "mtime": 1779517853.0483098,
     "ast_hash": "90de9638835049b411c0be55bd5931a3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\continuous_training_daemon.py": {
-    "mtime": 1778913543.531632,
-    "ast_hash": "95da6023db0e23d48198141a5fb27894",
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\continuous_training_daemon.py": {
+    "mtime": 1779517853.04931,
+    "ast_hash": "5633b663bd3a0c2150a00a26eb61d397",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\daily_scheduler.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\daily_scheduler.py": {
+    "mtime": 1779517853.04931,
     "ast_hash": "2abf7deb91050a9b55b4d18f3a68bd94",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\deploy.sh": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\deploy.sh": {
+    "mtime": 1779517853.0498128,
     "ast_hash": "921fb4d49fd49af83de0b755cde2f840",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\generate_pdf.py": {
-    "mtime": 1779457122.6084952,
-    "ast_hash": "fc297d334d199490287ac0930a119530",
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\download_gold_data.py": {
+    "mtime": 1779722168.08576,
+    "ast_hash": "5573624fa6464d5bbe7ca6e31109179c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\live_trader.py": {
-    "mtime": 1779799803.2362165,
-    "ast_hash": "5a35e74911e42ba4db8d573bee18cc76",
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\generate_pdf.py": {
+    "mtime": 1779517853.0498128,
+    "ast_hash": "4572a6124e1aa36f9db6acdb3fd2554d",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\run_backups.py": {
-    "mtime": 1778844433.7536864,
-    "ast_hash": "2d804882685dedfb3f5c1a159fce5438",
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\gold_data_manager.py": {
+    "mtime": 1779722947.1076188,
+    "ast_hash": "1beb6f43523106927fb4a63ddfe46ff7",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\run_daily_pipeline.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\init_system.py": {
+    "mtime": 1779722936.9401705,
+    "ast_hash": "c1abe4f6f12cdfbb2270b174db8c3f4c",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\live_trader.py": {
+    "mtime": 1779816891.8916593,
+    "ast_hash": "c5176afa18e1643e4b2cc253a201969f",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\run_backups.py": {
+    "mtime": 1779517853.0498128,
+    "ast_hash": "41dde8f94b9889679e945e295db40a11",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\run_daily_pipeline.py": {
+    "mtime": 1779517853.0503252,
     "ast_hash": "e817f8e8a24659a18a2234e0fc22e231",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\run_pipeline.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\run_pipeline.py": {
+    "mtime": 1779816888.8804865,
     "ast_hash": "dd9bf31ac9a37d9b683d7caf7c9cd22d",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\run_shap_audit.py": {
-    "mtime": 1779602468.298135,
-    "ast_hash": "3ef3afec3aba9a9c7d3f4d31c99be336",
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\run_shap_audit.py": {
+    "mtime": 1779717418.9234507,
+    "ast_hash": "51ba8cde0bb8e4b7fec35354008af936",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\strategy_simulator.py": {
-    "mtime": 1779729895.4450977,
-    "ast_hash": "b4c914bcf8eef14dbe98769dfe00d01f",
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\strategy_simulator.py": {
+    "mtime": 1779816891.8916593,
+    "ast_hash": "ea39b8389f92270fda65d311230b8d69",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\teardown.sh": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\teardown.sh": {
+    "mtime": 1779517853.0503252,
     "ast_hash": "ab66ba5f45f483e2432cb83ff23c67e8",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\test_api.py": {
-    "mtime": 1779286398.3123908,
-    "ast_hash": "58858b2ec3c1eaee76d3b0c8786a4390",
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\test_api.py": {
+    "mtime": 1779517853.0503252,
+    "ast_hash": "9245e1b7bf3005899b4cfd4c02d128d2",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\test_run.py": {
-    "mtime": 1779729495.8863542,
-    "ast_hash": "4b2c30f20dd887e2269cd182f2685858",
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\test_gold_data.py": {
+    "mtime": 1779722977.1636825,
+    "ast_hash": "73e8fc8e3daef7674d27e7ee9a0cda93",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\scripts\\train_meta_learner.py": {
-    "mtime": 1779640496.600186,
-    "ast_hash": "2f5b3aa1691c4baa873be863f202e4a3",
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\test_run.py": {
+    "mtime": 1779816891.8926568,
+    "ast_hash": "e0d20e5b115fa51f46b48b6afaf4a012",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\__init__.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\scripts\\train_meta_learner.py": {
+    "mtime": 1779717418.9241784,
+    "ast_hash": "bae19c4db89e446482ab1f10495161f7",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\__init__.py": {
+    "mtime": 1779517853.051329,
     "ast_hash": "f58de0d5881125ea5b229d65821cfa37",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\api\\app.py": {
-    "mtime": 1779697718.7248225,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\api\\app.py": {
+    "mtime": 1779720793.5628276,
     "ast_hash": "fd3b810864d776a7b1ae44ab088d5eb3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\api\\models.py": {
-    "mtime": 1778790862.39232,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\api\\models.py": {
+    "mtime": 1779517853.0518312,
     "ast_hash": "a52c6512b8696720615434c1054880d1",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\api\\paper_trading_routes.py": {
-    "mtime": 1779800496.2507813,
-    "ast_hash": "031ce6eb82a21ea2ec07f99b212cf14e",
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\api\\paper_trading_routes.py": {
+    "mtime": 1779899543.3538222,
+    "ast_hash": "d2e67436512fe60196b918a1fe6863ab",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\api\\security.py": {
-    "mtime": 1779697883.9864874,
-    "ast_hash": "880b8656056fac44325ed4f9c9112866",
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\api\\security.py": {
+    "mtime": 1779717418.9256964,
+    "ast_hash": "d23162928c256f9eb49f8a5612494540",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\api\\__init__.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\api\\__init__.py": {
+    "mtime": 1779517853.0518312,
     "ast_hash": "d0dac7fd37cd28a504950245b0ebc3f8",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\backtester.py": {
-    "mtime": 1778769698.804896,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\backtester.py": {
+    "mtime": 1779517853.0528336,
     "ast_hash": "bdab40551045090ad4767c6deeb072d9",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\cpcv.py": {
-    "mtime": 1778769698.804896,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\cpcv.py": {
+    "mtime": 1779517853.0528336,
     "ast_hash": "496475dea99e6ff39a1835ab489c71e7",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\data_handler.py": {
-    "mtime": 1778769698.804896,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\data_handler.py": {
+    "mtime": 1779517853.0528336,
     "ast_hash": "1d898550f6da59a7ae03b58ea8e8010c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\deflated_sharpe.py": {
-    "mtime": 1778769698.804896,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\deflated_sharpe.py": {
+    "mtime": 1779517853.0528336,
     "ast_hash": "1ea719076f2803573fece35c6f864635",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\events.py": {
-    "mtime": 1778769698.804896,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\events.py": {
+    "mtime": 1779517853.0528336,
     "ast_hash": "11baa9f0b55098ff4203ef66490e6ef9",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\execution.py": {
-    "mtime": 1778769698.804896,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\execution.py": {
+    "mtime": 1779517853.0538383,
     "ast_hash": "89757483edaf8dc743cd8fff94bc320a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\metrics.py": {
-    "mtime": 1778769698.807292,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\metrics.py": {
+    "mtime": 1779517853.0538383,
     "ast_hash": "61ae298cacab3312aaa8d57a1e500a48",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\model_strategies.py": {
-    "mtime": 1778769698.807292,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\model_strategies.py": {
+    "mtime": 1779517853.0538383,
     "ast_hash": "0508ef2ef2714f270909a9d2edb43bd6",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\portfolio.py": {
-    "mtime": 1778769698.807292,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\portfolio.py": {
+    "mtime": 1779517853.0538383,
     "ast_hash": "0e258c862582d52033085bc51dbc1ac3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\report_generator.py": {
-    "mtime": 1778769698.807292,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\report_generator.py": {
+    "mtime": 1779517853.0548377,
     "ast_hash": "a914e7aac819e1a3ec20a16e5a52bb7f",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\strategy_runner.py": {
-    "mtime": 1778769698.807292,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\strategy_runner.py": {
+    "mtime": 1779517853.0548377,
     "ast_hash": "f247b6b303cccd2e788c06fb1ec65751",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\walk_forward.py": {
-    "mtime": 1778769698.80941,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\walk_forward.py": {
+    "mtime": 1779517853.0553403,
     "ast_hash": "df6564c99d23317a58518360e06bd2ad",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\backtesting\\__init__.py": {
-    "mtime": 1778769698.8014588,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\backtesting\\__init__.py": {
+    "mtime": 1779517853.0528336,
     "ast_hash": "8fc15ac9ae85823e9b7388f604553682",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\engine.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\engine.py": {
+    "mtime": 1779517853.0573678,
     "ast_hash": "2190ef534a0fe7040cbe83404ce1928e",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\__init__.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\__init__.py": {
+    "mtime": 1779517853.0553403,
     "ast_hash": "74c1b31dcdb37576e93438183f0fd08c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\cpp\\include\\latency_monitor.h": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\cpp\\include\\latency_monitor.h": {
+    "mtime": 1779517853.0553403,
     "ast_hash": "21fc9d12762ba84d17b9393915cb147e",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\cpp\\include\\order_book.h": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\cpp\\include\\order_book.h": {
+    "mtime": 1779517853.0553403,
     "ast_hash": "f7bb8386a16fdca693452879ac60b53a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\cpp\\include\\order_router.h": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\cpp\\include\\order_router.h": {
+    "mtime": 1779517853.0553403,
     "ast_hash": "85e32c7ec88c1165afc512000af2e199",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\cpp\\src\\latency_monitor.cpp": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\cpp\\src\\latency_monitor.cpp": {
+    "mtime": 1779517853.0568433,
     "ast_hash": "811c3b288dc0bcd408f56fee4433a43f",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\cpp\\src\\main.cpp": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\cpp\\src\\main.cpp": {
+    "mtime": 1779517853.0568433,
     "ast_hash": "3316968699344f2d6a1220db75b078b3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\cpp\\src\\order_book.cpp": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\cpp\\src\\order_book.cpp": {
+    "mtime": 1779517853.0568433,
     "ast_hash": "32daab2087289727774fb1e53c4008b9",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\cpp\\src\\order_router.cpp": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\cpp\\src\\order_router.cpp": {
+    "mtime": 1779517853.0573678,
     "ast_hash": "59b6f8995f9333d3201d34d7b6b11669",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\features\\engine.py": {
-    "mtime": 1779721598.3412168,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\features\\engine.py": {
+    "mtime": 1779816891.8926568,
     "ast_hash": "8eee579d24a8ec58b8a64c05d5841721",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\features\\feature_drift_detector.py": {
-    "mtime": 1779600334.8552456,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\features\\feature_drift_detector.py": {
+    "mtime": 1779717418.9256964,
     "ast_hash": "dc6433124a2145c5f6b797eb4362d6d0",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\features\\feature_store.py": {
-    "mtime": 1778844089.7914312,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\features\\feature_store.py": {
+    "mtime": 1779517853.0583751,
     "ast_hash": "446de3f797e3add6d83cefb279121bbe",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\features\\__init__.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\features\\__init__.py": {
+    "mtime": 1779517853.0573678,
     "ast_hash": "8100c2a66c85e9f7640e60888385b89b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\infrastructure\\archival_scheduler.py": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\infrastructure\\archival_scheduler.py": {
+    "mtime": 1779517853.0583751,
     "ast_hash": "967fe18c326bd86235a97ee6f070a2b6",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\infrastructure\\backup_manager.py": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\infrastructure\\backup_manager.py": {
+    "mtime": 1779517853.0583751,
     "ast_hash": "a3fc9e23a96fb584d2a45059ad07c5b0",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\infrastructure\\data_lifecycle_manager.py": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\infrastructure\\data_lifecycle_manager.py": {
+    "mtime": 1779517853.0583751,
     "ast_hash": "6f71f113ef40b0cd960dbae234f78991",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\infrastructure\\disaster_recovery.py": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\infrastructure\\disaster_recovery.py": {
+    "mtime": 1779517853.0593715,
     "ast_hash": "17540108b09a0ba93517f38026454422",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\infrastructure\\health_monitor.py": {
-    "mtime": 1778844088.94087,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\infrastructure\\health_monitor.py": {
+    "mtime": 1779517853.0593715,
     "ast_hash": "589ee570458d1e27aeb8570b0b681bda",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\infrastructure\\health_monitor_extended.py": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\infrastructure\\health_monitor_extended.py": {
+    "mtime": 1779517853.0593715,
     "ast_hash": "e1d809b28def749ff5d9bb5de9fc33b9",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\infrastructure\\logging_config.py": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\infrastructure\\logging_config.py": {
+    "mtime": 1779517853.0603762,
     "ast_hash": "3bb418e6ea5859b1f21f5fbb6c0045f6",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\alternative_data.py": {
-    "mtime": 1779721393.388746,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\alternative_data.py": {
+    "mtime": 1779816891.8939743,
     "ast_hash": "ebc06e8a13b4af731dfdd10500664df9",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\data_quality.py": {
-    "mtime": 1779729177.3187733,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\data_quality.py": {
+    "mtime": 1779816891.8939743,
     "ast_hash": "8e99c77faa43118ac985ae25daffeae5",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\gold_fetcher.py": {
-    "mtime": 1778924290.3251395,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\gold_fetcher.py": {
+    "mtime": 1779517853.0614924,
     "ast_hash": "4251dfae83f1816f4aebf878661f6ca3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\macro_fetcher.py": {
-    "mtime": 1779720951.981096,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\macro_fetcher.py": {
+    "mtime": 1779816891.8939743,
     "ast_hash": "82bcada3dad0b9a824726812baad507b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\metrics_exporter.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\metrics_exporter.py": {
+    "mtime": 1779517853.0614924,
     "ast_hash": "ac7572cf7a5d55b5f8bf37155c16d236",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\oanda_fetcher.py": {
-    "mtime": 1778911641.9298444,
-    "ast_hash": "461ff1ad430a467532f2b451af15b3be",
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\oanda_fetcher.py": {
+    "mtime": 1779517853.0614924,
+    "ast_hash": "bb9c90f6e8b62df107dfc50a9bdc4fb3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\pipeline_orchestrator.py": {
-    "mtime": 1779600093.6232007,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\pipeline_orchestrator.py": {
+    "mtime": 1779717418.9272006,
     "ast_hash": "7c89fb88a152c9db06cecf44bb0bc751",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\questdb_writer.py": {
-    "mtime": 1779550472.1707656,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\questdb_writer.py": {
+    "mtime": 1779816888.8804865,
     "ast_hash": "64c80c4422c012bed62464fe760b1c42",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\real_time_feed_manager.py": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\real_time_feed_manager.py": {
+    "mtime": 1779517853.0630152,
     "ast_hash": "73d57349686ac27494a6061bc6c9859a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\schema_manager.py": {
-    "mtime": 1779712291.2519305,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\schema_manager.py": {
+    "mtime": 1779717418.9272006,
     "ast_hash": "c5e3eeb9faad8c585af4d7a4925c5399",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\streaming_features.py": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\streaming_features.py": {
+    "mtime": 1779517853.0630152,
     "ast_hash": "c7e56ffd9509cada43cefda860400a7c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\ingestion\\__init__.py": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\ingestion\\__init__.py": {
+    "mtime": 1779517853.0603762,
     "ast_hash": "627cf4b0a04aeefc8c42007852290314",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\operations\\team_operations.py": {
-    "mtime": 1778778854.9320903,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\operations\\team_operations.py": {
+    "mtime": 1779517853.0640285,
     "ast_hash": "e5cf65fc9f0973981da9fd28d6113a09",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\operations\\__init__.py": {
-    "mtime": 1778778854.9320903,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\operations\\__init__.py": {
+    "mtime": 1779517853.0640285,
     "ast_hash": "ae722468567efeebf81cd6334f10d4e1",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\paper_trading\\dynamic_weights.py": {
-    "mtime": 1779282716.231871,
-    "ast_hash": "8a7a969f380958cb5e1d132f2762c3d2",
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\paper_trading\\dynamic_weights.py": {
+    "mtime": 1779823615.3452728,
+    "ast_hash": "9fea70832ba8bf62f455ac252192757c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\paper_trading\\engine.py": {
-    "mtime": 1779800438.2350132,
-    "ast_hash": "0786e4fb0539aaa2eb93eb9608ec756c",
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\paper_trading\\engine.py": {
+    "mtime": 1779822478.0394442,
+    "ast_hash": "e1e0084b834d8769127d6ec1c00f216b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\paper_trading\\live_inference.py": {
-    "mtime": 1779820898.2257614,
-    "ast_hash": "ad9fcfcaba3a5bbbc26c80469a8566ae",
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\paper_trading\\kalman_hedge.py": {
+    "mtime": 1779816891.894974,
+    "ast_hash": "349b24d10717821a4764dae7cee2ec34",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\paper_trading\\prediction_logger.py": {
-    "mtime": 1779538716.027741,
-    "ast_hash": "d478be3f61bfe93c77fab09e2ef5d08e",
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\paper_trading\\live_inference.py": {
+    "mtime": 1779900344.2389376,
+    "ast_hash": "47d844d3765e049afaf5e73b7d4a938c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\paper_trading\\risk_manager.py": {
-    "mtime": 1778844728.8946414,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\paper_trading\\prediction_logger.py": {
+    "mtime": 1779717418.9287217,
+    "ast_hash": "67839da99377ec5e765b22b6cd9ecd61",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\paper_trading\\risk_manager.py": {
+    "mtime": 1779517853.0651164,
     "ast_hash": "37ab3ed77e3e2a48cc92bbfa28289f16",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\paper_trading\\__init__.py": {
-    "mtime": 1779270827.0850873,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\paper_trading\\silver_feed_adapter.py": {
+    "mtime": 1779816891.894974,
+    "ast_hash": "1c380b0eea32d235ccc4e001638de1f4",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\paper_trading\\__init__.py": {
+    "mtime": 1779517853.0640285,
     "ast_hash": "255110679ccdf6255468c25512126d6d",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\risk\\advanced_metrics.py": {
-    "mtime": 1778769698.8104243,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\risk\\advanced_metrics.py": {
+    "mtime": 1779517853.066121,
     "ast_hash": "a93c5854bff7e96f76b2f54560efc9de",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\risk\\dynamic_risk_adjuster.py": {
-    "mtime": 1778778854.932601,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\risk\\dynamic_risk_adjuster.py": {
+    "mtime": 1779517853.066121,
     "ast_hash": "7c3aaa174ff50fe3edae09e9f23b2702",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\risk\\gpu_var.py": {
-    "mtime": 1778769698.8104243,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\risk\\economic_calendar.py": {
+    "mtime": 1779816891.894974,
+    "ast_hash": "e82b236b1e9c1fe748ea7f0055f0f6fb",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\risk\\gpu_var.py": {
+    "mtime": 1779517853.066121,
     "ast_hash": "b8a84ff882b450e530f11db9bd9108d8",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\risk\\manager.py": {
-    "mtime": 1779799390.0476308,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\risk\\manager.py": {
+    "mtime": 1779816891.894974,
     "ast_hash": "9e262576ad004f3fd475fe956bb313ee",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\risk\\meta_labeler.py": {
-    "mtime": 1778769698.8104243,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\risk\\meta_labeler.py": {
+    "mtime": 1779517853.066121,
     "ast_hash": "6672e1025916c45470fcc45daa3266ab",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\risk\\position_manager.py": {
-    "mtime": 1778769698.8104243,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\risk\\position_manager.py": {
+    "mtime": 1779517853.066121,
     "ast_hash": "53627a61e613e44c84173915e629e211",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\risk\\stress_tester.py": {
-    "mtime": 1778778854.9343736,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\risk\\stress_tester.py": {
+    "mtime": 1779517853.0676293,
     "ast_hash": "bef31291dcea61a1ccae4768cafc5c6b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\risk\\__init__.py": {
-    "mtime": 1778769698.80941,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\risk\\__init__.py": {
+    "mtime": 1779517853.066121,
     "ast_hash": "ee4f1659f3c403d61ed5af2e79952ea6",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\testing\\extended_testing_framework.py": {
-    "mtime": 1778778854.934886,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\testing\\extended_testing_framework.py": {
+    "mtime": 1779517853.0676293,
     "ast_hash": "327e320274d675a68cb21787fabcccda",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\testing\\__init__.py": {
-    "mtime": 1778778854.934886,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\testing\\__init__.py": {
+    "mtime": 1779517853.0676293,
     "ast_hash": "861256b5fb7affe9930364728c4ce786",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\utils\\config.py": {
-    "mtime": 1778748216.9717116,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\config.py": {
+    "mtime": 1779822473.3914177,
     "ast_hash": "ef2cc555279f82695d8c850d6826f7a9",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\utils\\gpu.py": {
-    "mtime": 1779781946.1849098,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\gpu.py": {
+    "mtime": 1779816891.8959746,
     "ast_hash": "28401dad227bbca5bbf985f898a41c0e",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\utils\\gpu_models.py": {
-    "mtime": 1779781957.6727896,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\gpu_models.py": {
+    "mtime": 1779816891.8959746,
     "ast_hash": "1458f2bb684910bd7e1441dbeb166b8c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\utils\\infra.py": {
-    "mtime": 1778748216.9717116,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\infra.py": {
+    "mtime": 1779517853.069183,
     "ast_hash": "2cfa8b61e299bf61da42c54c82e7185b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\utils\\logger.py": {
-    "mtime": 1779698441.8386445,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\logger.py": {
+    "mtime": 1779717418.929726,
     "ast_hash": "06a6528967f6f349f37dbb616ec5f3a0",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\utils\\redis_client.py": {
-    "mtime": 1778844059.458141,
-    "ast_hash": "431741903783f152afa829e4aa711f78",
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\redis_client.py": {
+    "mtime": 1779517853.070196,
+    "ast_hash": "6f5f322b112ad76242ade981cf96c217",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\utils\\resilience.py": {
-    "mtime": 1778748216.9717116,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\resilience.py": {
+    "mtime": 1779517853.070196,
     "ast_hash": "40a5751c0b1dbee809f9a5c01f1e8843",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\utils\\__init__.py": {
-    "mtime": 1778748216.9717116,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\__init__.py": {
+    "mtime": 1779517853.0676293,
     "ast_hash": "567d5b629f732ce1d5c1f394a57bf7ee",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\static\\dashboard.js": {
-    "mtime": 1778790862.3959453,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\shims\\cudf.py": {
+    "mtime": 1778863205.342546,
+    "ast_hash": "cfabfc9d4469adb4d78e24b3add5702e",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\shims\\cuml.py": {
+    "mtime": 1778862361.627829,
+    "ast_hash": "93c35bc46f09c541472ea138bf919837",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\shims\\cusignal.py": {
+    "mtime": 1778862362.4283602,
+    "ast_hash": "b5d8733abdc559171bd9f094ca7b3f05",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\static\\dashboard.js": {
+    "mtime": 1779816888.8820307,
     "ast_hash": "8e01856388677a2b29fa65a0f4f6381d",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\run_phase4_tests.py": {
-    "mtime": 1778769698.8104243,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\run_phase4_tests.py": {
+    "mtime": 1779517853.0716994,
     "ast_hash": "9560d3f0a8078d83db63d0ae8b79b59e",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_advanced_risk_metrics.py": {
-    "mtime": 1778769698.8124368,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_advanced_risk_metrics.py": {
+    "mtime": 1779517853.0716994,
     "ast_hash": "1df0141cb8fdf792540242f553c311ef",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_backtester_core.py": {
-    "mtime": 1778769698.8124368,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_backtester_core.py": {
+    "mtime": 1779517853.072704,
     "ast_hash": "32caa3ed6df7518b0ab326ab1227748c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_backtesting_integration.py": {
-    "mtime": 1778769698.8124368,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_backtesting_integration.py": {
+    "mtime": 1779517853.072704,
     "ast_hash": "5d99a4c662d72bc6e20f1a8b0195cd19",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_core.py": {
-    "mtime": 1779604533.0952787,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_core.py": {
+    "mtime": 1779717418.9302309,
     "ast_hash": "05cba523433dd33df3c0cce6ac2dabe3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_10_logging.py": {
-    "mtime": 1778778854.9358995,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_10_logging.py": {
+    "mtime": 1779517853.072704,
     "ast_hash": "beebd7b11dbf28ce5e9ce274c3d93fa3",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_11_extended_testing.py": {
-    "mtime": 1778778854.9358995,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_11_extended_testing.py": {
+    "mtime": 1779517853.072704,
     "ast_hash": "31b2281b11803cd47ca88b1acdacec35",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_1_health_monitoring.py": {
-    "mtime": 1778778854.9371295,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_1_health_monitoring.py": {
+    "mtime": 1779517853.072704,
     "ast_hash": "1be6fb7f099b43341b9d3534e5321a9f",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_2_lifecycle.py": {
-    "mtime": 1778778854.9376404,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_2_lifecycle.py": {
+    "mtime": 1779517853.072704,
     "ast_hash": "b7de8b096b68fa0ddf8de95b3a03e357",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_2_scheduler.py": {
-    "mtime": 1778778854.9376404,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_2_scheduler.py": {
+    "mtime": 1779517853.0742123,
     "ast_hash": "a804915ee67b8c97f42117a16924a8eb",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_3_backup_recovery.py": {
-    "mtime": 1779706326.5764945,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_3_backup_recovery.py": {
+    "mtime": 1779717418.9302309,
     "ast_hash": "6fb1ebaf040f6e1f8d30cb710df0dda1",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_4_realtime_ingestion.py": {
-    "mtime": 1778778854.9376404,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_4_realtime_ingestion.py": {
+    "mtime": 1779517853.0742123,
     "ast_hash": "023aa762ce0b6e50b665d33db64aaedc",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_5_drift_detection.py": {
-    "mtime": 1778778854.9376404,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_5_drift_detection.py": {
+    "mtime": 1779517853.0742123,
     "ast_hash": "6593ae7bdb11a9e5b86d1a64165ae774",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_6_model_performance.py": {
-    "mtime": 1778778854.9398167,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_6_model_performance.py": {
+    "mtime": 1779517853.0752206,
     "ast_hash": "3095af6a22fdbcc9fcbba3bd1876d89b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_7_retraining.py": {
-    "mtime": 1778778854.9403207,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_7_retraining.py": {
+    "mtime": 1779517853.0752206,
     "ast_hash": "cdf097b0a40d090fbeb65b5aab63fde5",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_8_dynamic_risk.py": {
-    "mtime": 1778778854.9407852,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_8_dynamic_risk.py": {
+    "mtime": 1779517853.0752206,
     "ast_hash": "35aa77667f9a003536094cae1f2722bc",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_enhancement_9_stress_testing.py": {
-    "mtime": 1778778854.9413013,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_enhancement_9_stress_testing.py": {
+    "mtime": 1779517853.0762875,
     "ast_hash": "20bfc013a1a99c65aa6e30991fa66689",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_gpu_var.py": {
-    "mtime": 1778769698.8134468,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_gpu_var.py": {
+    "mtime": 1779517853.0762875,
     "ast_hash": "abe7fb7907d8d3db68eb52f40cc13eff",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_health_monitor.py": {
-    "mtime": 1778769698.8134468,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_health_monitor.py": {
+    "mtime": 1779517853.0762875,
     "ast_hash": "841a650b7aa8ecee125afee25c78f300",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_infrastructure_integration.py": {
-    "mtime": 1778748216.9717116,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_infrastructure_integration.py": {
+    "mtime": 1779517853.0762875,
     "ast_hash": "aad95a7f84c6b4e3b7431ce22b5f5a55",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_meta_labeler.py": {
-    "mtime": 1778769698.8134468,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_meta_labeler.py": {
+    "mtime": 1779517853.0762875,
     "ast_hash": "122cd57d66ff8df303bb0965d63e3503",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_model_performance.py": {
-    "mtime": 1778769698.8134468,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_model_performance.py": {
+    "mtime": 1779517853.0772882,
     "ast_hash": "5cb4b049162c178113f792f848111533",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_paper_trading.py": {
-    "mtime": 1779697089.6271844,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_paper_trading.py": {
+    "mtime": 1779717418.9302309,
     "ast_hash": "041007c95fb6e6763c2553b8e7e9b0be",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_paper_trading_api.py": {
-    "mtime": 1779697591.0500035,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_paper_trading_api.py": {
+    "mtime": 1779717418.9312375,
     "ast_hash": "b81327cd8746945c04c9946fab523386",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_phase2_pipeline.py": {
-    "mtime": 1778748216.9744778,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_phase2_pipeline.py": {
+    "mtime": 1779517853.0772882,
     "ast_hash": "eeaf24362e0daaa893628974202d6488",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_phase3_models_backtest.py": {
-    "mtime": 1778769698.8134468,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_phase3_models_backtest.py": {
+    "mtime": 1779517853.078387,
     "ast_hash": "99c47cf6ad1b042b26316ce12c71c8f4",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_phase_7_operations.py": {
-    "mtime": 1778778854.9413013,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_phase_7_operations.py": {
+    "mtime": 1779517853.078387,
     "ast_hash": "359cceec45bcf40ee43c2f0bf122ebf1",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_position_lifecycle_integration.py": {
-    "mtime": 1778769698.8134468,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_position_lifecycle_integration.py": {
+    "mtime": 1779517853.078387,
     "ast_hash": "3011df5f6cd10e1ae8d1d89897725ec7",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_position_manager.py": {
-    "mtime": 1778769698.8134468,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_position_manager.py": {
+    "mtime": 1779517853.0793874,
     "ast_hash": "997d6a6e009e752e548bf39e8ef929d8",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\test_validation_framework.py": {
-    "mtime": 1778769698.8134468,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\test_validation_framework.py": {
+    "mtime": 1779517853.0793874,
     "ast_hash": "2571c6012ad21f65988dcb98c7820d13",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\tests\\__init__.py": {
-    "mtime": 1778748216.9717116,
+  "E:\\PRO\\JIMxNik\\jim_new\\tests\\__init__.py": {
+    "mtime": 1779517853.0716994,
     "ast_hash": "5bd26c3ca236b2081ff6b4a37168217d",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\AGENTS.md": {
-    "mtime": 1779779898.34453,
+  "E:\\PRO\\JIMxNik\\jim_new\\AGENTS.md": {
+    "mtime": 1779816891.8117633,
     "ast_hash": "752aa83aa64361ac32860f882dcff932",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\CLAUDE.md": {
-    "mtime": 1779779898.1310818,
+  "E:\\PRO\\JIMxNik\\jim_new\\CLAUDE.md": {
+    "mtime": 1779816891.8117633,
     "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\docker-compose.yml": {
-    "mtime": 1779698492.5732813,
-    "ast_hash": "0a7660358f84d9b088caabbe36e99f85",
+  "E:\\PRO\\JIMxNik\\jim_new\\docker-compose.yml": {
+    "mtime": 1779717418.9209464,
+    "ast_hash": "bd1815d1f5de5ab7e234fc9fd85e3be6",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\phase4_test_output.txt": {
-    "mtime": 1778769698.8014588,
+  "E:\\PRO\\JIMxNik\\jim_new\\GOLD_DATA_FILE_REFERENCE.md": {
+    "mtime": 1779723100.3166413,
+    "ast_hash": "02e75cef92138dc863717d4fe8964c68",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\GOLD_DATA_QUICK_START.md": {
+    "mtime": 1779723007.217792,
+    "ast_hash": "0b4fcea7b925bb45047a098a7721c17d",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\GOLD_DATA_SYSTEM.md": {
+    "mtime": 1779722936.942196,
+    "ast_hash": "595dc9cdf2790767238cb48d2dd201f3",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\IMPLEMENTATION_COMPLETE.md": {
+    "mtime": 1779723194.985742,
+    "ast_hash": "42c03dfa56b36c3903918a29fb69237e",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\phase4_test_output.txt": {
+    "mtime": 1779517853.0448022,
     "ast_hash": "4217dd5546066972334a268af7955a7b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\pytest_full_output.txt": {
-    "mtime": 1779204576.5206137,
+  "E:\\PRO\\JIMxNik\\jim_new\\project_summary.md": {
+    "mtime": 1779816891.8916593,
+    "ast_hash": "3dd3f42714001ba14ebc61022ec8a9c1",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\pytest_full_output.txt": {
+    "mtime": 1779517853.0458014,
     "ast_hash": "b9bdb551f031da2a883c334879e8e57f",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\pytest_output.txt": {
-    "mtime": 1778778854.9246006,
+  "E:\\PRO\\JIMxNik\\jim_new\\pytest_output.txt": {
+    "mtime": 1779517853.0458014,
     "ast_hash": "60eeb75baa5fda6e3a6464f1f857732e",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\pytest_results.txt": {
-    "mtime": 1778769698.8014588,
+  "E:\\PRO\\JIMxNik\\jim_new\\pytest_results.txt": {
+    "mtime": 1779517853.0468028,
     "ast_hash": "f5646ef6b3a22842c2327bf303a5853b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\requirements-cpu.txt": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\query_output.txt": {
+    "mtime": 1779822478.0384386,
+    "ast_hash": "eff0b45c9146777b07aafa7555a8c2c6",
+    "semantic_hash": ""
+  },
+  "E:\\PRO\\JIMxNik\\jim_new\\requirements-cpu.txt": {
+    "mtime": 1779517853.0468028,
     "ast_hash": "56307f0a67b38d181dcfdcfc8781d173",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\requirements-gpu.txt": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\requirements-gpu.txt": {
+    "mtime": 1779517853.0468028,
     "ast_hash": "202a7d2e41e2f028a021a5d987737c28",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\requirements-merged.txt": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\requirements-merged.txt": {
+    "mtime": 1779816888.878982,
     "ast_hash": "8d334e854d3d80b84a612b7248bcc32b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\test_results.txt": {
-    "mtime": 1778778854.9358995,
+  "E:\\PRO\\JIMxNik\\jim_new\\test_results.txt": {
+    "mtime": 1779517853.0716994,
     "ast_hash": "8dfc4ab521ddcff4cd73b07c6098b29b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\.agents\\rules\\graphify.md": {
-    "mtime": 1779779928.7748477,
-    "ast_hash": "a0e4d192b9e2e17256124dbfc8e24e6a",
+  "E:\\PRO\\JIMxNik\\jim_new\\.github\\workflows\\ci.yml": {
+    "mtime": 1779517852.986686,
+    "ast_hash": "72531d7ad29403b80e3899ffb53c1fd8",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\.agents\\skills\\graphify\\SKILL.md": {
-    "mtime": 1779779898.34302,
-    "ast_hash": "8a98d44ea5c92ab83d0c18efb43b57de",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\.agents\\workflows\\graphify.md": {
-    "mtime": 1779779928.7753701,
-    "ast_hash": "84de69efd46ab0b8430393bd4188f8f2",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\.claude\\CLAUDE.md": {
-    "mtime": 1779779898.1300752,
-    "ast_hash": "817fe671013b35ae0bc9301dfe449a87",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\.claude\\skills\\graphify\\SKILL.md": {
-    "mtime": 1779779898.1274564,
-    "ast_hash": "e065bdafac4ca689ffd4e353ffd71160",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\.github\\workflows\\ci.yml": {
-    "mtime": 1779284866.4019709,
-    "ast_hash": "d329829e0f0ef960c0379bc8c35b166d",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\API Keys\\API KEYS.txt": {
-    "mtime": 1778748216.9485295,
+  "E:\\PRO\\JIMxNik\\jim_new\\API Keys\\API KEYS.txt": {
+    "mtime": 1779517852.988204,
     "ast_hash": "bb9e398b6b5df094749a345292c98e6b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\artifacts\\feature_shap_audit.md": {
-    "mtime": 1779602493.2854328,
+  "E:\\PRO\\JIMxNik\\jim_new\\artifacts\\feature_shap_audit.md": {
+    "mtime": 1779717418.915338,
     "ast_hash": "13f1f95aae03cb39416b793d1d71ad06",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\clerk-react\\index.html": {
-    "mtime": 1779183713.7174785,
-    "ast_hash": "54ceb5277fc174a138207cdeca8786d7",
+  "E:\\PRO\\JIMxNik\\jim_new\\clerk-react\\index.html": {
+    "mtime": 1779517853.0274694,
+    "ast_hash": "f785699be10e0dd68f750d00bae6f4af",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\configs\\base.yaml": {
-    "mtime": 1779799980.9339397,
-    "ast_hash": "a2225b80dab18eb46ab9670f114f7fb1",
+  "E:\\PRO\\JIMxNik\\jim_new\\configs\\base.yaml": {
+    "mtime": 1779822478.0112796,
+    "ast_hash": "42a8291597e012a53dbec82df827942a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\index.html": {
-    "mtime": 1778600051.250805,
-    "ast_hash": "e872eb4310b82a1d0c6c6a9dffd17a95",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\index.html": {
+    "mtime": 1779517853.0309937,
+    "ast_hash": "096b019517ddfc552e7021cc83afa549",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\README.md": {
-    "mtime": 1778599960.6456492,
-    "ast_hash": "a28dc4cb878325f3e9e5649f3e1469ac",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\README.md": {
+    "mtime": 1779517853.0309937,
+    "ast_hash": "abfa161e3e5434e3e85394bf03d387a4",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\.vercel\\README.txt": {
-    "mtime": 1779263868.4949572,
-    "ast_hash": "2b13c79d37d6ed82a3255b83b6815034",
+  "E:\\PRO\\JIMxNik\\jim_new\\DataBase\\DATA_SUMMARY.txt": {
+    "mtime": 1779722165.498135,
+    "ast_hash": "6800a7c707bbd23770f37b55fabe3c29",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\docker\\prometheus.yml": {
-    "mtime": 1778748216.9533966,
+  "E:\\PRO\\JIMxNik\\jim_new\\docker\\prometheus.yml": {
+    "mtime": 1779517853.040202,
     "ast_hash": "3e8d1880e16fe5ba4d9b4c2f75f53972",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docker-compose.yml": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docker-compose.yml": {
+    "mtime": 1779517852.9938235,
     "ast_hash": "7efc1cd0da9de90515180de8931a8167",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\PHASE_1_COMPLETION.txt": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\PHASE_1_COMPLETION.txt": {
+    "mtime": 1779517852.9928162,
     "ast_hash": "69dc4d41f6772dd0db01bd7b3dfab9a9",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\QUICK_REFERENCE.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\QUICK_REFERENCE.md": {
+    "mtime": 1779517852.9938235,
     "ast_hash": "94ad307f77f33a6ecab80edb2236e6ed",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\README.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\README.md": {
+    "mtime": 1779517852.9938235,
     "ast_hash": "578e7fa2b30b020c88397a211902853b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\requirements-base.txt": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\requirements-base.txt": {
+    "mtime": 1779517852.9981825,
     "ast_hash": "42cf209f5fceee4d8b7453d78a1a903a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\requirements-cpu.txt": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\requirements-cpu.txt": {
+    "mtime": 1779517852.9981825,
     "ast_hash": "56307f0a67b38d181dcfdcfc8781d173",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\requirements-gpu.txt": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\requirements-gpu.txt": {
+    "mtime": 1779517852.9981825,
     "ast_hash": "202a7d2e41e2f028a021a5d987737c28",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\requirements.txt": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\requirements.txt": {
+    "mtime": 1779517852.9981825,
     "ast_hash": "b1befdedeeb6267a10385a45e2c53d6b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\ROADMAP.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\ROADMAP.md": {
+    "mtime": 1779517852.9938235,
     "ast_hash": "e878f88bb9d8b6e6f837070a9e3fcd1d",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\configs\\base.yaml": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\configs\\base.yaml": {
+    "mtime": 1779517852.9938235,
     "ast_hash": "2c6e5462da0f76e107f8d43b15f2694f",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docker\\prometheus.yml": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docker\\prometheus.yml": {
+    "mtime": 1779517852.9951088,
     "ast_hash": "9308c138e3c56fada11bf3c39bb45c2e",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docs\\FORMULAS.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docs\\FORMULAS.md": {
+    "mtime": 1779517852.9951088,
     "ast_hash": "604eb6ac81f8fd0177e5a6f04472c226",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docs\\PHASE_1_INFRASTRUCTURE.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docs\\PHASE_1_INFRASTRUCTURE.md": {
+    "mtime": 1779517852.9951088,
     "ast_hash": "17d1de7792169c0ce30f599df5f7e4aa",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docs\\PHASE_2_DATA.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docs\\PHASE_2_DATA.md": {
+    "mtime": 1779517852.9961073,
     "ast_hash": "15e2a8ff55b61227d3ef92ab11364a4d",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docs\\PHASE_3_MODELING.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docs\\PHASE_3_MODELING.md": {
+    "mtime": 1779517852.9961073,
     "ast_hash": "319eaf65bc6c05d82b7069d56d507252",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docs\\PHASE_4_RISK.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docs\\PHASE_4_RISK.md": {
+    "mtime": 1779517852.9961073,
     "ast_hash": "88660277425162032280f208f7767edc",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docs\\PHASE_5_BACKTESTING.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docs\\PHASE_5_BACKTESTING.md": {
+    "mtime": 1779517852.9961073,
     "ast_hash": "d34c46c47da9521ad04e614e8ac318c8",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docs\\PHASE_6_DEPLOYMENT.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docs\\PHASE_6_DEPLOYMENT.md": {
+    "mtime": 1779517852.9971068,
     "ast_hash": "32ee0ec718fd91c69d08fbf3d1abc59a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docs\\PHASE_7_CULTURE.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docs\\PHASE_7_CULTURE.md": {
+    "mtime": 1779517852.9971068,
     "ast_hash": "9a6800008054398df25ce67d4fa16333",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\docs\\PHILOSOPHY.md": {
-    "mtime": 1778595807.2062726,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\docs\\PHILOSOPHY.md": {
+    "mtime": 1779517852.9971068,
     "ast_hash": "37fa20924f788fd9687e2c1774e646b1",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\JIM\\src\\execution\\cpp\\CMakeLists.txt": {
-    "mtime": 1778595807.2189977,
+  "E:\\PRO\\JIMxNik\\jim_new\\JIM\\src\\execution\\cpp\\CMakeLists.txt": {
+    "mtime": 1779517853.0001774,
     "ast_hash": "49d88abaf81fbdc16fe697e5c50dea73",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\src\\execution\\cpp\\CMakeLists.txt": {
-    "mtime": 1778748216.9544132,
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\execution\\cpp\\CMakeLists.txt": {
+    "mtime": 1779517853.0553403,
     "ast_hash": "49d88abaf81fbdc16fe697e5c50dea73",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\static\\dashboard.html": {
-    "mtime": 1778790862.3949068,
+  "E:\\PRO\\JIMxNik\\jim_new\\static\\dashboard.html": {
+    "mtime": 1779517853.070196,
     "ast_hash": "031ddf2b9336544522d32be387d85e9c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\clerk-react\\public\\favicon.svg": {
-    "mtime": 1778599960.7025414,
-    "ast_hash": "098c888910dd3b64d291f1f0dc9e7033",
+  "E:\\PRO\\JIMxNik\\jim_new\\clerk-react\\public\\favicon.svg": {
+    "mtime": 1779517853.0284724,
+    "ast_hash": "d013eacca6b099ff612a6781523f2e81",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\clerk-react\\public\\icons.svg": {
-    "mtime": 1778599960.7173657,
-    "ast_hash": "3b4fcfcf393eca4d264dca4a4663bc37",
+  "E:\\PRO\\JIMxNik\\jim_new\\clerk-react\\public\\icons.svg": {
+    "mtime": 1779517853.0284724,
+    "ast_hash": "21c7473c592c67dc87223d49892c8f0a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\clerk-react\\src\\assets\\hero.png": {
-    "mtime": 1778599960.6763332,
+  "E:\\PRO\\JIMxNik\\jim_new\\clerk-react\\src\\assets\\hero.png": {
+    "mtime": 1779517853.0284724,
     "ast_hash": "aead493361b27e7510691c5d7072dfc1",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\clerk-react\\src\\assets\\javascript.svg": {
-    "mtime": 1778599960.7173657,
-    "ast_hash": "067c459716da80af65db120e6c0404b9",
+  "E:\\PRO\\JIMxNik\\jim_new\\clerk-react\\src\\assets\\javascript.svg": {
+    "mtime": 1779517853.0284724,
+    "ast_hash": "4532a85fc0e928b781c74fbfd15d0b75",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\clerk-react\\src\\assets\\vite.svg": {
-    "mtime": 1778599960.7505636,
-    "ast_hash": "9960a24288958394ac50e57ff638b036",
+  "E:\\PRO\\JIMxNik\\jim_new\\clerk-react\\src\\assets\\vite.svg": {
+    "mtime": 1779517853.0284724,
+    "ast_hash": "6d5180a782d64c8cf51ba01c2a2184d8",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\public\\favicon.svg": {
-    "mtime": 1778599960.6993492,
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\public\\favicon.svg": {
+    "mtime": 1779517853.03199,
     "ast_hash": "7e840862161341271697daa99a40d76b",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\public\\icons.svg": {
-    "mtime": 1778599960.7025414,
-    "ast_hash": "3b4fcfcf393eca4d264dca4a4663bc37",
+  "E:\\PRO\\JIMxNik\\jim_new\\dashboard\\public\\icons.svg": {
+    "mtime": 1779517853.03199,
+    "ast_hash": "21c7473c592c67dc87223d49892c8f0a",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\dashboard\\src\\pages\\LiveTrading.jsx": {
-    "mtime": 1779800503.30627,
-    "ast_hash": "5bb23a2ea8075768fc55326041fcce49",
+  "E:\\PRO\\JIMxNik\\jim_new\\src\\utils\\prediction_log_manager.py": {
+    "mtime": 1779899543.3538222,
+    "ast_hash": "fcf138ca6f558ec6783f55157660808e",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\check file\\adx_regime_detector.py": {
-    "mtime": 1779774826.0,
-    "ast_hash": "f1427753dd42e9db7d917c2a269e57af",
+  "E:\\PRO\\JIMxNik\\jim_new\\IMPLEMENTATION_SUMMARY_PREDICTION_LOGS.md": {
+    "mtime": 1779899543.3548281,
+    "ast_hash": "fa1ee73ee8a7add6c656d418d183e31c",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\check file\\circuit_breaker.py": {
-    "mtime": 1779774826.0,
-    "ast_hash": "ce109ea125704a3189cf6e5499e62263",
+  "E:\\PRO\\JIMxNik\\jim_new\\PREDICTION_LOGS_QUICK_START.md": {
+    "mtime": 1779899543.3548281,
+    "ast_hash": "f8abd741816e03d0139973a168443419",
     "semantic_hash": ""
   },
-  "D:\\AI\\Jim\\check file\\live_trader_integration.py": {
-    "mtime": 1779774826.0,
-    "ast_hash": "6e46386c3eb28003a23e733d68613296",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\check file\\silver_feed_adapter.py": {
-    "mtime": 1779774826.0,
-    "ast_hash": "e6143ba516249159ccdb6f37caea1af5",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\check file\\trailing_stop.py": {
-    "mtime": 1779774826.0,
-    "ast_hash": "d8c88abeef915313fb8620072f6188bb",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\check file\\walk_forward_backtester.py": {
-    "mtime": 1779774826.0,
-    "ast_hash": "31a5175ef14b07764707be9197a199d6",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\src\\paper_trading\\kalman_hedge.py": {
-    "mtime": 1779794341.4098077,
-    "ast_hash": "501e6c64b7fb5a47cc2eb0adeda600d0",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\src\\paper_trading\\silver_feed_adapter.py": {
-    "mtime": 1779795183.9718862,
-    "ast_hash": "f4a89c38f69b678430ed4e358235ea91",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\src\\risk\\economic_calendar.py": {
-    "mtime": 1779794226.909901,
-    "ast_hash": "bcaa06fd0dacdeaea0ad261a8cee1500",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\PROJECT_SUMMARY.md": {
-    "mtime": 1779786954.249044,
-    "ast_hash": "7dfbd51f0487d0dee5d476d5e5a3cf61",
-    "semantic_hash": ""
-  },
-  "D:\\AI\\Jim\\query_output.txt": {
-    "mtime": 1779819886.0712066,
-    "ast_hash": "eff0b45c9146777b07aafa7555a8c2c6",
+  "E:\\PRO\\JIMxNik\\jim_new\\PREDICTION_LOGS_SETUP.md": {
+    "mtime": 1779899543.3538222,
+    "ast_hash": "c6a4ff70b545a9ea9cf00106d4144539",
     "semantic_hash": ""
   }
 }

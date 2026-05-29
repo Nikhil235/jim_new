@@ -51,11 +51,16 @@ graphify --version
 
 ---
 
-## Step 2: Configure LLM API Key (Optional but Recommended)
+## Step 2: Configure LLM API Key (REQUIRED for Graphify to Work)
 
-Graphify uses an LLM for semantic inference. Choose one:
+**Important**: Graphify requires an LLM API key to function. Without it, you'll get:
+```
+error: no LLM API key found. Set GEMINI_API_KEY or GOOGLE_API_KEY...
+```
 
-### Option A: Google Gemini (Free Trial)
+**Three Options**:
+
+### ✅ Option A: Google Gemini (FREE - Recommended)
 ```powershell
 # Create .env file in project root
 $env:GOOGLE_API_KEY = "your-gemini-api-key"

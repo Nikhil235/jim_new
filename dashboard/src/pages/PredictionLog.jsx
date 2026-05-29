@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Database, Download, RefreshCw, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Database, Download, RefreshCw, AlertCircle, Save } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -7,6 +7,12 @@ export default function PredictionLog() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
+  const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [saveStatus, setSaveStatus] = useState('idle'); // idle, saving, success, error
+  const saveIntervalRef = useRef(null);
+  const fetchIntervalRef = useRef(null);
+  const logsRef = useRef([]);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -15,7 +21,9 @@ export default function PredictionLog() {
       const response = await fetch(`${API_BASE}/paper-trading/prediction-log?limit=200`);
       if (!response.ok) throw new Error('Failed to fetch prediction logs');
       const data = await response.json();
-      setLogs(data.logs || []);
+      const fetchedLogs = data.logs || [];
+      setLogs(fetchedLogs);
+      logsRef.current = fetchedLogs;
     } catch (err) {
       setError(err.message);
     } finally {
@@ -23,11 +31,58 @@ export default function PredictionLog() {
     }
   };
 
-  useEffect(() => {
-    fetchLogs();
-    const interval = setInterval(fetchLogs, 15000); // refresh every 15s
-    return () => clearInterval(interval);
+  const saveLogs = useCallback(async () => {
+    if (logsRef.current.length === 0) return;
+    
+    setSaveStatus('saving');
+    try {
+      const response = await fetch(`${API_BASE}/paper-trading/save-prediction-logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(logsRef.current)
+      });
+      
+      if (!response.ok) throw new Error('Failed to save logs');
+      const data = await response.json();
+      
+      setSessionId(data.session_id);
+      setLastSaveTime(new Date().toLocaleString());
+      setSaveStatus('success');
+      
+      // Reset status after 3 seconds
+      setTimeout(() => setSaveStatus('idle'), 3000);
+      
+      console.log('Logs saved successfully:', data);
+    } catch (err) {
+      console.error('Error saving logs:', err);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
   }, []);
+
+  useEffect(() => {
+    // Initial fetch
+    fetchLogs();
+    
+    // Set up fetch interval (15 seconds)
+    fetchIntervalRef.current = setInterval(fetchLogs, 15000);
+    
+    // Set up save interval (5 minutes = 300,000 ms)
+    saveIntervalRef.current = setInterval(() => {
+      saveLogs();
+    }, 300000);
+    
+    // Save immediately on component mount (after 1 second delay to let first fetch complete)
+    const timer = setTimeout(() => {
+      saveLogs();
+    }, 1000);
+    
+    return () => {
+      clearInterval(fetchIntervalRef.current);
+      clearInterval(saveIntervalRef.current);
+      clearTimeout(timer);
+    };
+  }, [saveLogs]);
 
   const downloadCSV = () => {
     if (logs.length === 0) return;
@@ -74,6 +129,18 @@ export default function PredictionLog() {
             <RefreshCw size={16} className={loading ? 'spin-icon' : ''} />
             Refresh
           </button>
+          <button 
+            className="btn" 
+            onClick={saveLogs} 
+            disabled={logs.length === 0 || saveStatus === 'saving'}
+            style={{ 
+              opacity: saveStatus === 'saving' ? 0.6 : 1,
+              background: saveStatus === 'success' ? 'rgba(34, 197, 94, 0.2)' : saveStatus === 'error' ? 'rgba(239, 68, 68, 0.2)' : undefined
+            }}
+          >
+            <Save size={16} className={saveStatus === 'saving' ? 'spin-icon' : ''} />
+            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'success' ? 'Saved!' : saveStatus === 'error' ? 'Save Error' : 'Save to Disk'}
+          </button>
           <button className="btn btn-primary" onClick={downloadCSV} disabled={logs.length === 0}>
             <Download size={16} />
             Export CSV
@@ -85,6 +152,19 @@ export default function PredictionLog() {
         <div className="alert-box error" style={{ marginBottom: '24px' }}>
           <AlertCircle size={18} />
           <span>{error}</span>
+        </div>
+      )}
+
+      {sessionId && (
+        <div className="glass-panel" style={{ marginBottom: '24px', padding: '12px 16px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+            <div>
+              <span style={{ color: 'rgba(34, 197, 94, 0.9)', fontWeight: 600 }}>📁 Local Storage Active</span>
+              <span style={{ marginLeft: '16px', color: 'var(--text-muted)' }}>Session: {sessionId}</span>
+              {lastSaveTime && <span style={{ marginLeft: '16px', color: 'var(--text-muted)' }}>Last saved: {lastSaveTime}</span>}
+            </div>
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Auto-saving every 5 minutes</span>
+          </div>
         </div>
       )}
 

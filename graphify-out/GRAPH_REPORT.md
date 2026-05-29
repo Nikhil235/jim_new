@@ -1,16 +1,16 @@
-# Graph Report - Jim  (2026-05-27)
+# Graph Report - jim_new  (2026-05-27)
 
 ## Corpus Check
-- 224 files · ~202,045 words
+- 239 files · ~216,824 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 9202 nodes · 14006 edges · 823 communities (561 shown, 262 thin omitted)
-- Extraction: 85% EXTRACTED · 15% INFERRED · 0% AMBIGUOUS · INFERRED: 2097 edges (avg confidence: 0.51)
+- 10572 nodes · 17445 edges · 867 communities (579 shown, 288 thin omitted)
+- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 2136 edges (avg confidence: 0.51)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `be93ab17`
+- Built from commit: `3ef7ec3f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -645,12 +645,10 @@
 - [[_COMMUNITY_Community 637|Community 637]]
 - [[_COMMUNITY_Community 638|Community 638]]
 - [[_COMMUNITY_Community 639|Community 639]]
-- [[_COMMUNITY_Community 640|Community 640]]
 - [[_COMMUNITY_Community 641|Community 641]]
 - [[_COMMUNITY_Community 642|Community 642]]
 - [[_COMMUNITY_Community 643|Community 643]]
 - [[_COMMUNITY_Community 644|Community 644]]
-- [[_COMMUNITY_Community 645|Community 645]]
 - [[_COMMUNITY_Community 646|Community 646]]
 - [[_COMMUNITY_Community 647|Community 647]]
 - [[_COMMUNITY_Community 659|Community 659]]
@@ -780,11 +778,9 @@
 - [[_COMMUNITY_Community 783|Community 783]]
 - [[_COMMUNITY_Community 784|Community 784]]
 - [[_COMMUNITY_Community 785|Community 785]]
-- [[_COMMUNITY_Community 786|Community 786]]
 - [[_COMMUNITY_Community 787|Community 787]]
 - [[_COMMUNITY_Community 788|Community 788]]
 - [[_COMMUNITY_Community 789|Community 789]]
-- [[_COMMUNITY_Community 790|Community 790]]
 - [[_COMMUNITY_Community 791|Community 791]]
 - [[_COMMUNITY_Community 792|Community 792]]
 - [[_COMMUNITY_Community 793|Community 793]]
@@ -805,11 +801,7 @@
 - [[_COMMUNITY_Community 808|Community 808]]
 - [[_COMMUNITY_Community 809|Community 809]]
 - [[_COMMUNITY_Community 810|Community 810]]
-- [[_COMMUNITY_Community 811|Community 811]]
 - [[_COMMUNITY_Community 812|Community 812]]
-- [[_COMMUNITY_Community 813|Community 813]]
-- [[_COMMUNITY_Community 814|Community 814]]
-- [[_COMMUNITY_Community 815|Community 815]]
 - [[_COMMUNITY_Community 816|Community 816]]
 - [[_COMMUNITY_Community 817|Community 817]]
 - [[_COMMUNITY_Community 818|Community 818]]
@@ -817,76 +809,120 @@
 - [[_COMMUNITY_Community 820|Community 820]]
 - [[_COMMUNITY_Community 821|Community 821]]
 - [[_COMMUNITY_Community 822|Community 822]]
+- [[_COMMUNITY_Community 823|Community 823]]
+- [[_COMMUNITY_Community 824|Community 824]]
+- [[_COMMUNITY_Community 825|Community 825]]
+- [[_COMMUNITY_Community 826|Community 826]]
+- [[_COMMUNITY_Community 827|Community 827]]
+- [[_COMMUNITY_Community 828|Community 828]]
+- [[_COMMUNITY_Community 829|Community 829]]
+- [[_COMMUNITY_Community 830|Community 830]]
+- [[_COMMUNITY_Community 831|Community 831]]
+- [[_COMMUNITY_Community 832|Community 832]]
+- [[_COMMUNITY_Community 833|Community 833]]
+- [[_COMMUNITY_Community 834|Community 834]]
+- [[_COMMUNITY_Community 835|Community 835]]
+- [[_COMMUNITY_Community 836|Community 836]]
+- [[_COMMUNITY_Community 837|Community 837]]
+- [[_COMMUNITY_Community 838|Community 838]]
+- [[_COMMUNITY_Community 839|Community 839]]
+- [[_COMMUNITY_Community 840|Community 840]]
+- [[_COMMUNITY_Community 841|Community 841]]
+- [[_COMMUNITY_Community 842|Community 842]]
+- [[_COMMUNITY_Community 843|Community 843]]
+- [[_COMMUNITY_Community 844|Community 844]]
+- [[_COMMUNITY_Community 845|Community 845]]
+- [[_COMMUNITY_Community 846|Community 846]]
+- [[_COMMUNITY_Community 847|Community 847]]
+- [[_COMMUNITY_Community 848|Community 848]]
+- [[_COMMUNITY_Community 849|Community 849]]
+- [[_COMMUNITY_Community 850|Community 850]]
+- [[_COMMUNITY_Community 851|Community 851]]
+- [[_COMMUNITY_Community 852|Community 852]]
+- [[_COMMUNITY_Community 853|Community 853]]
+- [[_COMMUNITY_Community 854|Community 854]]
+- [[_COMMUNITY_Community 855|Community 855]]
+- [[_COMMUNITY_Community 856|Community 856]]
+- [[_COMMUNITY_Community 857|Community 857]]
+- [[_COMMUNITY_Community 858|Community 858]]
+- [[_COMMUNITY_Community 859|Community 859]]
+- [[_COMMUNITY_Community 860|Community 860]]
+- [[_COMMUNITY_Community 861|Community 861]]
+- [[_COMMUNITY_Community 862|Community 862]]
+- [[_COMMUNITY_Community 863|Community 863]]
+- [[_COMMUNITY_Community 864|Community 864]]
+- [[_COMMUNITY_Community 865|Community 865]]
+- [[_COMMUNITY_Community 866|Community 866]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `RiskManager` - 69 edges
-2. `QuestDBWriter` - 68 edges
-3. `Direction` - 65 edges
-4. `ExecutionSimulator` - 63 edges
-5. `MarketEvent` - 54 edges
-6. `timedelta` - 52 edges
-7. `PipelineOrchestrator` - 52 edges
-8. `ExecutionConfig` - 48 edges
-9. `EventType` - 47 edges
-10. `BackupManager` - 45 edges
+1. `QuestDBWriter` - 69 edges
+2. `RiskManager` - 69 edges
+3. `Direction` - 66 edges
+4. `ExecutionSimulator` - 64 edges
+5. `timedelta` - 58 edges
+6. `MarketEvent` - 55 edges
+7. `PipelineOrchestrator` - 53 edges
+8. `ExecutionConfig` - 49 edges
+9. `EventType` - 48 edges
+10. `BackupManager` - 46 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `str` --uses--> `PipelineOrchestrator`  [INFERRED]
-  main.py → src/ingestion/pipeline_orchestrator.py
-- `str` --uses--> `RiskManager`  [INFERRED]
-  main.py → src/risk/manager.py
-- `str` --uses--> `GoldDataFetcher`  [INFERRED]
-  main.py → src/ingestion/gold_fetcher.py
-- `str` --uses--> `ExecutionEngine`  [INFERRED]
-  main.py → src/execution/engine.py
-- `int` --uses--> `PipelineOrchestrator`  [INFERRED]
-  main.py → src/ingestion/pipeline_orchestrator.py
+- `str` --uses--> `Direction`  [INFERRED]
+  src/backtesting/model_strategies.py → D:/AI/Jim/src/backtesting/events.py
+- `run_paper_trading()` --calls--> `RegimeDetector`  [INFERRED]
+  D:/AI/Jim/main.py → check file/adx_regime_detector.py
+- `run_demo()` --calls--> `RegimeDetector`  [INFERRED]
+  D:/AI/Jim/main.py → check file/adx_regime_detector.py
+- `run_demo()` --calls--> `RegimeDetector`  [INFERRED]
+  D:/AI/Jim/JIM/main.py → check file/adx_regime_detector.py
+- `compute_current_signal()` --calls--> `RegimeDetector`  [INFERRED]
+  D:/AI/Jim/src/api/app.py → check file/adx_regime_detector.py
 
-## Communities (823 total, 262 thin omitted)
+## Communities (867 total, 288 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.06
-Nodes (45): broadcast_update(), ConfigUpdateRequest, get_inference_status(), get_live_signals(), get_model_weights(), get_risk_report(), inject_signal(), PaperTradingStartRequest (+37 more)
+Nodes (67): broadcast_update(), get_engine(), get_inference_status(), get_live_signals(), get_model_weights(), get_paper_trading_status(), get_performance_metrics(), get_portfolio_snapshot() (+59 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.07
-Nodes (88): BacktestConfig, Backtester, Phase 5: Backtester - Main Event Loop Orchestrator  This is the heart of the b, Run backtest for date range.                  Args:             start_date: B, Process new market data., Process trading signal., Calculate position size using Kelly Criterion.                  Kelly formula:, Create order from signal. (+80 more)
+Nodes (94): BacktestConfig, Backtester, Run backtest for date range.                  Args:             start_date: B, Process new market data., Process trading signal., Calculate position size using Kelly Criterion.                  Kelly formula:, Create order from signal., Reset daily P&L tracking if new day. (+86 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.04
-Nodes (90): CPCVAnalyzer, Combinatorial Purged Cross-Validation for time-series data.          Prevents, bootstrap_test(), calculate(), DeflatedSharpeCalculator, DSRResult, format_result(), Phase 5: Deflated Sharpe Ratio (DSR)  DSR corrects Sharpe Ratio for: 1. Numbe (+82 more)
+Cohesion: 0.05
+Nodes (72): CPCVAnalyzer, Combinatorial Purged Cross-Validation for time-series data.          Prevents, DeflatedSharpeCalculator, DSRResult, Deflated Sharpe Ratio result., Calculate Deflated Sharpe Ratio with statistical rigor., format_metrics(), MetricsCalculator (+64 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.03
-Nodes (59): event_loop(), Test suite for Enhancement #8: Dynamic Risk Adjustment  Tests cover: - Volati, Test realized volatility with insufficient data, Test VIX proxy with volatile returns, Test classify_volatility_regime() for normal volatility, Test classify_volatility_regime() for high volatility, Test classify_volatility_regime() for extreme volatility, Test CorrelationDetector initialization (+51 more)
+Nodes (81): correlation_detector(), dynamic_risk_manager(), event_loop(), Test suite for Enhancement #8: Dynamic Risk Adjustment  Tests cover: - Volati, Create DynamicRiskManager, Test VolatilityMetrics creation, Test VolatilityMetrics with extreme volatility, Test ModelConsensus with strong agreement (+73 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.06
-Nodes (42): AsyncPaperTradingClient, _default_handler(), example_async_monitoring(), example_basic_workflow(), example_configuration_update(), example_signal_injection(), example_websocket_monitoring(), PaperTradingClient (+34 more)
+Cohesion: 0.07
+Nodes (47): Any, bool, float, int, str, AsyncPaperTradingClient, _default_handler(), example_async_monitoring() (+39 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.03
-Nodes (57): event_loop(), Test suite for Enhancement #9: Comprehensive Stress Testing  Tests cover: - S, Test AssetShock with negative magnitude, Test adding shocks to scenario, Test ReverseStressResult creation, Test building 2008 Financial Crisis scenario, Test building 2020 COVID scenario, Test building flash crash scenario (+49 more)
+Nodes (82): event_loop(), Test suite for Enhancement #9: Comprehensive Stress Testing  Tests cover: - S, Test AssetShock creation, Test AssetShock with negative magnitude, Test StressScenario creation, Test adding shocks to scenario, Test StressScenario with complete metadata, Test PortfolioImpact creation (+74 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.05
-Nodes (40): CriticInput, MetaLabeler, Meta-Labeler (Critic Model) ============================ Two-model system: Tra, Convert CriticInput to feature vector., Train the Critic model on historical data.                  Args:, Get feature importance from the trained model., Output from the Trader (ensemble of models)., Input features for the Critic model. (+32 more)
+Cohesion: 0.07
+Nodes (29): CriticInput, Output from the Trader (ensemble of models)., Input features for the Critic model., TraderSignal, critic_input(), labeler(), Unit Tests: Meta-Labeler (Critic Model) =======================================, Test temporal encoding (hour + day of week). (+21 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.06
-Nodes (31): ABC, DisasterRecoveryManager, get_available_recovery_points(), get_recovery_status(), Disaster Recovery Manager - Point-in-time recovery and failover procedures  Ha, Manages disaster recovery operations          Responsibilities:     - Coordin, Initialize DisasterRecoveryManager                  Args:             logger:, Register recovery connector for a data tier (+23 more)
+Cohesion: 0.08
+Nodes (27): Any, bool, Logger, str, DisasterRecoveryManager, get_recovery_status(), Manages disaster recovery operations          Responsibilities:     - Coordin, Initialize DisasterRecoveryManager                  Args:             logger: (+19 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.09
-Nodes (31): QuestDBWriter, Convert a pandas timestamp/index to nanoseconds., Return float value if valid, else None., Write OHLCV DataFrame to QuestDB.          Args:             df: DataFrame wi, Write OHLCV data via ILP protocol., Fallback: write to local parquet file., Write macro-correlate DataFrames to QuestDB.          Each macro source (dxy,, Write FRED data (wide DataFrame with series columns) to QuestDB.          Conv (+23 more)
+Nodes (37): Any, bool, DataFrame, float, int, str, QuestDBWriter, QuestDB Writer ============== Writes time-series data to QuestDB via ILP (Infl (+29 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.07
-Nodes (29): COTParser, ETFFlowTracker, Alternative Data Sources ======================== Non-traditional data for gol, Download and parse a CFTC zip archive COT file., Parse COT text content and extract gold rows.          The CFTC short format i, Extract structured data from a COT CSV row., Generate synthetic COT data for development/testing., News sentiment scoring for gold using NewsAPI.      Uses the NewsAPI (newsapi. (+21 more)
+Cohesion: 0.10
+Nodes (25): DataFrame, float, int, Path, str, ETFFlowTracker, Download and parse a CFTC zip archive COT file., Parse COT text content and extract gold rows.          The CFTC short format i (+17 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.16
-Nodes (64): BackupTarget, BackupType, DataTier, BackupConnector, BackupMetadata, BackupStats, BackupStatus, BackupTarget (+56 more)
+Cohesion: 0.12
+Nodes (69): BackupTarget, BackupType, DataTier, BackupConnector, BackupMetadata, BackupStats, BackupStatus, BackupTarget (+61 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.04
@@ -897,8 +933,8 @@ Cohesion: 0.04
 Nodes (47): 1. Core Engine Module: `src/paper_trading/engine.py` (550 lines), 1. Signal Processing, 2. Position Sizing, 2. Risk Manager Module: `src/paper_trading/risk_manager.py` (220 lines), 3. Order Execution, 3. Unit Test Suite: `tests/test_paper_trading.py` (31 tests), 4. P&L Calculation, 5. Risk Management (+39 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.04
-Nodes (29): Tests for Enhancement #6: Model Performance Monitoring  Test coverage: - Pred, Test PerformanceDegradation, Test creating degradation alert, Test ConfidenceCalibrator, Test creating calibrator, Test calibration with perfect predictions, Test calibration with uncalibrated predictions, Test ModelPerformanceMonitor (+21 more)
+Cohesion: 0.07
+Nodes (21): PerformanceReport, Daily/Weekly/Monthly performance report, Tests for Enhancement #6: Model Performance Monitoring  Test coverage: - Pred, Test PerformanceDegradation, Test creating degradation alert, Test ConfidenceCalibrator, Test creating calibrator, Test calibration with perfect predictions (+13 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.04
@@ -913,8 +949,8 @@ Cohesion: 0.04
 Nodes (46): 1.1 Wavelet Signal Denoiser, 1.2 HMM Regime Detector, 2.1 LSTM Temporal Model, 2.2 Temporal Fusion Transformer (TFT), 3.1 Genetic Algorithm Framework, 3.2 Ensemble Stacking Meta-Learner, 4.1 Model Integration Pipeline, 4.2 Walk-Forward Backtesting (+38 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.06
-Nodes (31): MetricsExporter, Prometheus Metrics Exporter ============================ Exposes pipeline heal, Start the Prometheus HTTP metrics server in a background thread., Update all metrics from a PipelineReport dataclass.          Args:, Update data quality metrics from a consolidated quality report.          Args:, Update staleness for a data source.          Args:             source: Name o, Update feature drift status for a symbol., Fallback: log metrics when Prometheus is unavailable. (+23 more)
+Cohesion: 0.05
+Nodes (39): bool, str, Any, bool, float, int, str, MetricsExporter (+31 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.04
@@ -929,8 +965,8 @@ Cohesion: 0.04
 Nodes (29): Phase 1: Infrastructure Integration Tests =====================================, Test basic Redis connectivity., Test basic set/get operations., Test caching feature vectors (realistic scenario)., Test MinIO (object storage) connectivity., Test basic MinIO connectivity., Test QuestDB (time-series database) connectivity., Test bucket creation. (+21 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.08
-Nodes (22): Track regime switches and update cooldown counters., Track regime switches with anti-whipsaw confirmation.                  The HMM, Calculate position size using Dynamic Kelly Criterion.          f* = (p * b -, Calculate position size using Dynamic Kelly Criterion.          f* = (p * b -, Calculate pairs trading position sizes for both Gold and Silver legs simultaneou, Calculate pairs trading position sizes for both Gold and Silver legs simultaneou, Check all circuit breakers.          Args:             portfolio_value: Curre, Check all circuit breakers.          Args:             portfolio_value: Curre (+14 more)
+Cohesion: 0.07
+Nodes (26): bool, float, int, str, Track regime switches and update cooldown counters., Track regime switches with anti-whipsaw confirmation.                  The HMM, Calculate position size using Dynamic Kelly Criterion.          f* = (p * b -, Calculate position size using Dynamic Kelly Criterion.          f* = (p * b - (+18 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.04
@@ -945,12 +981,12 @@ Cohesion: 0.05
 Nodes (41): 10. How to Run, 11. Current State & Next Steps, 1. Project Vision & Philosophy, 2. Technology Stack, 3. System Architecture, 4. Phase-by-Phase Breakdown, 5.1 Data Pipeline (`src/ingestion/`), 5.2 Feature Engineering (`src/features/engine.py` — 710 lines) (+33 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.09
-Nodes (23): _fetch_single_yahoo(), MacroFetcher, Macro-Correlate Data Fetcher ============================= Fetches all macro v, Fetch a single macro feed by name (e.g., 'dxy', 'vix')., Fetch Federal Reserve Economic Data (FRED)., Convert FRED series dict to aligned DataFrame, forward-filled., Align all macro data to a base DataFrame's timezone-naive index., Fetches macro-correlate data from Yahoo Finance and FRED. (+15 more)
+Cohesion: 0.10
+Nodes (22): DataFrame, int, Path, Series, str, _fetch_single_yahoo(), Macro-Correlate Data Fetcher ============================= Fetches all macro v, Fetch a single macro feed by name (e.g., 'dxy', 'vix'). (+14 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.12
-Nodes (52): backtest(), compute_current_signal(), get_data_quality(), get_ensemble_prediction(), get_features(), get_gold_price(), get_gs_ratio(), get_model_performance() (+44 more)
+Cohesion: 0.09
+Nodes (36): compute_current_signal(), dashboard(), generic_exception_handler(), get_data_quality(), get_ensemble_prediction(), get_features(), get_gold_price(), get_gs_ratio() (+28 more)
 
 ### Community 27 - "Community 27"
 Cohesion: 0.05
@@ -961,16 +997,16 @@ Cohesion: 0.05
 Nodes (40): code:bash (# 1. Navigate to project folder), code:block2 (============================================================), code:block3 (Every Minute:), 🆘 Common Problems & Solutions, ⚠️ CRITICAL WARNINGS, 📊 Expected Results, 🎯 First Day Checklist, 🚀 Get Started in 3 Steps (+32 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.10
-Nodes (27): BacktestMetrics, PredictionRequest, Request prediction from ensemble., Backtest performance metrics., BaseModel, CircuitBreakers, DatabaseConfig, Kelly (+19 more)
+Cohesion: 0.08
+Nodes (36): PredictionRequest, Request prediction from ensemble., BaseModel, CircuitBreakers, DatabaseConfig, Kelly, MetaLabel, MinIO (+28 more)
 
 ### Community 30 - "Community 30"
 Cohesion: 0.06
-Nodes (31): BackupManager, create_backup(), delete_backup(), Main orchestrator for backup operations          Manages automated backups acr, Register a backup connector for a target, Create backups for all registered targets                  Returns:, Create backup for a specific policy, Verify all existing backups                  Returns:             Dict mappin (+23 more)
+Nodes (49): Any, bool, datetime, float, int, Logger, str, BackupManager (+41 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.11
-Nodes (17): empty(), latest(), previous(), PriceSnapshot, RatioMonitor, silver_feed_adapter.py ====================== Real-time XAU + XAG price feed for, Background price feed for XAU and XAG.     Maintains current (T0) and previous (, Launch background fetch thread. (+9 more)
+Nodes (17): empty(), latest(), previous(), PriceSnapshot, RatioMonitor, silver_feed_adapter.py ====================== Real-time XAU + XAG price feed f, Background price feed for XAU and XAG.     Maintains current (T0) and previous, Launch background fetch thread. (+9 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.05
@@ -989,8 +1025,8 @@ Cohesion: 0.05
 Nodes (38): 3.0 Overview, 3.10 Files & Locations, 3.11 Next Phase: Phase 4 (Risk Management & Meta-Labeling), 3.6 Deliverables Checklist - ✅ ALL COMPLETE, 3.7 Model Architecture Details, 3.8 Performance Expectations, 3.9 Usage Examples, code:block10 (Static Inputs (regime, day_of_week, ...)) (+30 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.11
-Nodes (18): Get list of engineered feature column names (exclude raw OHLCV)., Multi-horizon returns., Realized volatility at multiple scales., Momentum and mean-reversion signals., Support/resistance and range features., Volume-based features: OBV, VWAP, volume ratios, divergence., Transforms raw OHLCV data into a rich feature matrix.     All features are comp, Time-based cyclical features (no lookahead). (+10 more)
+Cohesion: 0.07
+Nodes (46): DataFrame, FeatureEngine, Feature Engineering Pipeline ============================= Generates 200+ feat, float, int, ndarray, Series, str (+38 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.05
@@ -1001,20 +1037,20 @@ Cohesion: 0.05
 Nodes (38): **A. Data Pipeline (Phase 2) — 75% COMPLETE** ✅, **A. Docker Stack (6 services)**, **A. Entry Point: `main.py`**, **B. Feature Engineering (Phase 2) — 95% COMPLETE** ✅, **B. Key Modules to Study (In Order)**, **B. REST API (Phase 2.5)** ✅, **C. C++ Execution Engine**, **C. GPU Acceleration (Phase 2.5)** ✅ (+30 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.10
-Nodes (43): fetch_live_gold_data(), fetch_metalpriceapi_gs_spot(), Live Inference Loop ==================== Background asyncio task that continuo, Fetch real-time spot prices for Gold and Silver from Gold-API.com,     with fal, Wavelet denoiser signal: trend direction from denoised price series., Wavelet denoiser signal: uses the real WaveletDenoiser class., HMM regime detector: uses the real RegimeDetector.generate_signal()., HMM regime detector: market regime → regime-aware signal. (+35 more)
+Cohesion: 0.06
+Nodes (63): fetch_live_gold_data(), fetch_metalpriceapi_gs_spot(), Live Inference Loop ==================== Background asyncio task that continuo, Fetch real-time spot prices for Gold and Silver from Gold-API.com,     with fal, Wavelet denoiser signal: trend direction from denoised price series., Wavelet denoiser signal: uses the real WaveletDenoiser class., HMM regime detector: uses the real RegimeDetector.generate_signal()., HMM regime detector: uses the real RegimeDetector.generate_signal(). (+55 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.15
-Nodes (31): Candle, ConnectionStatus, FeedMetrics, MessageType, Quote, Real-Time Feed Manager - WebSocket-based market data ingestion  Provides: - W, Feed performance metrics, WebSocket message types (+23 more)
+Cohesion: 0.13
+Nodes (39): Candle, ConnectionStatus, FeedMetrics, MessageType, Quote, Real-Time Feed Manager - WebSocket-based market data ingestion  Provides: - W, Feed performance metrics, WebSocket message types (+31 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.03
-Nodes (114): get_engine(), Paper Trading API Routes - Phase 6B Implementation (COMPLETE) =================, Get the paper trading engine instance (for testing injection)., Get the paper trading engine instance (for testing injection)., Set the paper trading engine instance (for testing injection)., Set the paper trading engine instance (for testing injection)., set_engine(), ExecutionConfig (+106 more)
+Cohesion: 0.02
+Nodes (102): Background price feed for XAU and XAG.     Maintains current (T0) and previous, Launch background fetch thread., SilverFeedAdapter, get_weight_adjuster(), Get or create the global DynamicWeightAdjuster singleton., Get or create the global DynamicWeightAdjuster singleton., ModelSignal, PaperTradingConfig (+94 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.08
-Nodes (32): avg_losing_trade(), avg_trade_duration_hours(), avg_trade_pnl(), avg_winning_trade(), current_drawdown(), current_drawdown_dollars(), gross_pnl(), is_winning_trade() (+24 more)
+Cohesion: 0.11
+Nodes (37): avg_losing_trade(), avg_trade_duration_hours(), avg_trade_pnl(), avg_winning_trade(), current_drawdown(), current_drawdown_dollars(), gross_pnl(), is_winning_trade() (+29 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.05
@@ -1025,12 +1061,12 @@ Cohesion: 0.11
 Nodes (30): apiFetch(), apiPost(), chartDefaults, equityData, formatCurrency(), formatDuration(), injectSignal(), loadGoldChart() (+22 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.08
-Nodes (34): AssetShock, classify_resilience(), Enhancement #9: Comprehensive Stress Testing - Scenario-based testing framework, Results from reverse stress testing, Build standard stress test scenarios, Execute stress test scenarios, Type of stress test scenario, Analyze portfolio resilience to stress (+26 more)
+Cohesion: 0.11
+Nodes (32): float, str, AssetShock, calculate_resilience_score(), PortfolioImpact, Enhancement #9: Comprehensive Stress Testing - Scenario-based testing framework, Results from executing a stress test scenario, Results from reverse stress testing (+24 more)
 
 ### Community 46 - "Community 46"
-Cohesion: 0.09
-Nodes (25): ExecutionSignal, Position, PositionManager, Position Manager ================ Manages the complete position lifecycle: -, Open a new position after all checks pass.                  Args:, Update position P&L and check exit conditions.                  Returns:, Active trading position., Close an open position.                  Returns:             Closed Position (+17 more)
+Cohesion: 0.08
+Nodes (30): float, int, str, ExecutionSignal, Position, PositionManager, Position Manager ================ Manages the complete position lifecycle: -, Open a new position after all checks pass.                  Args: (+22 more)
 
 ### Community 47 - "Community 47"
 Cohesion: 0.05
@@ -1049,20 +1085,20 @@ Cohesion: 0.05
 Nodes (36): Code Metrics, Critical Path (Phase 6 - Paper Trading Ready), Cross-Phase Enhancements 🔄, 📊 Current Project Status, 📝 Documentation Updates Made, 🔍 Enhancement Analysis by Phase, 📈 Enhancement Priority Matrix, 📋 Executive Summary (+28 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.08
-Nodes (21): PipelineOrchestrator, Orchestrates the full data acquisition and feature generation pipeline.      M, main(), int, str, Execute the data acquisition pipeline., Schedule daily pipeline runs at specified time (UTC)., run_pipeline() (+13 more)
+Cohesion: 0.06
+Nodes (32): int, str, bool, str, str, PipelineOrchestrator, PipelineReport, Pipeline Orchestrator ===================== Central coordinator for the Phase (+24 more)
 
 ### Community 52 - "Community 52"
 Cohesion: 0.06
-Nodes (36): SLAViolation, event_loop(), mock_chaos_workload(), mock_workload(), Test suite for Enhancement #11: Extended Testing & Runbooks  Tests cover: - L, Test LoadProfile enum values, Test ChaosEventType enum values, Test SLAMetric enum values (+28 more)
+Nodes (51): event_loop(), load_test_config(), mock_chaos_workload(), mock_workload(), Test suite for Enhancement #11: Extended Testing & Runbooks  Tests cover: - L, Test LoadProfile enum values, Test ChaosEventType enum values, Test SLAMetric enum values (+43 more)
 
 ### Community 53 - "Community 53"
 Cohesion: 0.12
-Nodes (19): DataQualityMonitor, QualityAlert, Data Quality Monitor ==================== Validates data integrity across all, Check if a data source is stale (hasn't updated recently)., Verify timestamp alignment across multiple data sources., A data quality issue found during validation., Monitor if Gold/Macro correlation deviates from historical., Get Prometheus-compatible metrics dict. (+11 more)
+Nodes (25): any, DataFrame, datetime, float, int, str, DataQualityMonitor, QualityAlert (+17 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.12
-Nodes (27): DataQualityMonitor, DistributionCalculator, DriftAlert, DriftMetrics, DriftSeverity, DriftType, FeatureDistribution, Feature Drift Detection - Monitor data quality and feature distributions  Prov (+19 more)
+Cohesion: 0.22
+Nodes (21): DataQualityMonitor, DistributionCalculator, DriftAlert, DriftMetrics, DriftSeverity, DriftType, Feature Drift Detection - Monitor data quality and feature distributions  Prov, Metrics for drift detection (+13 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.06
@@ -1077,32 +1113,32 @@ Cohesion: 0.06
 Nodes (34): 1. Created Single Source of Truth, 2. Created File Organization Guide, 3. Created Cleanup Plan, 4. Updated Core Documents, 5. Preserved Phase Details, 6. Clarified Requirements Files, After (Clear), Before (Confusing) (+26 more)
 
 ### Community 58 - "Community 58"
-Cohesion: 0.07
-Nodes (34): Catalog of all discovered signals, SignalCatalog, event_loop(), Test suite for Phase 7: Team & Operations  Tests cover: - TeamRole and Operat, Test OperationFrequency enum values, Test ModelChangeStatus enum values, Test IncidentSeverity enum values, Test generating performance report (+26 more)
+Cohesion: 0.04
+Nodes (77): CodeReview, ModelChangeRequest, Model governance change request, Catalog of all discovered signals, SignalCatalog, event_loop(), governance_manager(), incident_manager() (+69 more)
 
 ### Community 59 - "Community 59"
 Cohesion: 0.06
 Nodes (33): 1. **metrics.py** (200 lines), 2. **deflated_sharpe.py** (170 lines), 3. **cpcv.py** (150 lines), 4. **report_generator.py** (200 lines), 5. **__init__.py** (50 lines - Updated), code:block1 (TestWalkForwardAnalyzer (2 tests)), code:block2 (TestFullBacktest (2 tests)), code:block3 (MarketEvent → Strategy → Signal → Order → Execution → Fill →) (+25 more)
 
 ### Community 60 - "Community 60"
-Cohesion: 0.11
-Nodes (20): date, ArchivalTask, is_overdue(), LoggingNotifier, notify_completed(), notify_failed(), notify_started(), Archival Scheduler - Orchestrates scheduled data archival operations  Manages (+12 more)
+Cohesion: 0.12
+Nodes (22): bool, datetime, float, str, date, ArchivalTask, is_overdue(), notify_completed() (+14 more)
 
 ### Community 61 - "Community 61"
-Cohesion: 0.10
-Nodes (25): _default_stress_scenarios(), GPUVaRCalculator, GPU Monte Carlo VaR Calculator =============================== Compute Value-a, GPU-accelerated Monte Carlo simulation., CPU-based Monte Carlo simulation., Run predefined stress scenarios and report P&L impact.                  Args:, Value-at-Risk calculation result., Pre-defined stress test scenario. (+17 more)
+Cohesion: 0.12
+Nodes (21): float, int, ndarray, str, Risk management and position sizing., _default_stress_scenarios(), GPU Monte Carlo VaR Calculator =============================== Compute Value-a, GPU-accelerated Monte Carlo simulation. (+13 more)
 
 ### Community 62 - "Community 62"
 Cohesion: 0.06
 Nodes (32): 1. Operational Procedures Documentation ✅, 2. Production Monitoring Guide ✅, 3. Troubleshooting Guide ✅, 4. Documentation Updates ✅, code:block1 (Week 1 (May 6-12):), code:block2 (README.md → PROJECT_STATUS.md → ROADMAP.md), code:block3 (OPERATIONAL_PROCEDURES.md → PRODUCTION_MONITORING.md → TROUB), code:block4 (QUICK_START_PIPELINE.md → GPU_ACCELERATION_AND_REST_API.md →) (+24 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.10
-Nodes (14): FeedConnector, FeedType, Abstract base for feed connections, Unsubscribe from symbols, Get next message from feed, Register a feed connector                  Args:             feed_type: Type, Connect to feed with automatic retry                  Args:             feed_, Unsubscribe from symbols (+6 more)
+Cohesion: 0.07
+Nodes (30): Any, bool, str, FeedConnector, FeedType, MockFeedConnector, Abstract base for feed connections, Unsubscribe from symbols (+22 more)
 
 ### Community 64 - "Community 64"
-Cohesion: 0.11
-Nodes (18): ModelPerformanceRecord, Dynamic Model Weight Adjuster ============================== Real-world-style re, Initialize the weight adjuster., Calculate current model weights.          Args:             regime: Current mark, Record a trade result for performance tracking.          Args:             model, Get a summary of current weights and model performance., Check if we have enough trade history for performance adaptation., Adjust weights based on each model's recent rolling Sharpe ratio.          Uses (+10 more)
+Cohesion: 0.08
+Nodes (30): DynamicWeightAdjuster, ModelPerformanceRecord, Dynamic Model Weight Adjuster ============================== Real-world-style, Production-grade dynamic model weight allocator.      Combines three weight sour, Production-grade dynamic model weight allocator.      Combines three weight so, Initialize the weight adjuster., Initialize the weight adjuster., Calculate current model weights.          Args:             regime: Current mark (+22 more)
 
 ### Community 65 - "Community 65"
 Cohesion: 0.06
@@ -1113,60 +1149,60 @@ Cohesion: 0.06
 Nodes (31): 1. Complete REST API (10 Endpoints), 2. WebSocket Endpoint (Real-Time), 3. Test Coverage, 4. Documentation, 5. Client Implementations, 6. Router Integration, 7. Completion Report, Access Swagger UI (+23 more)
 
 ### Community 67 - "Community 67"
-Cohesion: 0.13
-Nodes (19): FeatureStore, Get the most recent feature vector for a symbol., Get recent feature history as a DataFrame., Detect feature drift by comparing recent vs historical distributions., Get feature store metadata., Redis-backed feature store for real-time model serving.      Dual-mode: Redis, Lazy-connect to Redis., Check if Redis is reachable. (+11 more)
+Cohesion: 0.12
+Nodes (25): Any, bool, DataFrame, float, int, str, FeatureStore, Redis Feature Store =================== Real-time feature serving layer for ML (+17 more)
 
 ### Community 68 - "Community 68"
-Cohesion: 0.09
-Nodes (23): PipelineReport, Pipeline Orchestrator ===================== Central coordinator for the Phase, Execute the pipeline in the specified mode.          Args:             mode:, Run a pipeline step with retry logic., Result of a single pipeline step., Full pipeline execution report., StepResult, QuestDB Writer ============== Writes time-series data to QuestDB via ILP (Infl (+15 more)
+Cohesion: 0.18
+Nodes (13): bool, int, str, Check if QuestDB is reachable., Execute SQL via QuestDB HTTP API with retries for robust startup behavior., Create a single table if it doesn't exist.          Args:             table_n, Create all tables defined in SCHEMAS.          Returns:             Dict of t, List all tables in QuestDB. (+5 more)
 
 ### Community 69 - "Community 69"
-Cohesion: 0.14
-Nodes (24): DataType, ArchivalRecord, ArchivalStatus, Record of an archival operation, Abstract base for storage backend connections, Register a storage connector for a backend, Storage backend types, Archival operation status (+16 more)
+Cohesion: 0.12
+Nodes (41): DataType, ArchivalRecord, ArchivalStats, ArchivalStatus, DataRetentionPolicy, Record of an archival operation, Statistics for archival operations, Abstract base for storage backend connections (+33 more)
 
 ### Community 70 - "Community 70"
-Cohesion: 0.11
-Nodes (22): Any, str, Serialize to dictionary, Single step in a runbook, Serialize to dictionary, Library of operational runbooks, Create deployment runbook, Create incident response runbook (+14 more)
+Cohesion: 0.13
+Nodes (20): Any, str, Any, str, Serialize to dictionary, Check metrics against SLA thresholds, Establish performance baseline, Single step in a runbook (+12 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.06
 Nodes (30): code:block1 (Mon: Infrastructure (containers, health, pooling)), code:block2 (Mon-Wed: Advanced metrics + risk framework), code:block3 (Mon: Data repair engine), code:block4 (Mon-Tue: Hyperparameter tuning), code:block5 (Mon-Tue: Parallel backtesting), 🔴 CRITICAL PRIORITIES (Week 1), Data Pipeline, 📖 DOCUMENTATION (+22 more)
 
 ### Community 72 - "Community 72"
-Cohesion: 0.12
-Nodes (21): ArchivalTask, Abstract base for schedule notifications, Status of scheduled archival task, Strategy for retrying failed operations, RetryStrategy, ScheduleNotifier, ScheduleStatus, MockNotifier (+13 more)
+Cohesion: 0.15
+Nodes (25): bool, datetime, str, LoggingNotifier, Abstract base for schedule notifications, Default notifier that logs to logger, Status of scheduled archival task, Strategy for retrying failed operations (+17 more)
 
 ### Community 73 - "Community 73"
 Cohesion: 0.06
-Nodes (16): Crisis regime should produce smaller position than normal., TestRiskManager, Tests for the risk management system., Positive edge should give positive position size., No edge should give zero position size., Growth regime should produce larger position than normal., Position should never exceed max_position_pct., Should halt after hitting daily loss limit. (+8 more)
+Nodes (18): Crisis regime should produce smaller position than normal., TestRiskManager, Crisis regime should produce smaller position than normal., TestRiskManager, Tests for the risk management system., Positive edge should give positive position size., No edge should give zero position size., Growth regime should produce larger position than normal. (+10 more)
 
 ### Community 74 - "Community 74"
 Cohesion: 0.07
 Nodes (29): dependencies, autoprefixer, lucide-react, postcss, react, react-dom, react-is, react-router-dom (+21 more)
 
 ### Community 75 - "Community 75"
-Cohesion: 0.14
-Nodes (22): archive_data(), average_duration_ms(), DataType, delete_data(), query_data(), Data Lifecycle Manager - Automatic data movement between storage tiers  Manage, Get tier that should contain data from given date, Archive data for a specific date across all data types                  Args: (+14 more)
+Cohesion: 0.15
+Nodes (30): bool, datetime, float, int, Logger, str, archive_data(), average_duration_ms() (+22 more)
 
 ### Community 76 - "Community 76"
-Cohesion: 0.07
-Nodes (16): Test scaling with position size., Test longer time horizons., Test suite for GPUVaRCalculator., Test that more scenarios improve accuracy., Test default stress scenarios., Test with custom stress scenarios., Test with zero position., Test high price, low unit count. (+8 more)
+Cohesion: 0.06
+Nodes (25): bool, GPUVaRCalculator, GPU-accelerated Monte Carlo VaR and stress testing.          Scenarios:     -, Args:             use_gpu: Whether to use GPU (falls back to CPU if not availab, bool, calculator(), Unit Tests: GPU Monte Carlo VaR Calculator ====================================, Test scaling with position size. (+17 more)
 
 ### Community 77 - "Community 77"
 Cohesion: 0.08
-Nodes (24): lifespan(), Lifespan context manager for startup and shutdown., float, int, ndarray, Series, str, get_gpu_accelerators() (+16 more)
+Nodes (30): float, int, ndarray, Series, str, firwin(), lfilter(), spectrogram() (+22 more)
 
 ### Community 78 - "Community 78"
-Cohesion: 0.08
-Nodes (25): int, ChaosEvent, ChaosTestResult, ChaosTestRunner, Chaos test event definition, Result from chaos testing, Framework for chaos/fault injection testing, Run chaos test with specified events (+17 more)
+Cohesion: 0.18
+Nodes (10): ChaosTestRunner, Framework for chaos/fault injection testing, chaos_test_runner(), Test ChaosTestRunner creation, Test running chaos test, Test chaos testing workflow, Create ChaosTestRunner, test_chaos_test_runner_creation() (+2 more)
 
 ### Community 79 - "Community 79"
-Cohesion: 0.10
-Nodes (17): AdvancedHealthMonitor, Advanced health monitoring system for Mini-Medallion          Tracks:     - S, Test advanced health monitor, Test creating health monitor, Test monitor with service checks, Test monitor with failing health check, Test recording endpoint latency, Test registering connection pool (+9 more)
+Cohesion: 0.07
+Nodes (20): AdvancedHealthMonitor, Advanced health monitoring system for Mini-Medallion          Tracks:     - S, Run all health checks and return comprehensive report                  Returns, Run individual service check, Get system resource metrics, Add a service dependency, Test advanced health monitor, Test creating health monitor (+12 more)
 
 ### Community 80 - "Community 80"
-Cohesion: 0.04
-Nodes (50): create_strategy(), EnsembleStrategy, GeneticStrategy, HMMStrategy, LSTMStrategy, Phase 5 Week 3: Model Strategies - Wraps Phase 3 Models as Trading Strategies, Trading strategy using LSTM Temporal model., Initialize LSTM strategy.                  Args:             sequence_length: (+42 more)
+Cohesion: 0.14
+Nodes (21): create_strategy(), Factory function to create strategy instances.          Args:         model_n, str, datetime, float, int, str, generate_realistic_market_data() (+13 more)
 
 ### Community 81 - "Community 81"
 Cohesion: 0.07
@@ -1178,51 +1214,47 @@ Nodes (27): code:block1 (src/), Enhancement #10: Logging & Observability (4-5 da
 
 ### Community 83 - "Community 83"
 Cohesion: 0.11
-Nodes (17): ArchivalScheduler, Orchestrates scheduled data archival operations          Responsibilities:, Get all archival tasks, MockDataLifecycleManager, Test creating a scheduler, Test scheduler with custom configuration, Integration tests for archival scheduler, Test running archival for a specific date (+9 more)
+Nodes (13): ArchivalScheduler, Orchestrates scheduled data archival operations          Responsibilities:, Get all archival tasks, Integration tests for archival scheduler, Test running archival for a specific date, Test that tasks are properly tracked, Test handling of archival failures, Test retry logic on failure (+5 more)
 
 ### Community 84 - "Community 84"
-Cohesion: 0.11
-Nodes (18): fetch_historical(), fetch_historical_bulk(), Phase 6: Data Quality & Imputation Engine.         Automatically repairs missin, Fetch all gold-related symbols in batch.          Returns:             Dict o, Fetch only new data since last_timestamp.          Args:             symbol:, Fetch macro-correlate data (DXY, VIX, TLT, TIP).         Delegates to MacroFetc, Fetches gold price data from Yahoo Finance (dev) and     premium feeds (product, Fetch Federal Reserve Economic Data (FRED) series.         Delegates to MacroFe (+10 more)
+Cohesion: 0.09
+Nodes (24): DataFrame, datetime, GoldDataFetcher, Gold Data Fetcher ================= Fetches historical and live gold price dat, int, Path, str, fetch_historical() (+16 more)
 
 ### Community 85 - "Community 85"
-Cohesion: 0.13
-Nodes (19): calculate_atr(), calculate_bollinger_bands(), calculate_ema(), calculate_macd(), calculate_rsi(), calculate_sma(), Streaming Features - Real-time feature computation  Provides: - On-demand fea, Add candle and update features                  Args:             symbol: Sto (+11 more)
+Cohesion: 0.50
+Nodes (3): bool, Check if window is empty, bool
 
 ### Community 86 - "Community 86"
 Cohesion: 0.07
 Nodes (26): 1. DataLifecycleManager, 2. ArchivalScheduler, 3. RetentionPolicy, Architecture, code:block1 (┌───────────────────────────────────────────────────────────), code:python (@dataclass), code:block3 (src/infrastructure/), code:block4 (Day 1: Architecture & Design) (+18 more)
 
 ### Community 87 - "Community 87"
-Cohesion: 0.13
-Nodes (12): ModelGovernanceManager, Serialize to dictionary, Deactivate team member, Record operation execution, Manages model change requests and governance, Mark backtest as complete, Approve production deployment, Any (+4 more)
+Cohesion: 0.08
+Nodes (26): Any, bool, float, str, ModelGovernanceManager, Serialize to dictionary, Deactivate team member, Get team composition summary (+18 more)
 
 ### Community 88 - "Community 88"
-Cohesion: 0.09
-Nodes (20): Manages team members and organization, Get all members with specific role, Get all active members, Get team composition summary, Calculate average tenure in days, TeamManager, TeamMember, TeamRole (+12 more)
+Cohesion: 0.04
+Nodes (29): Phase 1: Infrastructure Integration Tests =====================================, Test basic Redis connectivity., Test basic set/get operations., Test caching feature vectors (realistic scenario)., Test MinIO (object storage) connectivity., Test basic MinIO connectivity., Test QuestDB (time-series database) connectivity., Test bucket creation. (+21 more)
 
 ### Community 89 - "Community 89"
 Cohesion: 0.08
 Nodes (24): 1. Meta-Labeler (Critic Model) ✅, 2. GPU Monte Carlo VaR ✅, 3. Position Manager ✅, 4. Enhanced Risk Manager ✅, 5. Module Integration ✅, 📊 Architecture: Phase 4 Position Lifecycle, code:python (critic = MetaLabeler(threshold=0.65)), code:python (var_calc = GPUVaRCalculator(use_gpu=True)) (+16 more)
 
-### Community 90 - "Community 90"
-Cohesion: 0.12
-Nodes (18): DataRetentionPolicy, _get_default_policies(), Initialize DataLifecycleManager                  Args:             policies:, Configuration for a single retention tier, Complete retention policy for a data type, RetentionTier, Logger, Test tier creation from dict (+10 more)
-
 ### Community 91 - "Community 91"
 Cohesion: 0.10
-Nodes (16): DataLifecycleManager, Main orchestrator for managing data lifecycle across storage tiers          Re, Record archival operation, Get all archival records, Test DataLifecycleManager functionality, Test creating a manager, Test default policies are correct, Test registering a storage connector (+8 more)
+Nodes (12): DataLifecycleManager, Main orchestrator for managing data lifecycle across storage tiers          Re, Register a storage connector for a backend, Verify integrity of all archived data, Verify archives for a single data type, Record archival operation, Get current archival statistics, Get all archival records (+4 more)
 
 ### Community 92 - "Community 92"
-Cohesion: 0.11
-Nodes (17): Record a new trade.                  Args:             trade: TradeExecution, Record a closed trade and update consecutive loss tracking.                  A, Update daily state (call at market open each day).                  Args:, Hard reset all circuit breakers. Used when a user manually overrides a trading h, Get current risk metrics., Generate comprehensive risk report., Check for any risk limit violations., Risk management constraints. (+9 more)
+Cohesion: 0.10
+Nodes (21): bool, float, str, Risk Management for Paper Trading ================================== Enforces, Record a new trade.                  Args:             trade: TradeExecution, Record a closed trade and update consecutive loss tracking.                  A, Update daily state (call at market open each day).                  Args:, Hard reset all circuit breakers. Used when a user manually overrides a trading h (+13 more)
 
 ### Community 93 - "Community 93"
-Cohesion: 0.11
-Nodes (15): MockFeedConnector, Mock feed connector for testing, Manages WebSocket connections to market data feeds          Example:, Get connection status, Get subscribed symbols for feed, RealTimeFeedManager, Test feed connector connection, Test RealTimeFeedManager (+7 more)
+Cohesion: 0.04
+Nodes (29): Phase 1: Infrastructure Integration Tests =====================================, Test basic Redis connectivity., Test basic set/get operations., Test caching feature vectors (realistic scenario)., Test MinIO (object storage) connectivity., Test basic MinIO connectivity., Test QuestDB (time-series database) connectivity., Test bucket creation. (+21 more)
 
 ### Community 94 - "Community 94"
-Cohesion: 0.18
-Nodes (18): build_cascade_scenarios(), build_correlation_scenarios(), build_fat_tail_scenarios(), build_historical_scenarios(), build_hypothetical_scenarios(), Run scenario against portfolio.                  Args:             scenario:, Run multiple scenarios concurrently, Initialize ReverseStressTester.                  Args:             max_accept (+10 more)
+Cohesion: 0.19
+Nodes (22): float, int, str, build_cascade_scenarios(), build_correlation_scenarios(), build_fat_tail_scenarios(), build_historical_scenarios(), build_hypothetical_scenarios() (+14 more)
 
 ### Community 95 - "Community 95"
 Cohesion: 0.08
@@ -1237,12 +1269,12 @@ Cohesion: 0.08
 Nodes (24): 1. Full Pipeline Testing ✅, 2. All Execution Modes Validated ✅, 3. Health Monitoring System ✅, 4. Error Handling & Resilience ✅, 5. Data Consistency Validation ✅, code:block1 (Phase 2: Data Acquisition & Pipeline), code:block2 (Current:  ███████████████░░░░░░░░░░░░░░░░░░░░░░░░ 85%), 📁 Deliverables Created (+16 more)
 
 ### Community 98 - "Community 98"
-Cohesion: 0.09
-Nodes (19): Operation, OperationsScheduler, Manages daily/weekly/monthly operations, Schedule next execution time, Get operations due for execution, Get operations summary, Calculate average success rate, operations_scheduler() (+11 more)
+Cohesion: 0.14
+Nodes (13): Operation, OperationsScheduler, Manages daily/weekly/monthly operations, Schedule next execution time, Get operations due for execution, Test Operation creation, Test executing operation, Test getting operations due (+5 more)
 
 ### Community 99 - "Community 99"
-Cohesion: 0.09
-Nodes (21): float, BenchmarkResult, LoadTestMetrics, PerformanceBaseline, Baseline performance metrics for regression detection, Performance benchmark result, Run load test with specified configuration, Execute single request and record metrics (+13 more)
+Cohesion: 0.04
+Nodes (44): 1. **Automatic Gold Price Data Download System**, 2. **Incremental Update Logic**, 3. **Multiple Storage Formats**, 4. **Seamless Integration**, code:block1 (DAILY DATA (2000-present)), code:block10 (1. User runs: python main.py / .\run_jim.ps1 / scripts/run_p), code:json ({), code:bash (# Automatic startup (recommended)) (+36 more)
 
 ### Community 100 - "Community 100"
 Cohesion: 0.08
@@ -1269,44 +1301,44 @@ Cohesion: 0.08
 Nodes (23): 1. The Five Guiding Principles, 2.1 The Epistemology of "What" vs. "Why", 2.2 Signal vs. Noise, 2.3 Never Overwrite the Model, 2. The "Scientific" Approach to Markets (Radical Empiricism), 3.1 Anti-Silo Culture, 3.2 Collaborative Floor, 3.3 Retaining Talent ("The Secret Sauce") (+15 more)
 
 ### Community 106 - "Community 106"
-Cohesion: 0.13
-Nodes (22): AlternativeDataManager, Unified manager for all alternative data sources., _backfill_alternative(), _backfill_gold(), _backfill_macro(), _check_existing_data(), _generate_features(), main() (+14 more)
+Cohesion: 0.16
+Nodes (20): bool, Path, str, _backfill_alternative(), _backfill_gold(), _backfill_macro(), _check_existing_data(), _generate_features() (+12 more)
 
 ### Community 107 - "Community 107"
 Cohesion: 0.04
 Nodes (46): 1. The Five Guiding Principles, 2.1 The Epistemology of "What" vs. "Why", 2.2 Signal vs. Noise, 2.3 Never Overwrite the Model, 2. The "Scientific" Approach to Markets (Radical Empiricism), 3.1 Anti-Silo Culture, 3.2 Collaborative Floor, 3.3 Retaining Talent ("The Secret Sauce") (+38 more)
 
 ### Community 108 - "Community 108"
-Cohesion: 0.08
-Nodes (14): Get RPO (Recovery Point Objective)         Typically 24 hours (1 day backup fre, Close position with profit., Calculate portfolio statistics correctly., Data handler can generate mock data., Test metrics calculation with real backtest data., Calculate metrics from equity curve., TestMetricsIntegration, Staleness check should detect old data. (+6 more)
+Cohesion: 0.07
+Nodes (15): Get RPO (Recovery Point Objective)         Typically 24 hours (1 day backup fre, Close position with profit., Calculate portfolio statistics correctly., Data handler can generate mock data., Test getting tier for recent data, Test getting tier for older data, Test getting tier for data beyond retention, Test creating an archival record (+7 more)
 
 ### Community 109 - "Community 109"
 Cohesion: 0.09
-Nodes (17): Weekly research seminar record, Get count of changes at each stage, Manages research seminars and signal catalog, Schedule research seminar, Get upcoming seminars, Register new signal in catalog, Get signal catalog summary, Calculate average discovery Sharpe ratio (+9 more)
+Nodes (29): GoldDataManager, bool, DataFrame, datetime, int, Path, str, Gold Data Manager - Incremental Data Download & Management ==================== (+21 more)
 
 ### Community 110 - "Community 110"
-Cohesion: 0.09
-Nodes (18): DynamicRiskAdjustment, DynamicRiskManager, Initialize CorrelationDetector.                  Args:             window_siz, Orchestrate dynamic risk adjustment.          Real-time Kelly coefficient adju, Update model consensus metrics.                  Args:             consensus_, Calculate comprehensive dynamic risk adjustment.                  Combines:, Get recent adjustment history, Get most recent adjustment (+10 more)
+Cohesion: 0.20
+Nodes (8): DynamicRiskAdjustment, Calculate comprehensive dynamic risk adjustment.                  Combines:, Get most recent adjustment, Recommended Kelly adjustment, Test DynamicRiskAdjustment creation, Test DynamicRiskAdjustment with risk reduction, test_dynamic_risk_adjustment_creation(), test_dynamic_risk_adjustment_with_reduction()
 
 ### Community 111 - "Community 111"
-Cohesion: 0.11
-Nodes (16): bool, float, PositionState, Risk Manager ============= Implements Kelly Criterion, circuit breakers, and p, RiskManager, RiskState, str, Check all circuit breakers.          Returns:             Tuple of (can_trade (+8 more)
+Cohesion: 0.08
+Nodes (23): bool, float, PositionState, Risk Manager ============= Implements Kelly Criterion, circuit breakers, and p, RiskManager, RiskState, str, bool (+15 more)
 
 ### Community 112 - "Community 112"
-Cohesion: 0.12
-Nodes (26): fetch_metalpriceapi_spot(), Fetch real-time spot price for Gold from the free Gold-API.com,     with fallba, PaperTradingEngine, Reset daily counters (call at start of each trading day)., Reset daily counters (call at start of each trading day)., Central risk management system.      Enforces:     - Kelly Criterion position, Central risk management system.      Enforces:     - Kelly Criterion position, RiskManager (+18 more)
+Cohesion: 0.05
+Nodes (41): Automatic Startup Flow, code:block1 (Database/), code:block10 (timestamp              | open    | high    | low     | close), code:block11 (User runs: python main.py OR .\run_jim.ps1 OR python scripts), code:bash (python scripts/test_gold_data.py), code:block13 (✓ Daily data       (6,457 records from 2000-08-30 to 2026-05), code:bash (# Run everything automatically), code:python (import pandas as pd) (+33 more)
 
 ### Community 113 - "Community 113"
-Cohesion: 0.11
-Nodes (24): LoadTestConfig, LoadTestRunner, Framework for running load tests, Configuration for load testing, load_test_runner(), Test LoadTestRunner creation, Test running load test, Test metrics collection during load test (+16 more)
+Cohesion: 0.10
+Nodes (20): LoadTestConfig, Configuration for load testing, Test LoadTestConfig creation, Test LoadTestConfig with ramp-up, Test running load test, Test metrics collection during load test, Test complete load test workflow, Test constant load profile (+12 more)
 
 ### Community 114 - "Community 114"
-Cohesion: 0.13
-Nodes (13): Submit an order to the execution engine.          Generates a unique order ID,, Cancel an existing order., Return the current order status., Return full order history as list of dicts., Return latency statistics (p50, p95, p99)., Return execution engine health info including latency stats., Execution engine abstraction for paper and live modes.      Tracks all orders, Connect to the configured broker adapter. (+5 more)
+Cohesion: 0.11
+Nodes (17): Any, ExecutionEngine, float, str, Submit an order to the execution engine.          Generates a unique order ID,, Cancel an existing order., Return the current order status., Return full order history as list of dicts. (+9 more)
 
 ### Community 115 - "Community 115"
-Cohesion: 0.15
-Nodes (11): Internal logging method, Track an operation duration, Get performance statistics, Get summary of all operations, Record a histogram value, Convert to JSON-serializable dictionary, span(), Any (+3 more)
+Cohesion: 0.14
+Nodes (19): Any, Exception, float, int, str, from_string(), Internal logging method, Initialize PerformanceTracker                  Args:             component: C (+11 more)
 
 ### Community 116 - "Community 116"
 Cohesion: 0.08
@@ -1329,12 +1361,12 @@ Cohesion: 0.09
 Nodes (22): 📊 API Endpoints (All Working), code:block1 (Engine Tests (31): ✅ PASS), code:block2 (1. POST   /paper-trading/start           - Initialize engine), ✅ COMPLETED (100%), Conclusion, 📋 Deliverables (All Completed ✅), 📁 Files Created, 📝 Files Updated (+14 more)
 
 ### Community 121 - "Community 121"
-Cohesion: 0.14
-Nodes (13): Support/resistance and range features., Time-based cyclical features (no lookahead)., Transforms raw OHLCV data into a rich feature matrix.     All features are comp, Cross-asset correlation and spread features., Get list of engineered feature column names (exclude raw OHLCV)., Generate all features from raw data.          Args:             df: Gold OHLC, Multi-horizon returns., Realized volatility at multiple scales. (+5 more)
+Cohesion: 0.11
+Nodes (17): DataFrame, FeatureEngine, Feature Engineering Pipeline ============================= Generates 200+ feat, str, Support/resistance and range features., Time-based cyclical features (no lookahead)., Transforms raw OHLCV data into a rich feature matrix.     All features are comp, Cross-asset correlation and spread features. (+9 more)
 
 ### Community 122 - "Community 122"
-Cohesion: 0.12
-Nodes (14): CacheMetrics, Calculate pool utilization percentage, Cache performance metrics, Calculate cache hit rate, Calculate memory utilization percentage, Convert to dictionary, Register a cache for monitoring, float (+6 more)
+Cohesion: 0.08
+Nodes (24): Any, float, CacheMetrics, Convert to dictionary, Calculate pool utilization percentage, Convert to dictionary, Cache performance metrics, Calculate cache hit rate (+16 more)
 
 ### Community 123 - "Community 123"
 Cohesion: 0.09
@@ -1349,44 +1381,44 @@ Cohesion: 0.05
 Nodes (42): 7.1 The Five Laws of the Commune, 7.2 Team Structure, 7.3 Daily Operations, 7.4 Model Governance, 7.5 Knowledge Base, 7.6 Deliverables Checklist, Change Management, code:block1 (Researcher proposes model change) (+34 more)
 
 ### Community 126 - "Community 126"
-Cohesion: 0.13
-Nodes (12): Return basic execution engine health info., Simple execution engine abstraction for paper and live modes., Submit an order to the execution engine.          This is currently a skeleton, Cancel an existing order., Return the current order status., Any, ExecutionEngine, Execution Engine Skeleton ==========================  Provides a lightweight (+4 more)
+Cohesion: 0.08
+Nodes (19): Any, ExecutionEngine, Execution Engine Skeleton ==========================  Provides a lightweight, Connect to the configured broker adapter., float, str, Execution engine for order routing and management., Return basic execution engine health info. (+11 more)
 
 ### Community 127 - "Community 127"
-Cohesion: 0.10
-Nodes (21): CorrelationStatus, ModelConsensus, Calculate volatility metrics from price/return data, Initialize DynamicRiskManager.                  Args:             base_kelly_, Correlation health status, Model agreement/disagreement metrics, VolatilityCalculator, asset_returns_matrix() (+13 more)
+Cohesion: 0.40
+Nodes (5): float, Generate sample daily log returns, Generate volatile market returns, sample_returns(), volatile_returns()
 
 ### Community 128 - "Community 128"
 Cohesion: 0.10
-Nodes (19): PerformanceMonitor, SLA threshold definition, Monitor performance metrics and SLA compliance, Check metrics against SLA thresholds, SLAThreshold, performance_monitor(), Test SLAThreshold creation, Test PerformanceMonitor creation (+11 more)
+Nodes (20): PerformanceMonitor, SLA threshold definition, Monitor performance metrics and SLA compliance, SLAThreshold, performance_monitor(), Test SLAThreshold creation, Test PerformanceMonitor creation, Test adding SLA threshold (+12 more)
 
 ### Community 129 - "Community 129"
 Cohesion: 0.12
-Nodes (14): _make_sample_data(), Unit tests for core components. Run: pytest tests/test_core.py -v  Phase 1 en, TestFeatureEngine, TestRegimeDetector, Tests for the HMM regime detector., Should train and produce regime predictions., Should return a named regime with confidence., Create sample gold-like OHLCV data. (+6 more)
+Nodes (16): Unit tests for core components. Run: pytest tests/test_core.py -v  Phase 1 en, TestFeatureEngine, TestRegimeDetector, _make_sample_data(), TestFeatureEngine, TestRegimeDetector, Tests for the HMM regime detector., Should train and produce regime predictions. (+8 more)
 
 ### Community 130 - "Community 130"
-Cohesion: 0.12
-Nodes (13): Compute streaming features in real-time          Example:         >>> engine, Initialize StreamingFeatureEngine                  Args:             buffer_s, Get latest features for symbol, Get features for all symbols, Get window data for symbol, StreamingFeatureEngine, str, Test StreamingFeatureEngine (+5 more)
+Cohesion: 0.11
+Nodes (27): datetime, float, int, str, calculate_atr(), calculate_bollinger_bands(), calculate_ema(), calculate_macd() (+19 more)
 
 ### Community 131 - "Community 131"
-Cohesion: 0.13
-Nodes (12): FeatureDriftDetector, Detect drift in feature distributions          Example:         >>> detector, Test FeatureDriftDetector, Test creating detector, Test updating features, Test check_drift with no baseline, Test drift detection with distribution shift, Test updating baseline (+4 more)
+Cohesion: 0.09
+Nodes (13): datetime, FeatureDriftDetector, Detect drift in feature distributions          Example:         >>> detector, Update feature values                  Args:             features: Dictionary, datetime, Test creating detector, Test updating features, Test check_drift with no baseline (+5 more)
 
 ### Community 132 - "Community 132"
-Cohesion: 0.09
-Nodes (12): Test temporal encoding (hour + day of week)., Test with different trader signals., Test when trader has low recent accuracy., Test suite for MetaLabeler class., Test in crisis regime., Test MetaLabeler initialization., Test fallback behavior when model not trained., Test feature vector construction. (+4 more)
+Cohesion: 0.19
+Nodes (35): backtest(), health_check(), lifespan(), Health check endpoint with advanced monitoring.          Returns:         Ser, Backtest a strategy using the real engine with transaction costs,     walk-forw, Lifespan context manager for startup and shutdown., BacktestMetrics, BacktestRequest (+27 more)
 
 ### Community 133 - "Community 133"
 Cohesion: 0.13
-Nodes (17): CPCVFold, CPCVResult, is_overfit(), num_embargo(), num_test(), num_train(), Phase 5: Combinatorial Purged Cross-Validation (CPCV)  CPCV overcomes limitati, Run CPCV analysis.                  Args:             folds: CPCV folds (+9 more)
+Nodes (22): CPCVFold, CPCVResult, is_overfit(), num_embargo(), num_test(), num_train(), Phase 5: Combinatorial Purged Cross-Validation (CPCV)  CPCV overcomes limitati, Run CPCV analysis.                  Args:             folds: CPCV folds (+14 more)
 
 ### Community 134 - "Community 134"
 Cohesion: 0.10
 Nodes (21): code:powershell (New-Item -ItemType Directory -Force -Path graphify-out | Out), code:powershell (@'), code:powershell (@'), code:powershell (@'), code:powershell (@'), code:powershell (@'), code:powershell (# Detect Python with graphify — uv/pipx-aware (fixes #831)), code:powershell (@') (+13 more)
 
 ### Community 135 - "Community 135"
-Cohesion: 0.13
-Nodes (16): check_api_health(), check_cache_health(), check_database_health(), HealthStatus, Advanced Health Monitoring Module  Provides comprehensive health checks for th, Health status enumeration, Example database health check, Example cache health check (+8 more)
+Cohesion: 0.10
+Nodes (43): check_cache_health(), check_database_health(), ConnectionPoolHealth, HealthReport, HealthStatus, LatencyMetrics, Advanced Health Monitoring Module  Provides comprehensive health checks for th, System resource utilization (+35 more)
 
 ### Community 136 - "Community 136"
 Cohesion: 0.10
@@ -1397,28 +1429,28 @@ Cohesion: 0.10
 Nodes (19): DATA QUALITY & MONITORING (✅ COMPLETE), DATA SOURCES (✅ COMPLETE), DATABASE INTEGRATION (✅ COMPLETE), DEPENDENCIES & UTILITIES (✅ COMPLETE), FEATURE ENGINEERING & STORAGE (✅ COMPLETE), 2.1 Core Price Data, 2.2 Macro-Correlate Feeds, 2.3 Alternative Data (+11 more)
 
 ### Community 138 - "Community 138"
-Cohesion: 0.08
-Nodes (16): Phase 2 Pipeline Tests ====================== Comprehensive test suite for dat, Good data should pass validation., Empty DataFrame should trigger FAIL., Missing OHLC columns should trigger alert., high < low should be detected., Cross-source alignment check should work., Generate realistic synthetic gold OHLCV data., All expected tables should be defined in SCHEMAS. (+8 more)
+Cohesion: 0.04
+Nodes (54): AlternativeDataManager, COTParser, Alternative Data Sources ======================== Non-traditional data for gol, News sentiment scoring for gold using NewsAPI.      Uses the NewsAPI (newsapi., Parse CFTC Commitments of Traders reports for gold futures.      Downloads the, Unified manager for all alternative data sources., SentimentScorer, MacroFetcher (+46 more)
 
 ### Community 139 - "Community 139"
-Cohesion: 0.10
-Nodes (11): Tests for ModelPerformanceMonitor class., Test ModelPerformanceMonitor initialization., Test tracking a losing trade., Test regime-specific performance tracking., Test tracking trade for unknown model., Test regime performance for unknown model., Test daily report when no trades occurred., Test daily report generation with default date. (+3 more)
+Cohesion: 0.09
+Nodes (12): Tests for ModelPerformanceMonitor class., Test baseline metrics for all models., Test tracking a winning trade., Test tracking trades across multiple days., Test regime-specific performance tracking., Test degradation detection with no trades., Test when there is no degradation., Test regime performance for unknown model. (+4 more)
 
 ### Community 140 - "Community 140"
-Cohesion: 0.13
-Nodes (12): Fetch Federal Reserve Economic Data (FRED) series.          Returns:, Save DataFrame to parquet in the raw data directory., Load DataFrame from parquet., Fetches gold price data from Yahoo Finance (dev) and      premium feeds (produc, Fetch historical gold data.          Args:             symbol: Ticker symbol., Fetch historical gold data.          Args:             symbol: Ticker symbol., Fetch macro-correlate data (DXY, VIX, TLT, TIP).          Returns:, DataFrame (+4 more)
+Cohesion: 0.10
+Nodes (17): DataFrame, GoldDataFetcher, Gold Data Fetcher ================= Fetches historical and live gold price dat, Path, str, Fetch Federal Reserve Economic Data (FRED) series.          Returns:, Save DataFrame to parquet in the raw data directory., Load DataFrame from parquet. (+9 more)
 
 ### Community 141 - "Community 141"
-Cohesion: 0.11
-Nodes (18): get_prediction_log(), get_trade_history(), Trade record from history., Get trade history with pagination and optional status filtering., Get trade history with pagination and optional status filtering., Get the prediction cycle CSV log.     Returns the most recent `limit` rows., Get the prediction cycle CSV log.     Returns the most recent `limit` rows., TradeHistoryResponse (+10 more)
+Cohesion: 0.22
+Nodes (9): _ensure_csv_exists(), get_csv_path(), Prediction Cycle CSV Logger ============================= Logs every model pre, Find the row whose timestamp starts with `trade_timestamp_prefix`     and fill, Return the absolute path to the prediction log CSV., Create the CSV with a header row if it doesn't already exist., update_pnl_for_trade(), float (+1 more)
 
 ### Community 142 - "Community 142"
-Cohesion: 0.13
-Nodes (12): Metrics for a traced operation, Record operation metric, TraceMetrics, Tests for Enhancement #10: Logging & Observability  Test coverage: - Structur, Test trace metrics with error, Integration tests for logging system, Test complete logging workflow, Test logging with correlation ID tracking (+4 more)
+Cohesion: 0.22
+Nodes (7): Metrics for a traced operation, Record operation metric, TraceMetrics, Test trace metrics with error, Test TraceMetrics functionality, Test creating trace metrics, TestTraceMetrics
 
 ### Community 143 - "Community 143"
-Cohesion: 0.12
-Nodes (9): MockRecoveryConnector, Perform mock recovery, Get mock recovery status, Test registering recovery connector, Test getting recovery points, Test recovery to specific point, Test recovery statistics tracking, Mock recovery connector for testing (+1 more)
+Cohesion: 0.09
+Nodes (17): Any, bool, int, str, MockBackupConnector, bool, str, Perform mock recovery (+9 more)
 
 ### Community 144 - "Community 144"
 Cohesion: 0.11
@@ -1433,24 +1465,24 @@ Cohesion: 0.11
 Nodes (17): 10. Phase 6: Enhancements, 11. The Dashboard We Built, 12. What We Did Today, 13. File & Folder Structure, 15. Glossary, 1. What Is This Project?, 2. Who Is Jim Simons?, 3. The Big Picture (+9 more)
 
 ### Community 147 - "Community 147"
-Cohesion: 0.12
-Nodes (17): CodeReview, ModelChangeRequest, Model governance change request, Test ModelChangeRequest creation, Test proposing model change, Test code review workflow, Test backtest completion, Test production deployment (+9 more)
+Cohesion: 0.33
+Nodes (4): Check if any circuit breaker is triggered.                  Returns:, Calculate today's P&L from closed trades., bool, float
 
 ### Community 148 - "Community 148"
-Cohesion: 0.13
-Nodes (14): Incident, IncidentManager, IncidentSeverity, ModelChangeStatus, Phase 7: Team & Operations Management  Comprehensive team operations framework, Status of model governance change request, Manages incidents and escalation, Get unresolved critical incidents (+6 more)
+Cohesion: 0.11
+Nodes (20): Incident, IncidentManager, IncidentSeverity, ModelChangeStatus, Phase 7: Team & Operations Management  Comprehensive team operations framework, Weekly research seminar record, Manages team members and organization, Get all members with specific role (+12 more)
 
 ### Community 149 - "Community 149"
-Cohesion: 0.11
-Nodes (10): Test RiskManager class., Test risk manager initialization., Test circuit breakers with acceptable conditions., Test circuit breakers with low confidence., Test circuit breakers with daily loss exceeded., Test consecutive losses tracking., Test consecutive losses reset on win., Test peak equity tracking. (+2 more)
+Cohesion: 0.07
+Nodes (45): ConfigUpdateRequest, PaperTradingStatusResponse, PortfolioSnapshotResponse, QueuedSignal, Trade record from history., Portfolio state at a point in time., Portfolio state at a point in time., Request to inject a trading signal. (+37 more)
 
 ### Community 150 - "Community 150"
-Cohesion: 0.16
-Nodes (9): Structured logging with automatic JSON formatting          Example:         >, Get all logged entries, StructuredLogger, Test StructuredLogger functionality, Test creating structured logger, Test critical logging, Test logger with custom output handler, Test correlation ID persists across logs (+1 more)
+Cohesion: 0.14
+Nodes (10): Structured logging with automatic JSON formatting          Example:         >, Get all logged entries, StructuredLogger, Test StructuredLogger functionality, Test creating structured logger, Test critical logging, Test logger with custom output handler, Test correlation ID persists across logs (+2 more)
 
 ### Community 151 - "Community 151"
-Cohesion: 0.12
-Nodes (14): Convert to dictionary, Orchestrate comprehensive stress testing.          Example:         >>> stres, Calculate overall resilience from recent tests, Get recent reverse test results, Get latest resilience assessment, StressTester, Any, Test StressTester initialization (+6 more)
+Cohesion: 0.10
+Nodes (16): Any, Convert to dictionary, Orchestrate comprehensive stress testing.          Example:         >>> stres, Calculate overall resilience from recent tests, Get recent test results, Get recent reverse test results, Get latest resilience assessment, StressTester (+8 more)
 
 ### Community 152 - "Community 152"
 Cohesion: 0.12
@@ -1466,39 +1498,39 @@ Nodes (16): code:mermaid (graph TD), code:powershell (.venv\Scripts\python.exe m
 
 ### Community 155 - "Community 155"
 Cohesion: 0.12
-Nodes (16): code:bash (# 1. Verify system is running), code:bash (# 1. Generate weekly performance report), 📋 Daily Operations Checklist, Hardware, 🚀 Live Deployment Guide: Mini-Medallion Gold Trading Engine, Month 2: Gradual Increase, Month 3+: Full Operation, 🚀 Next Steps After Launch (+8 more)
+Nodes (16): code:block13 (┌───────────────────────────────────────────────────────────), code:bash (# 1. Verify system is running), code:bash (# 1. Generate weekly performance report), 📋 Daily Operations Checklist, Hardware, High-Level Data Flow, Key Components, 🚀 Live Deployment Guide: Mini-Medallion Gold Trading Engine (+8 more)
 
 ### Community 156 - "Community 156"
 Cohesion: 0.12
 Nodes (16): 2.5.1 REST API (`src/api/`), 2.5.2 GPU Model Accelerators (`src/utils/gpu_models.py`), API Models (`src/api/models.py`), Application (`src/api/app.py`), Architecture Diagram, code:block1 (┌─────────────────────────────────────────────────────────┐), code:bash (# Start API server), Dependencies (+8 more)
 
 ### Community 157 - "Community 157"
-Cohesion: 0.12
-Nodes (9): Lag features should be present., Regime detection proxies should be present., Microstructure proxy features should be present., Event proximity features should be present., Feature engine should produce 150+ features from OHLCV alone., With macro data, should exceed 200 features., Features should have no infinite values after dropna., Cyclical temporal features should be present. (+1 more)
+Cohesion: 0.14
+Nodes (15): GoldDataDownloader, DataFrame, int, Path, str, Gold Price Data Downloader =========================== Downloads gold (XAU/USD, Download recent 1-minute data (last ~60 days of available data)., Download recent hourly data (last 12 months).                  Hourly data is (+7 more)
 
 ### Community 158 - "Community 158"
 Cohesion: 0.06
 Nodes (31): 3.1 Signal Detection: Wavelet Transforms (DWT), 3.2 Regime Detection: Hidden Markov Models (HMM), 3.3 Pattern Discovery: Genetic Algorithms (GA), 3.4 Deep Learning Models, 3.5 The Ensemble: Master Model, 3.6 Deliverables Checklist, code:block1 (Gold Price Signal), code:python (import pywt) (+23 more)
 
 ### Community 159 - "Community 159"
-Cohesion: 0.11
-Nodes (15): OperationFrequency, PerformanceReport, PerformanceReporter, Daily/Weekly/Monthly performance report, Operation scheduling frequency, Generates performance reports, Generate performance report, Get recent reports by period type (+7 more)
+Cohesion: 0.15
+Nodes (12): int, OperationFrequency, PerformanceReporter, Operation scheduling frequency, Get count of changes at each stage, Generates performance reports, Generate performance report, Get recent reports by period type (+4 more)
 
 ### Community 160 - "Community 160"
 Cohesion: 0.15
-Nodes (10): Unit tests for core components. Run: pytest tests/test_core.py -v, TestFeatureEngine, TestRegimeDetector, Should return a named regime with confidence., Tests for the feature engineering pipeline., Should produce a DataFrame with many more columns., Feature values should not depend on future data., Tests for the HMM regime detector. (+2 more)
+Nodes (12): float, str, Returns         -------         "TRENDING"  — strong directional move, use tre, Returns a scalar 0.0–1.0 to multiply your base lot size by.          TRENDING, Detects whether the market is in a TRENDING, NEUTRAL, or RANGING regime     usi, RegimeDetector, TestRegimeDetector, TestRegimeDetector (+4 more)
 
 ### Community 161 - "Community 161"
 Cohesion: 0.20
 Nodes (12): Any, str, _deep_substitute(), get_config(), get_section(), load_config(), Get the global configuration (cached singleton)., Get a specific section from the config. (+4 more)
 
 ### Community 162 - "Community 162"
-Cohesion: 0.21
-Nodes (16): any, bool, float, int, str, check_stack(), _check_tcp_port(), _command_available() (+8 more)
+Cohesion: 0.08
+Nodes (32): Phase 5: Backtester - Main Event Loop Orchestrator  This is the heart of the b, Phase 5: Backtester - Historical Data Feed Handler  This module handles loadin, bootstrap_test(), calculate(), format_result(), Phase 5: Deflated Sharpe Ratio (DSR)  DSR corrects Sharpe Ratio for: 1. Numbe, verdict(), confidence() (+24 more)
 
 ### Community 163 - "Community 163"
-Cohesion: 0.16
-Nodes (10): calculate_distribution(), Update baseline distribution for feature                  Args:             f, Get current status of feature, Check data quality                  Args:             features: Features to c, Get comprehensive quality report, Convert to dictionary, Convert to dictionary, Any (+2 more)
+Cohesion: 0.23
+Nodes (10): Any, str, Get recommendations for detected drift, Get current status of feature, Check data quality                  Args:             features: Features to c, Get comprehensive quality report, Convert to dictionary, Convert to dictionary (+2 more)
 
 ### Community 164 - "Community 164"
 Cohesion: 0.13
@@ -1521,32 +1553,36 @@ Cohesion: 0.12
 Nodes (15): 5.1 Anti-Overfitting Protocol, 5.2 Backtester Architecture, 5.3 Performance Metrics & Targets, 5.4 Reporting Template, 5.5 Deliverables Checklist, code:block1 (Year:  2014  2015  2016  2017  2018  2019  2020  2021  2022 ), code:block2 (DSR adjusts the Sharpe Ratio for:), code:block3 (┌─────────────────────────────────────────┐) (+7 more)
 
 ### Community 169 - "Community 169"
-Cohesion: 0.18
-Nodes (9): Check database connection pool health., Check cache (Redis) connection health., Check disk space and I/O., Check CPU and memory utilization., Check network connectivity., Execute comprehensive health check across all components.                  Ret, Generate formatted health report.                  Args:             format:, float (+1 more)
+Cohesion: 0.17
+Nodes (14): float, int, str, Measure latency for an endpoint by running function multiple times., Check database connection pool health., Check disk space and I/O., Check CPU and memory utilization., Check network connectivity. (+6 more)
 
 ### Community 170 - "Community 170"
 Cohesion: 0.06
 Nodes (30): 5.1 Anti-Overfitting Protocol, 5.2 Backtester Architecture, 5.3 Performance Metrics & Targets, 5.4 Reporting Template, 5.5 Deliverables Checklist, code:block1 (Year:  2014  2015  2016  2017  2018  2019  2020  2021  2022 ), code:block2 (DSR adjusts the Sharpe Ratio for:), code:block3 (┌─────────────────────────────────────────┐) (+22 more)
 
 ### Community 171 - "Community 171"
-Cohesion: 0.20
-Nodes (15): Run the data ingestion pipeline.          Modes:       - full         : All s, Run paper trading simulation.          Initializes the paper trading engine, f, Run the live trading engine.          Continuously fetches real-time gold pric, Quick demo: Fetch data → Generate features → Run models → Show results.     Pro, Mini-Medallion Gold Trading Engine.          Modes:       - demo       : Quic, Run the REST API server.          Endpoints:       - GET /health, run_api(), run_live_trading() (+7 more)
+Cohesion: 0.19
+Nodes (20): int, main(), Mini-Medallion: Main Entry Point ================================== The comman, run_demo(), str, Run the data ingestion pipeline.          Modes:       - full         : All s, Run paper trading simulation.          Initializes the paper trading engine, f, Run the live trading engine.          Continuously fetches real-time gold pric (+12 more)
 
 ### Community 172 - "Community 172"
-Cohesion: 0.17
-Nodes (9): Convert to dictionary, Convert to dictionary, Convert to dictionary (JSON-serializable), Add a service dependency, Get current health status as JSON string, Convert to dictionary, Convert to dictionary (JSON-serializable), Any (+1 more)
+Cohesion: 0.18
+Nodes (16): Check if order can be filled with available liquidity., Calculate fill price and slippage cost., Calculate slippage per unit., Calculate total commission., Simulate order latency (milliseconds)., Calculate actual fill size (may be less than order due to liquidity)., Calculate market impact of large orders.                  For backtesting, we, Execute an order against current market conditions.                  Returns: (+8 more)
 
 ### Community 173 - "Community 173"
-Cohesion: 0.14
-Nodes (11): HealthReport, Comprehensive health report, Run all health checks and return comprehensive report                  Returns, Run individual service check, Get system resource metrics, Service names for dependency tracking, ServiceName, Test health report generation (+3 more)
+Cohesion: 0.13
+Nodes (17): bool, float, ndarray, str, MetaLabeler, Meta-Labeler (Critic Model) ============================ Two-model system: Tra, Convert CriticInput to feature vector., Train the Critic model on historical data.                  Args: (+9 more)
+
+### Community 174 - "Community 174"
+Cohesion: 0.20
+Nodes (12): Any, str, _deep_substitute(), get_config(), get_section(), load_config(), Get the global configuration (cached singleton)., Get a specific section from the config. (+4 more)
 
 ### Community 175 - "Community 175"
-Cohesion: 0.19
-Nodes (15): str, get_risk_logger(), get_trade_logger(), Logging Setup ============= Structured logging with Loguru. Every event in th, setup_logger(), console_formatter(), file_formatter(), format_and_redact_exception() (+7 more)
+Cohesion: 0.16
+Nodes (20): str, get_risk_logger(), get_trade_logger(), Logging Setup ============= Structured logging with Loguru. Every event in th, setup_logger(), str, get_risk_logger(), get_trade_logger() (+12 more)
 
 ### Community 176 - "Community 176"
-Cohesion: 0.16
-Nodes (13): bool, Exception, float, int, circuit_breaker(), CircuitBreaker, Resilience Utilities ==================== Provides decorators for automatic re, Decorator for circuit breaker. (+5 more)
+Cohesion: 0.15
+Nodes (17): bool, Exception, float, int, bool, Exception, float, int (+9 more)
 
 ### Community 177 - "Community 177"
 Cohesion: 0.13
@@ -1565,28 +1601,28 @@ Cohesion: 0.24
 Nodes (11): add_order(), get_ask_volume(), get_best_ask(), get_best_bid(), get_bid_volume(), get_levels(), get_mid_price(), get_snapshot() (+3 more)
 
 ### Community 181 - "Community 181"
-Cohesion: 0.16
-Nodes (11): CorrelationDetector, Detect correlation breakdowns and spikes, Calculate average pairwise correlation from returns matrix.                  A, Detect correlation spike.                  Args:             current_correlat, Get trend of correlations, Update correlation metrics from multi-asset returns.                  Args:, bool, ndarray (+3 more)
+Cohesion: 0.13
+Nodes (13): Any, bool, ndarray, str, Calculate average pairwise correlation from returns matrix.                  A, Detect correlation spike.                  Args:             current_correlat, Get trend of correlations, Update correlation metrics from multi-asset returns.                  Args: (+5 more)
 
 ### Community 182 - "Community 182"
 Cohesion: 0.24
 Nodes (11): add_order(), get_ask_volume(), get_best_ask(), get_best_bid(), get_bid_volume(), get_levels(), get_mid_price(), get_snapshot() (+3 more)
 
 ### Community 183 - "Community 183"
-Cohesion: 0.15
-Nodes (10): AdvancedRiskMetrics, Container for advanced risk metrics., Unit Tests for Advanced Risk Metrics ===================================== Tes, Tests for AdvancedRiskMetrics dataclass., Test basic AdvancedRiskMetrics creation., Tests for Risk Report generation., Test risk report generation., Test that risk report contains key metrics. (+2 more)
+Cohesion: 0.08
+Nodes (24): AdvancedRiskMetrics, Container for advanced risk metrics., Unit Tests for Advanced Risk Metrics ===================================== Tes, Test Ulcer Index with linear decline., Tests for Conditional Value at Risk (CVaR) calculation., Test CVaR with normally distributed returns., Tests for Expected Shortfall calculation., Test Expected Shortfall with normal distribution. (+16 more)
 
 ### Community 184 - "Community 184"
 Cohesion: 0.13
 Nodes (8): Tests for the execution engine., Should connect successfully in paper mode., Submitted order should have a unique order ID., Should track all submitted orders in history., Should compute latency percentiles after orders., Should cancel an existing order., Health check should report connected status and order count., TestExecutionEngine
 
 ### Community 185 - "Community 185"
-Cohesion: 0.17
-Nodes (9): Distributed tracing management with OpenTelemetry          Example:         >, Initialize TracingManager                  Args:             service_name: Se, Get all recorded metrics, TracingManager, Test TracingManager functionality, Test creating tracing manager, Test recording trace metrics, Test span context manager (+1 more)
+Cohesion: 0.13
+Nodes (13): Logging & Observability Configuration - Structured logging with distributed trac, Distributed tracing management with OpenTelemetry          Example:         >, Initialize TracingManager                  Args:             service_name: Se, Get all recorded metrics, Decorator for automatic tracing and logging          Example:         >>> @tr, traced(), TracingManager, Test traced decorator (+5 more)
 
 ### Community 186 - "Community 186"
-Cohesion: 0.17
-Nodes (9): MetricsCollector, Collect application metrics, Initialize MetricsCollector, int, Test MetricsCollector functionality, Test counter increment, Test histogram record, Test getting all metrics (+1 more)
+Cohesion: 0.15
+Nodes (12): MetricsCollector, Collect application metrics, Initialize MetricsCollector, Tests for Enhancement #10: Logging & Observability  Test coverage: - Structur, Test MetricsCollector functionality, Test counter increment, Test histogram record, Test getting all metrics (+4 more)
 
 ### Community 188 - "Community 188"
 Cohesion: 0.14
@@ -1613,40 +1649,36 @@ Cohesion: 0.20
 Nodes (9): Configuration for retry behavior, RetryConfig, Test exponential retry strategy, Test exponential retry with max delay cap, Test RetryConfig functionality, Test no retry strategy, Test immediate retry strategy, Test linear retry strategy (+1 more)
 
 ### Community 194 - "Community 194"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (13): 10. Kyle's Lambda (Price Impact), 6. Deflated Sharpe Ratio (Anti-Overfitting), 7. Sharpe Ratio, 8. Sortino Ratio, 9. Order Flow Imbalance (Microstructure), code:block18 (DSR = Φ[(SR_observed - SR_expected) / σ_SR]), code:block19 (SR = (R_p - R_f) / σ_p × √(252)), code:block20 (Sortino = (R_p - R_f) / σ_downside × √(252)) (+5 more)
 
 ### Community 195 - "Community 195"
-Cohesion: 0.14
-Nodes (13): dependencies, @clerk/react, react-is, @react-oauth/google, devDependencies, concurrently, name, scripts (+5 more)
+Cohesion: 0.07
+Nodes (26): dependencies, @clerk/react, react-is, @react-oauth/google, devDependencies, concurrently, name, scripts (+18 more)
 
 ### Community 196 - "Community 196"
-Cohesion: 0.14
-Nodes (8): Tests for POST /paper-trading/signal., Test signal injection when engine not initialized., Test signal injection when engine is initialized but not running., Test signal injection that results in a trade., Test that low confidence signals don't trigger trades., Test signal with invalid model name., Test signal with invalid signal type., TestSignalEndpoint
+Cohesion: 0.04
+Nodes (42): Set the paper trading engine instance (for testing injection)., Set the paper trading engine instance (for testing injection)., set_engine(), cleanup_engine(), client(), engine(), Paper Trading API Route Tests - Phase 6B ======================================, Ensure engine is cleaned up after each test. (+34 more)
 
 ### Community 197 - "Community 197"
 Cohesion: 0.16
-Nodes (13): LoadTestConfig, ChaosEventType, LoadProfile, Enhancement #11: Extended Testing & Runbooks  Comprehensive testing framework, Load testing profiles, Chaos testing event types, SLAMetric, load_test_config() (+5 more)
-
-### Community 198 - "Community 198"
-Cohesion: 0.15
-Nodes (9): LatencyMetrics, Record endpoint latency, Latency measurements for an endpoint, Update metrics with new latency sample, Test latency metrics tracking, Test creating latency metrics, Test updating latency metrics, Test converting latency metrics to dict (+1 more)
+Nodes (19): float, LoadTestConfig, float, BenchmarkResult, ChaosEventType, LoadProfile, LoadTestMetrics, PerformanceBaseline (+11 more)
 
 ### Community 199 - "Community 199"
-Cohesion: 0.11
-Nodes (17): BackupPolicy, calculate_rpo_hours(), calculate_rto_estimate(), estimate_recovery_time(), _get_default_policies(), list_backups(), Backup Manager - Automated backup orchestration for all data tiers  Manages da, Backup policy configuration (+9 more)
+Cohesion: 0.08
+Nodes (13): Test ModelPerformanceMonitor, Test creating monitor, Test recording prediction, Test recording actual value, Test regression metrics calculation, Test latency metrics calculation, Test getting performance report, Test degradation check with no baseline (+5 more)
 
 ### Community 200 - "Community 200"
-Cohesion: 0.11
-Nodes (20): detect_gpu(), get_array_engine(), get_device(), log_gpu_memory(), print_gpu_summary(), GPU Helpers =========== Detect GPU availability and provide fallback to CPU., _detect_hardware_gpu_via_nvidiasmi(), get_dataframe_engine() (+12 more)
+Cohesion: 0.09
+Nodes (27): detect_gpu(), get_array_engine(), get_device(), log_gpu_memory(), print_gpu_summary(), GPU Helpers =========== Detect GPU availability and provide fallback to CPU., detect_gpu(), get_array_engine() (+19 more)
 
 ### Community 201 - "Community 201"
 Cohesion: 0.15
 Nodes (13): code:block10 (You are a graphify extraction subagent. Read the files liste), code:bash ($(cat graphify-out/.graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), code:block8 (spawn_agent(agent_type="worker", message="Your task is to pe) (+5 more)
 
 ### Community 202 - "Community 202"
-Cohesion: 0.19
-Nodes (8): Generate mock market data for testing.                  Creates realistic OHLC, Get most recent bar for symbol (not used in event loop, for manual queries)., Initialize data handler.                  Args:             symbol: Trading s, Load historical data for date range.                  Args:             start, datetime, int, MarketEvent, str
+Cohesion: 0.18
+Nodes (12): Generate mock market data for testing.                  Creates realistic OHLC, Get most recent bar for symbol (not used in event loop, for manual queries)., Initialize data handler.                  Args:             symbol: Trading s, Load historical data for date range.                  Args:             start, datetime, int, MarketEvent, str (+4 more)
 
 ### Community 203 - "Community 203"
 Cohesion: 0.15
@@ -1676,9 +1708,13 @@ Nodes (12): 4.1 Meta-Labeling (Two-Model System), 4.2 GPU Monte Carlo Simulation
 Cohesion: 0.15
 Nodes (12): 6.1 Paper Trading (4 weeks minimum), 6.2 Live Deployment Stages, 6.3 Broker & Execution, 6.4 System Architecture (Production), 6.5 Disaster Recovery, 6.6 Deliverables Checklist, code:block1 (┌──────────────────────────────────────────────────┐), Daily Monitoring Checklist (+4 more)
 
+### Community 210 - "Community 210"
+Cohesion: 0.16
+Nodes (16): monitor(), Unit Tests for Advanced Health Monitoring =====================================, Tests for ServiceHealth dataclass., Test basic ServiceHealth creation., Test default values for optional fields., test_check_cache_health_failure(), test_check_cache_health_success(), test_check_database_health_failure() (+8 more)
+
 ### Community 211 - "Community 211"
 Cohesion: 0.19
-Nodes (9): OandaFetcher, OANDA Institutional Data Fetcher ================================ Replaces Yahoo, Fetches real-time institutional data and order book imbalances from OANDA., Fetch high-resolution recent candlestick data.         Granularity options: M1 (, Fetch the current Level 2 Order Book profile.         Calculates the imbalance b, DataFrame, float, int (+1 more)
+Nodes (9): OandaFetcher, OANDA Institutional Data Fetcher ================================ Replaces Yah, Fetches real-time institutional data and order book imbalances from OANDA., Fetch high-resolution recent candlestick data.         Granularity options: M1, Fetch the current Level 2 Order Book profile.         Calculates the imbalance, DataFrame, float, int (+1 more)
 
 ### Community 212 - "Community 212"
 Cohesion: 0.08
@@ -1697,8 +1733,8 @@ Cohesion: 0.24
 Nodes (12): bool, float, int, benchmark_cudf(), benchmark_pandas(), generate_tick_data(), main(), GPU Benchmark Script ==================== Benchmark cuDF vs Pandas performance (+4 more)
 
 ### Community 216 - "Community 216"
-Cohesion: 0.21
-Nodes (8): ArchivalStats, Statistics for archival operations, Get current archival statistics, Tests for Enhancement #2: Data Lifecycle Manager  Test coverage: - RetentionT, Test ArchivalStats functionality, Test success rate calculation, Test average duration calculation, TestArchivalStats
+Cohesion: 0.11
+Nodes (11): Integration Tests: Phase 4 Position Lifecycle =================================, Integration tests for full position lifecycle., Test position monitoring through various exit conditions., Test reduced sizing in crisis regime., Test circuit breaker stops trading., Test consecutive loss tracking affects Kelly sizing., Test that VaR limits inform position sizing., Test profit target causes position exit. (+3 more)
 
 ### Community 217 - "Community 217"
 Cohesion: 0.24
@@ -1706,11 +1742,11 @@ Nodes (12): bool, float, int, benchmark_cudf(), benchmark_pandas(), generate_tic
 
 ### Community 218 - "Community 218"
 Cohesion: 0.38
-Nodes (12): calculate_conditional_var(), calculate_expected_shortfall(), calculate_omega_ratio(), calculate_recovery_factor(), calculate_stress_adjusted_sharpe(), calculate_tail_risk_metrics(), calculate_ulcer_index(), generate_risk_report() (+4 more)
+Nodes (15): float, int, str, calculate_conditional_var(), calculate_expected_shortfall(), calculate_omega_ratio(), calculate_recovery_factor(), calculate_stress_adjusted_sharpe() (+7 more)
 
 ### Community 219 - "Community 219"
-Cohesion: 0.15
-Nodes (8): Test suite for Enhancement #7: Automated Model Retraining  Tests cover: - Ret, Test first model is promoted without A/B test, Test executing multiple retraining jobs in sequence, test_ab_test_runner_run_test(), test_orchestrator_ab_test_first_model(), test_orchestrator_execute_retraining_job(), test_orchestrator_get_current_production_version(), test_orchestrator_multiple_jobs_sequence()
+Cohesion: 0.14
+Nodes (12): mock_trainer(), Test ABTestResult creation, Test ModelRetrainingOrchestrator initialization, Test training data is loaded with 168-hour window, Test _deploy_canary() stages model through CANARY_10 → CANARY_50 → PRODUCTION, Test DeploymentStrategy enum values, test_ab_test_result_creation(), test_deployment_strategy_enum() (+4 more)
 
 ### Community 220 - "Community 220"
 Cohesion: 0.17
@@ -1757,16 +1793,16 @@ Cohesion: 0.30
 Nodes (8): compute_percentile(), get_max_latency(), get_mean_latency(), get_measurement_count(), get_p50_latency(), get_p95_latency(), get_p99_latency(), get_summary()
 
 ### Community 231 - "Community 231"
-Cohesion: 0.18
-Nodes (11): detect_gpu(), get_array_engine(), get_device(), log_gpu_memory(), print_gpu_summary(), GPU Helpers =========== Detect GPU availability and provide fallback to CPU., Print a formatted summary of GPU capabilities.          Args:         gpu_inf, Detect available GPU resources (comprehensive).      Returns:         Dict wi (+3 more)
+Cohesion: 0.14
+Nodes (17): detect_gpu(), get_array_engine(), get_device(), log_gpu_memory(), print_gpu_summary(), GPU Helpers =========== Detect GPU availability and provide fallback to CPU., detect_gpu(), get_array_engine() (+9 more)
 
 ### Community 232 - "Community 232"
-Cohesion: 0.26
-Nodes (11): bool, float, int, str, check_stack(), _check_tcp_port(), _command_available(), print_stack_summary() (+3 more)
+Cohesion: 0.15
+Nodes (20): bool, float, int, str, check_stack(), _check_tcp_port(), _command_available(), print_stack_summary() (+12 more)
 
 ### Community 233 - "Community 233"
-Cohesion: 0.29
-Nodes (10): calculate_realized_volatility(), calculate_vix_proxy(), classify_volatility_regime(), Enhancement #8: Dynamic Risk Adjustment - Real-time Kelly Coefficient Adjustment, Calculate excess kurtosis (Fisher's definition), Update volatility metrics from price returns.                  Args:, Volatility regime classification, scipy_kurtosis() (+2 more)
+Cohesion: 0.12
+Nodes (34): float, int, calculate_realized_volatility(), calculate_vix_proxy(), classify_volatility_regime(), CorrelationDetector, CorrelationStatus, DrawdownStressMetrics (+26 more)
 
 ### Community 234 - "Community 234"
 Cohesion: 0.17
@@ -1777,8 +1813,8 @@ Cohesion: 0.30
 Nodes (8): compute_percentile(), get_max_latency(), get_mean_latency(), get_measurement_count(), get_p50_latency(), get_p95_latency(), get_p99_latency(), get_summary()
 
 ### Community 236 - "Community 236"
-Cohesion: 0.20
-Nodes (12): Any, str, _deep_substitute(), get_config(), get_section(), load_config(), Get the global configuration (cached singleton)., Get a specific section from the config. (+4 more)
+Cohesion: 0.11
+Nodes (23): Any, str, CircuitBreakers, DatabaseConfig, _deep_substitute(), get_config(), get_section(), Kelly (+15 more)
 
 ### Community 237 - "Community 237"
 Cohesion: 0.17
@@ -1793,24 +1829,24 @@ Cohesion: 0.17
 Nodes (7): Tests for Tail Risk Metrics (skewness, kurtosis, tail ratio)., Test tail risk metrics with normal distribution., Test tail risk with left-skewed distribution., Test tail risk with right-skewed distribution., Test tail risk with high kurtosis (fat tails)., Test tail risk with short series., TestTailRiskMetrics
 
 ### Community 240 - "Community 240"
-Cohesion: 0.21
-Nodes (8): PerformanceTracker, Track performance metrics for operations, Initialize PerformanceTracker                  Args:             component: C, Test PerformanceTracker functionality, Test creating performance tracker, Test tracking operation, Test getting performance summary, TestPerformanceTracker
+Cohesion: 0.27
+Nodes (7): PerformanceTracker, Track performance metrics for operations, Test PerformanceTracker functionality, Test creating performance tracker, Test tracking operation, Test getting performance summary, TestPerformanceTracker
 
 ### Community 241 - "Community 241"
 Cohesion: 0.21
 Nodes (7): LogEntry, Default output handler (stdout as JSON), Test LogEntry functionality, Test creating log entry, Test log entry with error, Test log entry to_json_dict, TestLogEntry
 
 ### Community 242 - "Community 242"
-Cohesion: 0.21
-Nodes (8): Decorator for automatic tracing and logging          Example:         >>> @tr, traced(), Test traced decorator, Test traced decorator on async function, Test traced decorator on sync function, Test traced decorator with error, Test traced decorator with TracingManager, TestTracedDecorator
+Cohesion: 0.16
+Nodes (15): overfitting_ratio(), Phase 5: Walk-Forward Analysis  Walk-forward analysis ensures out-of-sample va, Generate walk-forward periods for date range.                  Returns:, Run walk-forward analysis.                  Args:             periods: Walk-f, Single walk-forward period., Check if results indicate overfitting., test_period(), train_period() (+7 more)
 
 ### Community 243 - "Community 243"
-Cohesion: 0.21
-Nodes (8): calculate_kl_divergence(), calculate_wasserstein_distance(), Initialize FeatureDriftDetector                  Args:             window_siz, Check for drift in feature                  Args:             feature_name: N, Determine alert severity based on drift score, Get recommendations for detected drift, float, int
+Cohesion: 0.17
+Nodes (13): bool, float, int, calculate_distribution(), calculate_kl_divergence(), calculate_wasserstein_distance(), Initialize FeatureDriftDetector                  Args:             window_siz, Check for drift in feature                  Args:             feature_name: N (+5 more)
 
 ### Community 244 - "Community 244"
 Cohesion: 0.33
-Nodes (3): Schedule daily archival at specified time                  Args:, Calculate delay for given attempt number, int
+Nodes (4): int, Schedule daily archival at specified time                  Args:, Calculate delay for given attempt number, int
 
 ### Community 245 - "Community 245"
 Cohesion: 0.18
@@ -1886,7 +1922,7 @@ Nodes (7): Statistics for archival scheduling, Get scheduler statistics, Schedul
 
 ### Community 263 - "Community 263"
 Cohesion: 0.17
-Nodes (13): BreakerConfig, CircuitBreaker, _now_utc(), bool, float, int, str, circuit_breaker.py ================== Daily loss circuit breaker + over-trading (+5 more)
+Nodes (13): BreakerConfig, CircuitBreaker, _now_utc(), bool, float, int, str, circuit_breaker.py ================== Daily loss circuit breaker + over-tradin (+5 more)
 
 ### Community 264 - "Community 264"
 Cohesion: 0.18
@@ -1901,8 +1937,8 @@ Cohesion: 0.24
 Nodes (10): backup_databases(), compress_directory(), enforce_retention_policy(), bool, Path, Compress a directory into a tar.gz archive., Backup QuestDB and Redis Docker volumes., Delete backups older than 30 days and tick data older than 1 year. (+2 more)
 
 ### Community 267 - "Community 267"
-Cohesion: 0.18
-Nodes (6): TestWaveletDenoiser, Tests for the wavelet de-noising model., De-noised signal should have less variance than original., De-noised signal should follow the general trend., Should decompose into named frequency bands., Signal should be LONG, SHORT, or HOLD with confidence 0-1.
+Cohesion: 0.15
+Nodes (7): TestWaveletDenoiser, TestWaveletDenoiser, Tests for the wavelet de-noising model., De-noised signal should have less variance than original., De-noised signal should follow the general trend., Should decompose into named frequency bands., Signal should be LONG, SHORT, or HOLD with confidence 0-1.
 
 ### Community 268 - "Community 268"
 Cohesion: 0.18
@@ -1929,8 +1965,8 @@ Cohesion: 0.20
 Nodes (10): 🎯 BY PURPOSE, "How do I run it for the first time?", "How do I run the pipeline in production?", "How do I set up monitoring?", "Something broke, what do I do?", "What commands do I need?", "What is the API?", "What is the current project status?" (+2 more)
 
 ### Community 274 - "Community 274"
-Cohesion: 0.20
-Nodes (10): 2. REST API Application (`src/api/app.py`) ⭐⭐⭐, 3. Pydantic Models (`src/api/models.py`), 4. Main Entry Point Updates (`main.py`), 5. Dependencies (`requirements-base.txt`), code:bash ($ curl -X GET http://localhost:8000/health), code:bash ($ curl -X GET http://localhost:8000/signal), code:bash ($ curl -X POST http://localhost:8000/backtest/hmm_ensemble \), code:bash (# Start API server on default port 8000) (+2 more)
+Cohesion: 0.14
+Nodes (14): 1. GPU Model Accelerators (`src/utils/gpu_models.py`) ⭐, 2. REST API Application (`src/api/app.py`) ⭐⭐⭐, 3. Pydantic Models (`src/api/models.py`), 4. Main Entry Point Updates (`main.py`), 5. Dependencies (`requirements-base.txt`), code:python (# Usage:), code:python (# Usage:), code:python (# Usage:) (+6 more)
 
 ### Community 275 - "Community 275"
 Cohesion: 0.20
@@ -1969,11 +2005,11 @@ Cohesion: 0.20
 Nodes (6): Tests for LatencyMetrics dataclass., Test basic LatencyMetrics creation., Test update with single measurement., Test update with multiple measurements., Test update with empty measurements., TestLatencyMetrics
 
 ### Community 284 - "Community 284"
-Cohesion: 0.20
+Cohesion: 0.18
 Nodes (9): 🛠️ BUILD COMMANDS, C++ Execution Engine, code:block20 (Phase 1 Infrastructure Files:), code:bash (# Auto-detect compiler & CUDA), 📁 KEY FILES, 🔗 NEXT: PHASE 2 DATA INGESTION, 🎯 PHASE 1 CHECKLIST, QUICK REFERENCE: Phase 1 Infrastructure (+1 more)
 
 ### Community 285 - "Community 285"
-Cohesion: 0.20
+Cohesion: 0.18
 Nodes (9): code:block1 (JIM_Latest/), code:block2 (Week:  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18), Inspired by Jim Simons' Renaissance Technologies, 📚 Key Reading, 📊 Master Timeline, 📋 Phase Overview, 🏆 Project MINI-MEDALLION: Gold (XAU) Trading Engine, 🏗️ Project Structure (+1 more)
 
 ### Community 286 - "Community 286"
@@ -1981,12 +2017,12 @@ Cohesion: 0.29
 Nodes (5): get_available_venues(), get_stats_summary(), route_to_venue(), select_best_venue(), submit_order()
 
 ### Community 287 - "Community 287"
-Cohesion: 0.20
-Nodes (9): DrawdownStressMetrics, Update drawdown stress metrics.                  Args:             current_eq, Drawdown stress level, Test DrawdownStressMetrics with no drawdown, Test DrawdownStressMetrics with moderate drawdown, Test DrawdownStressMetrics with severe drawdown, test_drawdown_stress_metrics_moderate(), test_drawdown_stress_metrics_no_drawdown() (+1 more)
+Cohesion: 0.18
+Nodes (13): ABC, float, int, Enum, get_available_recovery_points(), Disaster Recovery Manager - Point-in-time recovery and failover procedures  Ha, Get available recovery points for a data tier                  Args:, Estimate RTO (Recovery Time Objective) in hours         Based on historical rec (+5 more)
 
 ### Community 288 - "Community 288"
 Cohesion: 0.33
-Nodes (3): ContinuousTrainer, job(), Automated pipeline that prevents Concept Drift.     Wakes up on weekends, fetche
+Nodes (3): ContinuousTrainer, job(), Automated pipeline that prevents Concept Drift.     Wakes up on weekends, fetch
 
 ### Community 289 - "Community 289"
 Cohesion: 0.20
@@ -1996,41 +2032,29 @@ Nodes (6): Tests for GET /paper-trading/trades., Test trades when engine not ini
 Cohesion: 0.29
 Nodes (5): get_available_venues(), get_stats_summary(), route_to_venue(), select_best_venue(), submit_order()
 
-### Community 291 - "Community 291"
-Cohesion: 0.20
-Nodes (6): Tests for Conditional Value at Risk (CVaR) calculation., Test CVaR with normally distributed returns., Test CVaR with all positive returns., Test CVaR with extreme loss events., Test CVaR with short return series., TestConditionalVaR
-
-### Community 292 - "Community 292"
-Cohesion: 0.20
-Nodes (6): Tests for Stress-Adjusted Sharpe Ratio., Test stress-adjusted Sharpe with normal distribution., Test that stress-adjusted Sharpe reflects tail risk., Test stress-adjusted Sharpe with zero volatility., Test stress-adjusted Sharpe with short series., TestStressAdjustedSharpe
-
-### Community 293 - "Community 293"
-Cohesion: 0.20
-Nodes (6): Test Ulcer Index with linear decline., Test Ulcer Index with single drop then recovery., Test Ulcer Index with short equity series., Tests for Ulcer Index calculation., Test Ulcer Index with constant equity (no drawdown)., TestUlcerIndex
-
 ### Community 294 - "Community 294"
-Cohesion: 0.27
-Nodes (7): ConnectionPoolHealth, Database connection pool health, Test connection pool health tracking, Test creating connection pool health, Test calculating pool utilization, Test converting pool to dict, TestConnectionPoolHealth
+Cohesion: 0.24
+Nodes (11): add_order(), get_ask_volume(), get_best_ask(), get_best_bid(), get_bid_volume(), get_levels(), get_mid_price(), get_snapshot() (+3 more)
 
 ### Community 295 - "Community 295"
-Cohesion: 0.27
-Nodes (7): System resource utilization, ResourceMetrics, Test system resource metrics, Test creating resource metrics, Test resource metrics have expected attributes, Test converting resource metrics to dict, TestResourceMetrics
-
-### Community 296 - "Community 296"
-Cohesion: 0.20
-Nodes (6): Test tracking errors in service health, Test converting service health to dict, Test service health tracking, Test creating service health, Test changing service health status, TestServiceHealth
+Cohesion: 0.24
+Nodes (11): add_order(), get_ask_volume(), get_best_ask(), get_best_bid(), get_bid_volume(), get_levels(), get_mid_price(), get_snapshot() (+3 more)
 
 ### Community 297 - "Community 297"
-Cohesion: 0.16
-Nodes (14): print_report(), Any, float, int, str, walk_forward_backtester.py ========================== Walk-forward backtester fo, Return news or normal spread based on the bar's hour (UTC)., Stop = 1.5×ATR away; Target = stop × RR ratio. (+6 more)
+Cohesion: 0.13
+Nodes (18): BacktestConfig, my_signal(), print_report(), Any, DataFrame, float, int, str (+10 more)
+
+### Community 298 - "Community 298"
+Cohesion: 0.14
+Nodes (26): any, bool, float, int, str, check_stack(), _check_tcp_port(), _command_available() (+18 more)
 
 ### Community 299 - "Community 299"
 Cohesion: 0.20
 Nodes (4): Test technical indicator calculations, Test MACD calculation, Test Bollinger Bands calculation, TestIndicatorCalculator
 
 ### Community 300 - "Community 300"
-Cohesion: 0.20
-Nodes (9): Results from executing a stress test scenario, Get recent test results, StressTestResult, Test StressTestResult creation, Test StressTestResult with portfolio impacts, Test StressTestResult serialization, test_stress_test_result_creation(), test_stress_test_result_to_dict() (+1 more)
+Cohesion: 0.19
+Nodes (14): Gold Data Quick Test & Demo ============================ Demonstrates loading, Display metadata about last downloads., Display database file sizes., Load and display daily data stats., Load and display hourly data stats., Load and display minute data stats., Test SQLite database queries., run_all_tests() (+6 more)
 
 ### Community 301 - "Community 301"
 Cohesion: 0.20
@@ -2038,7 +2062,7 @@ Nodes (6): Tests for DailyMetrics dataclass., Test basic DailyMetrics creation.,
 
 ### Community 302 - "Community 302"
 Cohesion: 0.20
-Nodes (16): adx_value(), atr_normalised(), compute_adx(), compute_atr(), compute_ema(), latest(), bool, DataFrame (+8 more)
+Nodes (15): adx_value(), atr_normalised(), compute_adx(), compute_atr(), compute_ema(), latest(), bool, DataFrame (+7 more)
 
 ### Community 303 - "Community 303"
 Cohesion: 0.22
@@ -2130,7 +2154,7 @@ Nodes (8): code:bash (# Run all health monitoring tests), Enhancement #1: Advanc
 
 ### Community 325 - "Community 325"
 Cohesion: 0.18
-Nodes (10): on_new_bar(), Drop-in replacement for your existing bar-handler in live_trader.py      Paramet, bool, float, str, trailing_stop.py ================ ATR-based trailing stop manager — drop-in for, Feed the latest price and get back an action string.          Returns         --, Manages a single trade's stop loss with ATR-based trailing logic.      Parameter (+2 more)
+Nodes (10): on_new_bar(), Drop-in replacement for your existing bar-handler in live_trader.py      Param, bool, float, str, trailing_stop.py ================ ATR-based trailing stop manager — drop-in fo, Feed the latest price and get back an action string.          Returns, Manages a single trade's stop loss with ATR-based trailing logic.      Paramet (+2 more)
 
 ### Community 326 - "Community 326"
 Cohesion: 0.22
@@ -2149,20 +2173,20 @@ Cohesion: 0.22
 Nodes (9): code:powershell (# Check Docker status), code:bash (# Find process using port (example: 9000)), code:bash (# Add project to PYTHONPATH), code:bash (# Verify NVIDIA driver), Docker not running, GPU not detected, Port already in use, Python import errors (+1 more)
 
 ### Community 330 - "Community 330"
-Cohesion: 0.22
+Cohesion: 0.20
 Nodes (8): code:bash (python -m venv .venv), code:bash (docker compose up -d), code:bash (python scripts/check_infrastructure.py), code:bash (python main.py --mode demo), Mini-Medallion, Notes, Phase 1: Infrastructure & Compute, Quick Start
 
 ### Community 331 - "Community 331"
-Cohesion: 0.22
-Nodes (8): str, get_risk_logger(), get_trade_logger(), Logging Setup ============= Structured logging with Loguru. Every event in th, setup_logger(), Configure the global logger.      Args:         level: Minimum log level (DEB, Get a logger specifically for trade events., Get a logger specifically for risk events.
+Cohesion: 0.15
+Nodes (13): str, get_risk_logger(), get_trade_logger(), Logging Setup ============= Structured logging with Loguru. Every event in th, setup_logger(), str, get_risk_logger(), get_trade_logger() (+5 more)
 
 ### Community 332 - "Community 332"
 Cohesion: 0.39
-Nodes (8): fetch_data(), print_results(), 5. Session Open Strategy (London Open)     - Mark high/low of Asian session (3:3, 1. Trend Following (Daily)     - Identify direction using 50 EMA and 200 EMA, 4. Gold/Silver Ratio Trade     - When ratio is high (80+) -> Buy Silver     - Wh, run_gold_silver_ratio(), run_session_open(), run_trend_following()
+Nodes (8): fetch_data(), print_results(), 5. Session Open Strategy (London Open)     - Mark high/low of Asian session (3:, 1. Trend Following (Daily)     - Identify direction using 50 EMA and 200 EMA, 4. Gold/Silver Ratio Trade     - When ratio is high (80+) -> Buy Silver     -, run_gold_silver_ratio(), run_session_open(), run_trend_following()
 
 ### Community 333 - "Community 333"
-Cohesion: 0.22
-Nodes (9): calculate_resilience_score(), PortfolioImpact, Impact of scenario on portfolio, Test PortfolioImpact creation, Test PortfolioImpact with severe impact, Test resilience score calculation, test_portfolio_impact_creation(), test_portfolio_impact_severe() (+1 more)
+Cohesion: 0.16
+Nodes (9): bool, datetime, int, str, Test record serialization, Test archive path generation, Query data from storage, Archive data to target path (+1 more)
 
 ### Community 334 - "Community 334"
 Cohesion: 0.25
@@ -2201,55 +2225,47 @@ Cohesion: 0.25
 Nodes (8): code:json ({), code:json ({"detail": "Paper trading engine not initialized. Call POST ), code:json ({"detail": "Paper trading is already running. Stop it first.), code:json ({"detail": "Invalid signal_type. Must be one of: LONG, SHORT), Common HTTP Status Codes, Error Examples, Error Handling, Error Response Format
 
 ### Community 343 - "Community 343"
-Cohesion: 0.18
-Nodes (9): Initialize ArchivalScheduler                  Args:             manager: Data, Configuration for archival schedule, ScheduleConfig, Any, Logger, Test ScheduleConfig functionality, Test default schedule configuration, Test custom schedule configuration (+1 more)
+Cohesion: 0.14
+Nodes (10): Any, Logger, Initialize ArchivalScheduler                  Args:             manager: Data, Configuration for archival schedule, ScheduleConfig, Any, Logger, Test default schedule configuration (+2 more)
 
 ### Community 344 - "Community 344"
-Cohesion: 0.32
-Nodes (5): LatencyMetrics, Measure latency for an endpoint by running function multiple times., Latency statistics for an endpoint., Update metrics from new measurements., int
+Cohesion: 0.14
+Nodes (8): FeatureDistribution, Distribution statistics for a feature, Test KL divergence calculation, Test KL divergence detects distribution shift, Test Wasserstein distance calculation, Test creating distribution, Test distribution to_dict, Test creating drift alert
 
 ### Community 345 - "Community 345"
-Cohesion: 0.25
-Nodes (5): Tests for SLA compliance tracking., Test SLA target is initialized correctly., Test SLA compliance calculation., Test SLA non-compliance detection., TestHealthMonitorSLACompliance
+Cohesion: 0.20
+Nodes (7): LatencyMetrics, Latency statistics for an endpoint., Tests for SLA compliance tracking., Test SLA target is initialized correctly., Test SLA compliance calculation., Test SLA non-compliance detection., TestHealthMonitorSLACompliance
 
 ### Community 346 - "Community 346"
-Cohesion: 0.25
-Nodes (5): from_dict(), Convert to dictionary for logging, Export audit log to file, Convert to dictionary for serialization, Any
+Cohesion: 0.29
+Nodes (5): Any, Convert to dictionary for logging, Export audit log to file, Convert to dictionary for serialization, Any
 
 ### Community 347 - "Community 347"
 Cohesion: 0.25
 Nodes (8): CorrelationMetrics, Correlation matrix and health, Test CorrelationMetrics creation, Test CorrelationMetrics with spike, Test CorrelationMetrics degrading status, test_correlation_metrics_creation(), test_correlation_metrics_degrading(), test_correlation_metrics_spike()
 
-### Community 348 - "Community 348"
-Cohesion: 0.25
-Nodes (8): Current volatility measurements, VolatilityMetrics, Test VolatilityMetrics creation, Test VolatilityMetrics with high volatility, Test VolatilityMetrics with extreme volatility, test_volatility_metrics_creation(), test_volatility_metrics_extreme(), test_volatility_metrics_high_vol()
-
 ### Community 349 - "Community 349"
-Cohesion: 0.25
-Nodes (5): Tests for GET /paper-trading/status., Test status when engine not initialized returns 404., Test status when engine is running., Test that portfolio fields are present and correct., TestStatusEndpoint
+Cohesion: 0.24
+Nodes (12): bool, float, int, benchmark_cudf(), benchmark_pandas(), generate_tick_data(), main(), GPU Benchmark Script ==================== Benchmark cuDF vs Pandas performance (+4 more)
 
 ### Community 350 - "Community 350"
 Cohesion: 0.25
 Nodes (5): Tests for POST /paper-trading/config., Test config update when engine not initialized., Test updating a single config parameter., Test updating multiple config parameters., TestConfigEndpoint
 
-### Community 351 - "Community 351"
-Cohesion: 0.25
-Nodes (5): Tests for Expected Shortfall calculation., Test Expected Shortfall with normal distribution., Test Expected Shortfall with all positive returns., Test Expected Shortfall with short series., TestExpectedShortfall
-
 ### Community 352 - "Community 352"
-Cohesion: 0.25
-Nodes (5): Tests for GPU utility functions., detect_gpu should return a well-formed dict., Should return either cuDF or Pandas module., Should return either CuPy or NumPy module., TestGPUHelpers
+Cohesion: 0.14
+Nodes (9): Unit tests for core components. Run: pytest tests/test_core.py -v  Phase 1 en, Tests for GPU utility functions., detect_gpu should return a well-formed dict., Should return either CuPy or NumPy module., Tests for infrastructure health check utilities., Should return checks for all 7 infrastructure components., Should compute health summary from checks., TestGPUHelpers (+1 more)
 
 ### Community 353 - "Community 353"
-Cohesion: 0.12
-Nodes (9): Should halt after hitting max drawdown., TestRiskManager, Tests for the risk management system., Positive edge should give positive position size., No edge should give zero position size., Crisis regime should produce smaller position than normal., Position should never exceed max_position_pct., Should halt after hitting daily loss limit. (+1 more)
+Cohesion: 0.08
+Nodes (13): Unit tests for core components. Run: pytest tests/test_core.py -v, Should halt after hitting max drawdown., TestRiskManager, Unit tests for core components. Run: pytest tests/test_core.py -v, Should halt after hitting max drawdown., TestRiskManager, Tests for the risk management system., Positive edge should give positive position size. (+5 more)
 
 ### Community 354 - "Community 354"
-Cohesion: 0.25
-Nodes (4): Unit Tests for Model Performance Monitoring ===================================, Tests for RegimePerformance dataclass., Test basic RegimePerformance creation., TestRegimePerformance
+Cohesion: 0.28
+Nodes (5): monitor(), Unit Tests for Model Performance Monitoring ===================================, Tests for RegimePerformance dataclass., Test basic RegimePerformance creation., TestRegimePerformance
 
 ### Community 355 - "Community 355"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (6): 🗑️ Dead Weight candidates for Pruning, 🎯 Executive Summary, 🛠️ Mini-Medallion: Quant Feature Audit & SHAP Pruning Report, ⚠️ Multicollinearity Warnings (Correlation > 85%), 🚀 Practical Action Plan, 🏆 Top 20 Golden Features
 
 ### Community 356 - "Community 356"
@@ -2381,24 +2397,32 @@ Cohesion: 0.29
 Nodes (7): code:bash (docker-compose logs questdb                # All logs), code:bash (docker-compose up -d                       # Start all servi), code:bash (docker-compose restart redis), 📊 DOCKER COMMANDS, Restart Specific Service, Start/Stop Stack, View Service Logs
 
 ### Community 389 - "Community 389"
-Cohesion: 0.15
-Nodes (12): EconomicCalendar, Fetches the weekly XML feed and parses high impact USD events., Returns status regarding proximity to high impact news.         - block_trade: T, Fetches and parses high-impact economic events to protect the trading system fro, Current state of a position., Current state of a position., Current state of risk metrics., Current state of risk metrics. (+4 more)
+Cohesion: 0.12
+Nodes (15): PositionState, Risk Manager ============= Implements Kelly Criterion, circuit breakers, and p, RiskState, EconomicCalendar, Fetches the weekly XML feed and parses high impact USD events., Returns status regarding proximity to high impact news.         - block_trade:, Fetches and parses high-impact economic events to protect the trading system fro, Current state of a position. (+7 more)
 
 ### Community 390 - "Community 390"
-Cohesion: 0.33
-Nodes (6): main(), Mini-Medallion: Main Entry Point ================================== The comman, run_demo(), str, Mini-Medallion Gold Trading Engine., Quick demo: Fetch data → Generate features → Run models → Show results.     Pro
+Cohesion: 0.21
+Nodes (10): main(), Mini-Medallion: Main Entry Point ================================== The comman, run_demo(), str, main(), Mini-Medallion: Main Entry Point ================================== The comman, run_demo(), str (+2 more)
 
 ### Community 391 - "Community 391"
-Cohesion: 0.29
-Nodes (5): Initialize health monitor                  Args:             service_checks:, Register a connection pool for monitoring, Health status for a service, ServiceHealth, int
+Cohesion: 0.40
+Nodes (4): int, Initialize health monitor                  Args:             service_checks:, Register a connection pool for monitoring, int
 
 ### Community 392 - "Community 392"
-Cohesion: 0.29
-Nodes (4): Initialize RealTimeFeedManager                  Args:             max_retries, Calculate bid-ask spread, float, int
+Cohesion: 0.28
+Nodes (6): float, int, Initialize RealTimeFeedManager                  Args:             max_retries, Calculate bid-ask spread, float, int
+
+### Community 393 - "Community 393"
+Cohesion: 0.24
+Nodes (12): bool, float, int, benchmark_cudf(), benchmark_pandas(), generate_tick_data(), main(), GPU Benchmark Script ==================== Benchmark cuDF vs Pandas performance (+4 more)
 
 ### Community 394 - "Community 394"
 Cohesion: 0.33
 Nodes (6): code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), code:bash (if [ ! -f graphify-out/.graphify_extract.json ]; then), code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), For --update (incremental re-extraction)
+
+### Community 395 - "Community 395"
+Cohesion: 0.15
+Nodes (12): DataFrame, DatetimeIndex, from_pandas(), Index, MultiIndex, Shim for cuDF.DataFrame, Shim for cuDF.DatetimeIndex, Shim for cuDF.MultiIndex (+4 more)
 
 ### Community 396 - "Community 396"
 Cohesion: 0.33
@@ -2449,60 +2473,56 @@ Cohesion: 0.33
 Nodes (6): code:python (import websocket), code:json ({), code:json ({), code:json ({), code:json ({), WebSocket
 
 ### Community 409 - "Community 409"
-Cohesion: 0.33
-Nodes (5): get_health_monitor(), Advanced Health Monitoring ========================== Multi-tier health checks, Health status of a single service., Get or create global health monitor instance., ServiceHealth
+Cohesion: 0.21
+Nodes (10): get_health_monitor(), HealthMonitor, Advanced Health Monitoring ========================== Multi-tier health checks, Check cache (Redis) connection health., Health status of a single service., Get or create global health monitor instance., Advanced health monitoring system.     Tracks multiple services, endpoints, and, ServiceHealth (+2 more)
 
 ### Community 410 - "Community 410"
-Cohesion: 0.33
-Nodes (4): Tests for ServiceHealth dataclass., Test basic ServiceHealth creation., Test default values for optional fields., TestServiceHealth
+Cohesion: 0.20
+Nodes (6): ArchivalTask, MockNotifier, Test creating an archival task, Test checking if task is overdue, Test default logging notifier, Mock notifier for testing
 
 ### Community 411 - "Community 411"
 Cohesion: 0.33
 Nodes (6): 1. Wavelet Transform (Signal De-noising), code:block1 (Approximation:  cA[k] = Σ x[n] · φ(2^j · n - k)    (low-pass), code:block2 (1. Decompose: x → [cA5, cD5, cD4, cD3, cD2, cD1]), De-noising Process, Discrete Wavelet Transform (DWT), Wavelet Choice for Gold
 
 ### Community 412 - "Community 412"
-Cohesion: 0.33
-Nodes (4): Tests for GET /paper-trading/performance., Test performance when engine not initialized., Test performance metrics at start., TestPerformanceEndpoint
+Cohesion: 0.05
+Nodes (41): 1. Change Save Interval, 1. ✅ Frontend React Component, 2. ✅ Backend API Endpoint, 2. Change Storage Location, 3. Fetch Interval, 3. ✅ Utility Module (New), 4. ✅ Documentation (New), API Usage Examples (+33 more)
 
 ### Community 413 - "Community 413"
-Cohesion: 0.33
-Nodes (4): Tests for GET /paper-trading/risk-report., Test risk report when engine not initialized., Test risk report generation., TestRiskReportEndpoint
+Cohesion: 0.30
+Nodes (8): compute_percentile(), get_max_latency(), get_mean_latency(), get_measurement_count(), get_p50_latency(), get_p95_latency(), get_p99_latency(), get_summary()
 
 ### Community 414 - "Community 414"
-Cohesion: 0.33
-Nodes (4): Tests for POST /paper-trading/reset-daily., Test reset when engine not initialized., Test successful daily counter reset., TestDailyResetEndpoint
+Cohesion: 0.30
+Nodes (8): compute_percentile(), get_max_latency(), get_mean_latency(), get_measurement_count(), get_p50_latency(), get_p95_latency(), get_p99_latency(), get_summary()
 
 ### Community 415 - "Community 415"
-Cohesion: 0.33
-Nodes (4): Tests for GET /paper-trading/portfolio., Test portfolio when engine not initialized., Test initial portfolio snapshot., TestPortfolioEndpoint
+Cohesion: 0.18
+Nodes (10): created, daily_data_count, daily_end_date, hourly_data_count, hourly_end_date, last_daily_update, last_hourly_update, last_minute_update (+2 more)
 
 ### Community 416 - "Community 416"
 Cohesion: 0.33
 Nodes (4): Tests for POST /paper-trading/stop., Test stop when engine not initialized., Test stopping a running engine., TestStopEndpoint
 
 ### Community 417 - "Community 417"
-Cohesion: 0.33
-Nodes (4): Test trade status transitions., Test TradeExecution dataclass., Test trade creation with default values., TestTradeExecution
-
-### Community 418 - "Community 418"
-Cohesion: 0.33
-Nodes (4): Integration tests for risk metrics., Test complete risk analysis with multiple metrics., Test creating AdvancedRiskMetrics from calculations., TestAdvancedRiskIntegration
+Cohesion: 0.05
+Nodes (36): 1. **View Prediction Logs**, 2. **Monitor Auto-Save Status**, 3. **Manual Save (Anytime)**, 4. **Export CSV**, Change Save Interval (Default: 5 minutes), Change Storage Location, code:block1 (E:\PRO\JIMxNik\PredictionLogs\), code:python (from src.utils.prediction_log_manager import PredictionLogMa) (+28 more)
 
 ### Community 419 - "Community 419"
-Cohesion: 0.33
-Nodes (4): Test report generation with real metrics., Generate and validate markdown report., Test saving report to file., TestReportGeneration
+Cohesion: 0.06
+Nodes (26): callable, backtester(), mean_reversion_strategy(), Phase 5: Full Backtesting Integration Tests  End-to-end backtester workflow va, Test execution simulator works correctly., Test metrics calculation with real backtest data., Calculate metrics from equity curve., Test walk-forward validation with backtester. (+18 more)
 
 ### Community 420 - "Community 420"
-Cohesion: 0.33
-Nodes (4): OrderRecord, Execution Engine ==========================  Provides a lightweight order exe, Immutable record of a submitted order., Execution engine for order routing and management.
+Cohesion: 0.18
+Nodes (7): Execution Engine ==========================  Provides a lightweight order exe, Immutable record of a submitted order., Execution engine for order routing and management., OrderRecord, Execution Engine ==========================  Provides a lightweight order exe, Immutable record of a submitted order., Execution engine for order routing and management.
 
 ### Community 421 - "Community 421"
-Cohesion: 0.33
-Nodes (4): Tests for infrastructure health check utilities., Should return checks for all 7 infrastructure components., Should compute health summary from checks., TestInfrastructure
+Cohesion: 0.29
+Nodes (5): get_available_venues(), get_stats_summary(), route_to_venue(), select_best_venue(), submit_order()
 
 ### Community 422 - "Community 422"
-Cohesion: 0.33
-Nodes (4): from_string(), LogLevel, Logging & Observability Configuration - Structured logging with distributed trac, Initialize StructuredLogger                  Args:             component: Com
+Cohesion: 0.36
+Nodes (5): TestFeatureEngine, TestFeatureEngine, Tests for the feature engineering pipeline., Should produce a DataFrame with many more columns., Feature values should not depend on future data.
 
 ### Community 423 - "Community 423"
 Cohesion: 0.33
@@ -2511,6 +2531,10 @@ Nodes (4): Tests for ModelScorecard dataclass., Test basic ModelScorecard creati
 ### Community 424 - "Community 424"
 Cohesion: 0.33
 Nodes (4): Integration tests for ModelPerformanceMonitor., Test tracking across multiple days., Test tracking trades for all 6 models simultaneously., TestModelPerformanceIntegration
+
+### Community 425 - "Community 425"
+Cohesion: 0.29
+Nodes (5): get_available_venues(), get_stats_summary(), route_to_venue(), select_best_venue(), submit_order()
 
 ### Community 426 - "Community 426"
 Cohesion: 0.40
@@ -2638,11 +2662,11 @@ Nodes (5): code:bash (pip install -r requirements-base.txt -r requirements-cpu.t
 
 ### Community 457 - "Community 457"
 Cohesion: 0.50
-Nodes (4): generate_synthetic_data(), run_shap_audit.py =================== Quantitative Feature Auditing Tool for the, Generate high-fidelity synthetic gold price series with realistic drift and shoc, run_audit()
+Nodes (4): generate_synthetic_data(), run_shap_audit.py =================== Quantitative Feature Auditing Tool for t, Generate high-fidelity synthetic gold price series with realistic drift and shoc, run_audit()
 
 ### Community 458 - "Community 458"
-Cohesion: 0.29
-Nodes (5): health_check(), Health check endpoint with advanced monitoring.          Returns:         Ser, Redis Feature Store =================== Real-time feature serving layer for ML, get_redis_client(), Get a global Redis client using a connection pool.     This ensures we don't ope
+Cohesion: 0.20
+Nodes (9): code:python (# Change symbols (for different data sources)), code:bash (# Full workflow (includes auto-sync)), Configuration, Data Retention Policy, Edit in `gold_data_manager.py`, Gold Data Download & Incremental Sync System, Integration with Trading System, Overview (+1 more)
 
 ### Community 459 - "Community 459"
 Cohesion: 0.50
@@ -2657,12 +2681,12 @@ Cohesion: 0.50
 Nodes (4): code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -m graphify save-result --question "), For /graphify explain
 
 ### Community 462 - "Community 462"
-Cohesion: 0.50
-Nodes (3): Test walk-forward validation with backtester., Verify out-of-sample performance degrades (overfitting indicator)., TestWalkForwardIntegration
+Cohesion: 0.20
+Nodes (10): 1. Initialize System Only, 2. Gold Data Manager Direct Control, 3. Old Download Script (Legacy), Automatic Startup Sync (Recommended), code:bash (# All three methods trigger automatic data sync:), code:bash (# Initialize directories and sync gold data), code:bash (# Create manager and update incrementally), code:bash (# Full download (all data from scratch)) (+2 more)
 
 ### Community 463 - "Community 463"
-Cohesion: 0.50
-Nodes (3): Test statistical validation pipeline., Calculate DSR from actual backtest returns., TestStatisticalValidation
+Cohesion: 0.25
+Nodes (8): code:python (# Use hourly data instead), code:bash (# Force full update), code:bash (# Remove metadata), Issue: Download fails due to network, Issue: Duplicate timestamps in database, Issue: "No data available" for minute data, Issue: Old data not updating, Troubleshooting
 
 ### Community 464 - "Community 464"
 Cohesion: 0.50
@@ -2681,8 +2705,8 @@ Cohesion: 1.00
 Nodes (3): calculateEMA(), calculateSMI(), doubleSmooth()
 
 ### Community 468 - "Community 468"
-Cohesion: 0.50
-Nodes (4): code:block13 (┌───────────────────────────────────────────────────────────), High-Level Data Flow, Key Components, 🏗️ Understanding the Architecture
+Cohesion: 0.29
+Nodes (7): 1. `main.py`, 2. `run_jim.ps1`, 3. `scripts/run_pipeline.py`, code:python (# Added before GPU detection), code:powershell (# Step 0: Initialize System & Sync Gold Data), code:python (from scripts.gold_data_manager import GoldDataManager), 🔧 Modified Files
 
 ### Community 469 - "Community 469"
 Cohesion: 0.50
@@ -2697,8 +2721,8 @@ Cohesion: 0.50
 Nodes (4): Immediate (Today), Next Phase, 🚀 NEXT STEPS, This Week
 
 ### Community 472 - "Community 472"
-Cohesion: 0.50
-Nodes (4): 1. GPU Model Accelerators (`src/utils/gpu_models.py`) ⭐, code:python (# Usage:), code:python (# Usage:), code:python (# Usage:)
+Cohesion: 0.06
+Nodes (33): API Endpoints, Auto-Save Interval, Automatic Process (Backend), code:block1 (E:\PRO\JIMxNik\PredictionLogs\), code:json ({), code:javascript (// Line 67 - Change interval duration), code:python (# Line 1010), code:block5 (POST /paper-trading/save-prediction-logs) (+25 more)
 
 ### Community 473 - "Community 473"
 Cohesion: 0.50
@@ -2731,6 +2755,10 @@ Nodes (4): ✅ Already Implemented, 🔒 Production Readiness, Ready to Deploy N
 ### Community 480 - "Community 480"
 Cohesion: 0.50
 Nodes (4): code:json ({), 📊 Error Handling, Example Error Response, Response Codes
+
+### Community 481 - "Community 481"
+Cohesion: 0.29
+Nodes (7): Alternative Entry Points, code:block5 (User runs: .\run_jim.ps1), code:bash (python main.py --mode api), code:bash (python scripts/run_pipeline.py --mode full), code:bash (python scripts/init_system.py), 🔄 Integration Workflow, Startup Sequence
 
 ### Community 482 - "Community 482"
 Cohesion: 0.50
@@ -2773,8 +2801,8 @@ Cohesion: 0.50
 Nodes (4): code:python (from prometheus_client import Counter, Gauge, Histogram), Key Metrics to Monitor, Monitoring & Metrics, Prometheus Metrics
 
 ### Community 492 - "Community 492"
-Cohesion: 0.50
-Nodes (3): End-to-end lifecycle test: start → trade → monitor → stop., Test complete paper trading lifecycle., TestFullLifecycle
+Cohesion: 0.29
+Nodes (7): code:bash (python scripts/init_system.py --force), code:python (from scripts.gold_data_manager import GoldDataManager), code:python (import pandas as pd), 🚀 Common Operations, Export Data to Different Format, Force Re-Download All Data, Update Only Specific Timeframe
 
 ### Community 494 - "Community 494"
 Cohesion: 0.50
@@ -2784,9 +2812,9 @@ Nodes (3): FastAPI dependency to verify X-API-Key header against the API_ACCESS_
 Cohesion: 0.50
 Nodes (3): Test Runner for Phase 4 ======================= Run all Phase 4 unit and integ, Run specified tests using pytest.          Args:         test_names: List of, run_tests()
 
-### Community 497 - "Community 497"
-Cohesion: 0.33
-Nodes (4): Test StressScenario creation, Test StressScenario with complete metadata, test_stress_scenario_creation(), test_stress_scenario_with_metadata()
+### Community 496 - "Community 496"
+Cohesion: 0.29
+Nodes (7): code:python (import sqlite3), code:python (import pandas as pd), code:python (import pandas as pd), From CSV, From Parquet (Recommended - Fast), From SQLite Database, Loading Data in Your Code
 
 ### Community 498 - "Community 498"
 Cohesion: 0.50
@@ -2885,36 +2913,100 @@ Cohesion: 0.67
 Nodes (3): 8. UPDATE CONFIG, code:json ({), code:json ({)
 
 ### Community 528 - "Community 528"
-Cohesion: 0.67
-Nodes (3): ndarray, Train the RandomForest meta-learner with Walk-Forward CV., train_meta_learner()
+Cohesion: 0.33
+Nodes (4): 1.3 Monitoring Stack, 1.4 Project Structure, code:block5 (JIM_Latest/), Phase 1: Infrastructure & Compute
 
 ### Community 533 - "Community 533"
-Cohesion: 0.07
-Nodes (26): get_paper_trading_status(), get_performance_metrics(), PaperTradingStatusResponse, PerformanceMetricsResponse, QueuedSignal, Get current paper trading status including portfolio, trading stats,     and pe, Get current paper trading status including portfolio, trading stats,     and pe, Get performance metrics including P&L breakdown, Sharpe ratio,     drawdown, an (+18 more)
+Cohesion: 0.40
+Nodes (4): Signal the loop to stop., Signal the loop to stop., Signal the loop to stop., Signal the loop to stop.
 
 ### Community 535 - "Community 535"
 Cohesion: 0.14
 Nodes (13): 10. Kyle's Lambda (Price Impact), 6. Deflated Sharpe Ratio (Anti-Overfitting), 7. Sharpe Ratio, 8. Sortino Ratio, 9. Order Flow Imbalance (Microstructure), code:block18 (DSR = Φ[(SR_observed - SR_expected) / σ_SR]), code:block19 (SR = (R_p - R_f) / σ_p × √(252)), code:block20 (Sortino = (R_p - R_f) / σ_downside × √(252)) (+5 more)
 
-### Community 786 - "Community 786"
-Cohesion: 0.21
-Nodes (9): str, Returns         -------         "TRENDING"  — strong directional move, use trend, Returns a scalar 0.0–1.0 to multiply your base lot size by.          TRENDING  →, Detects whether the market is in a TRENDING, NEUTRAL, or RANGING regime     usin, RegimeDetector, BacktestConfig, my_signal(), DataFrame (+1 more)
+### Community 537 - "Community 537"
+Cohesion: 0.33
+Nodes (5): bool, check_api_health(), Example API health check, bool, Test API health check
+
+### Community 544 - "Community 544"
+Cohesion: 0.33
+Nodes (5): For Specific Issues, Gold Data System - File Reference & Integration Map, 🎯 Summary, 📞 Support, ✅ Verification Checklist
+
+### Community 548 - "Community 548"
+Cohesion: 0.33
+Nodes (6): code:block1 (┌─────────────────────────────────────────┐), code:json ({), Components, Data Timeframes, Metadata Tracking, System Architecture
+
+### Community 549 - "Community 549"
+Cohesion: 0.33
+Nodes (6): code:block12 (1. Check if timestamp already exists), Daily Data, Database Merge Logic, Hourly Data, Incremental Update Logic, Minute Data
+
+### Community 550 - "Community 550"
+Cohesion: 0.40
+Nodes (5): 1. `scripts/gold_data_manager.py` (445 lines), 2. `scripts/init_system.py` (180 lines), 3. `scripts/test_gold_data.py` (280 lines), Core System Files, 📋 New Files Created
+
+### Community 578 - "Community 578"
+Cohesion: 0.40
+Nodes (5): 💾 API Reference, code:python (# Incremental update (main method)), code:python (import pandas as pd), code:python (from scripts.gold_data_manager import GoldDataManager), GoldDataManager Class
+
+### Community 592 - "Community 592"
+Cohesion: 0.14
+Nodes (11): ab_test_runner(), Test suite for Enhancement #7: Automated Model Retraining  Tests cover: - Ret, Test RetrainingJob failure tracking, Test MockModelTrainer data loading, Create A/B test runner, Test second model runs A/B test against first, test_mock_trainer_data_loading(), test_orchestrator_ab_test_second_model() (+3 more)
+
+### Community 600 - "Community 600"
+Cohesion: 0.40
+Nodes (5): Check Current Status, code:bash (# Python one-liner), code:python (import pandas as pd), Data Quality Checks, 🔍 Monitoring & Debugging
+
+### Community 607 - "Community 607"
+Cohesion: 0.40
+Nodes (5): code:block10 (timestamp        : Datetime (UTC)), code:block11 (timestamp            open    high    low     close   volume), Data Format, Example Data, OHLCV Columns
+
+### Community 611 - "Community 611"
+Cohesion: 0.40
+Nodes (5): code:python (# ✗ SLOW: Load entire dataset), code:python (# Parquet is:), Performance Tips, Query Large Datasets Efficiently, Use Parquet for Large Reads
+
+### Community 613 - "Community 613"
+Cohesion: 0.40
+Nodes (3): Tests for AdvancedRiskMetrics dataclass., Test basic AdvancedRiskMetrics creation., TestAdvancedRiskMetrics
+
+### Community 618 - "Community 618"
+Cohesion: 0.10
+Nodes (20): EnsembleStrategy, GeneticStrategy, HMMStrategy, Initialize LSTM strategy.                  Args:             sequence_length:, Initialize TFT strategy.                  Args:             num_attention_hea, Initialize Wavelet strategy.                  Args:             lookback: Num, Trading strategy using Genetic Algorithm optimized model., Initialize Genetic Algorithm strategy.                  Args:             num (+12 more)
+
+### Community 622 - "Community 622"
+Cohesion: 0.08
+Nodes (24): int, int, ChaosEvent, ChaosTestResult, LoadTestRunner, Chaos test event definition, Result from chaos testing, Framework for running load tests (+16 more)
+
+### Community 623 - "Community 623"
+Cohesion: 0.50
+Nodes (4): Month 2: Gradual Increase, Month 3+: Full Operation, 🚀 Next Steps After Launch, Week 1-4: Monitor Closely
+
+### Community 630 - "Community 630"
+Cohesion: 0.16
+Nodes (18): Any, int, Path, str, cleanup_old_sessions(), get_latest_session(), get_session_by_id(), list_sessions() (+10 more)
+
+### Community 632 - "Community 632"
+Cohesion: 0.50
+Nodes (4): 1. `GOLD_DATA_SYSTEM.md` (400+ lines), 2. `GOLD_DATA_QUICK_START.md` (350+ lines), 3. This File: `GOLD_DATA_FILE_REFERENCE.md`, 📚 Documentation Files Created
+
+### Community 634 - "Community 634"
+Cohesion: 0.50
+Nodes (4): code:block4 (Database/), 📊 Data Storage Locations, Primary Storage, Total Storage Used
+
+### Community 638 - "Community 638"
+Cohesion: 0.67
+Nodes (3): ndarray, asset_returns_matrix(), Generate multi-asset returns matrix
 
 ### Community 787 - "Community 787"
-Cohesion: 0.18
-Nodes (12): 1.3 Monitoring Stack, 1.4 Project Structure, 1.7 Monitoring Dashboards, 1.8 Deliverables Checklist, code:block5 (JIM_Latest/), Grafana Dashboards, Phase 1: Infrastructure & Compute, Prometheus Metrics (+4 more)
+Cohesion: 0.25
+Nodes (8): 1.7 Monitoring Dashboards, 1.8 Deliverables Checklist, Grafana Dashboards, Prometheus Metrics, 1.3 Monitoring Stack, 1.4 Project Structure, code:block5 (JIM_Latest/), Phase 1: Infrastructure & Compute
 
 ### Community 788 - "Community 788"
-Cohesion: 0.18
-Nodes (10): 1. Project Overview, 2. Core Architecture, 3. Recent Milestones & Solved Blockers, 4. Immediate Roadmap (Next Steps), A. Data Ingestion & Feature Engineering, B. The 7-Model Ensemble (The "Brain"), C. Risk Management (The "Shield"), D. Live Trading & Execution (+2 more)
+Cohesion: 0.10
+Nodes (20): 1. Project Overview, 2. Core Architecture, 3. Recent Milestones & Solved Blockers, 4. Immediate Roadmap (Next Steps), A. Data Ingestion & Feature Engineering, B. The 7-Model Ensemble (The "Brain"), C. Risk Management (The "Shield"), D. Live Trading & Execution (+12 more)
 
 ### Community 789 - "Community 789"
-Cohesion: 0.18
-Nodes (6): TestWaveletDenoiser, Tests for the wavelet de-noising model., De-noised signal should have less variance than original., De-noised signal should follow the general trend., Should decompose into named frequency bands., Signal should be -1, 0, or 1 with confidence 0-1.
-
-### Community 790 - "Community 790"
-Cohesion: 0.20
-Nodes (6): ETF flow features from GLD/IAU volume data.          Generates:           - D, COT positioning features from CFTC data.          Generates:           - Net, Google Trends interest features.          Generates:           - Interest lev, News sentiment features.          Generates rolling averages, momentum, and fe, _tz_naive_series(), Index
+Cohesion: 0.15
+Nodes (7): TestWaveletDenoiser, TestWaveletDenoiser, Tests for the wavelet de-noising model., De-noised signal should have less variance than original., De-noised signal should follow the general trend., Should decompose into named frequency bands., Signal should be -1, 0, or 1 with confidence 0-1.
 
 ### Community 791 - "Community 791"
 Cohesion: 0.22
@@ -2924,21 +3016,13 @@ Nodes (9): 3. Genetic Algorithm (Strategy Evolution), code:block10 (param_new = 
 Cohesion: 0.22
 Nodes (9): 4. Kelly Criterion (Position Sizing), Basic Kelly, code:block11 (f* = (p · b - q) / b), code:block12 (f_actual = f* / 2), code:block13 (f_dynamic = (p_critic · b_rolling - q_critic) / (2 · b_rolli), code:block14 (f_final = min(f_dynamic, 0.05)     # Never exceed 5% of port), Dynamic Kelly with Meta-Label, Half-Kelly (Practical) (+1 more)
 
-### Community 793 - "Community 793"
-Cohesion: 0.25
-Nodes (5): _compute_kalman_spread(), Enhanced cross-asset features: ratios, betas, z-scores., Feature Engineering Pipeline ============================= Generates 200+ feat, float, ndarray
-
-### Community 794 - "Community 794"
-Cohesion: 0.29
-Nodes (5): Update the Kalman filter with new prices.         We treat Gold (XAU) as y and S, Enforces the user-defined bounds on the hedge ratio., Calculates the final Silver hedge size based on the current regime.         - NO, float, str
-
 ### Community 795 - "Community 795"
-Cohesion: 0.25
-Nodes (5): Test configuration dataclass., Test default configuration., Test custom configuration., Test that signal weights are properly defined., TestPaperTradingConfig
+Cohesion: 0.04
+Nodes (34): engine(), Unit tests for Paper Trading Engine  Tests cover: - Engine initialization and, Test trade status transitions., Test RiskManager class., Test risk manager initialization., Test circuit breakers with acceptable conditions., Test circuit breakers with low confidence., Test configuration dataclass. (+26 more)
 
 ### Community 796 - "Community 796"
-Cohesion: 0.25
-Nodes (5): Integration tests for paper trading engine., Test complete engine lifecycle., Test signal confidence threshold enforcement., Test that positions close on opposite signal., TestIntegration
+Cohesion: 0.20
+Nodes (12): Any, str, _deep_substitute(), get_config(), get_section(), load_config(), Get the global configuration (cached singleton)., Get a specific section from the config. (+4 more)
 
 ### Community 797 - "Community 797"
 Cohesion: 0.29
@@ -2948,29 +3032,13 @@ Nodes (7): 2. Hidden Markov Model (Regime Detection), code:block3 (λ = (A, B, �
 Cohesion: 0.29
 Nodes (7): 5. Value at Risk (VaR) & Conditional VaR, code:block15 (VaR_α = μ + z_α · σ), code:block16 (FOR i = 1 to 100,000:), code:block17 (CVaR_α = E[Loss | Loss > VaR_α]), CVaR (Expected Shortfall), Monte Carlo VaR (GPU-accelerated), Parametric VaR
 
-### Community 799 - "Community 799"
-Cohesion: 0.29
-Nodes (4): Compute higher timeframe features and inject into base frame., Lagged returns and autocorrelation features., Event proximity flags and timing features.                  Uses day-of-month, Series
-
-### Community 800 - "Community 800"
-Cohesion: 0.33
-Nodes (4): Get count of engineered features., Target Variable Engineering (Forward Returns) for supervised learning., Advances along the time-series and returns:           1 if take_profit is hit f, int
-
-### Community 801 - "Community 801"
-Cohesion: 0.33
-Nodes (6): get_portfolio_snapshot(), PortfolioSnapshotResponse, Portfolio state at a point in time., Portfolio state at a point in time., Get current portfolio snapshot with mark-to-market valuation., Get current portfolio snapshot with mark-to-market valuation.
-
-### Community 802 - "Community 802"
-Cohesion: 0.33
-Nodes (6): confidence(), effective_price(), spread(), spread_bps(), total_cost(), float
-
 ### Community 803 - "Community 803"
 Cohesion: 0.33
 Nodes (6): 1. Wavelet Transform (Signal De-noising), code:block1 (Approximation:  cA[k] = Σ x[n] · φ(2^j · n - k)    (low-pass), code:block2 (1. Decompose: x → [cA5, cD5, cD4, cD3, cD2, cD1]), De-noising Process, Discrete Wavelet Transform (DWT), Wavelet Choice for Gold
 
 ### Community 804 - "Community 804"
 Cohesion: 0.40
-Nodes (3): on_day_end(), live_trader_integration.py ========================== Shows exactly WHERE and HO, Call once per day at market close / midnight UTC.
+Nodes (3): on_day_end(), live_trader_integration.py ========================== Shows exactly WHERE and, Call once per day at market close / midnight UTC.
 
 ### Community 805 - "Community 805"
 Cohesion: 0.40
@@ -2996,33 +3064,41 @@ Nodes (5): 1.1 GPU Compute Stack, code:block1 (Benchmark: Loading 10GB of tick d
 Cohesion: 0.40
 Nodes (3): 1.2 Database Layer, QuestDB Schema (Gold Futures Order Book), QuestDB Schema (Gold Ticks)
 
-### Community 811 - "Community 811"
-Cohesion: 0.50
-Nodes (4): code:block19 (ws://localhost:8000/paper-trading/ws), code:json (// On connect), code:json (// Ping/pong keepalive), WebSocket (Real-Time Updates)
-
 ### Community 812 - "Community 812"
 Cohesion: 0.50
 Nodes (4): 1.9 Next Steps, code:bash (# Linux/macOS), code:bash (python scripts/benchmark_gpu.py --size 100 --iterations 3), code:bash (pytest tests/test_infrastructure_integration.py -v)
 
+### Community 848 - "Community 848"
+Cohesion: 0.18
+Nodes (7): LogLevel, Initialize StructuredLogger                  Args:             component: Com, Test TracingManager functionality, Test creating tracing manager, Test recording trace metrics, Test span context manager, TestTracingManager
+
+### Community 858 - "Community 858"
+Cohesion: 0.33
+Nodes (4): Tests for GET /paper-trading/risk-report., Test risk report when engine not initialized., Test risk report generation., TestRiskReportEndpoint
+
+### Community 859 - "Community 859"
+Cohesion: 0.50
+Nodes (4): code:block19 (ws://localhost:8000/paper-trading/ws), code:json (// On connect), code:json (// Ping/pong keepalive), WebSocket (Real-Time Updates)
+
 ## Knowledge Gaps
-- **2466 isolated node(s):** `name`, `version`, `start`, `start:backend`, `start:frontend` (+2461 more)
+- **2732 isolated node(s):** `name`, `version`, `start`, `start:backend`, `start:frontend` (+2727 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **262 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **288 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `timedelta` connect `Community 108` to `Community 1`, `Community 2`, `Community 130`, `Community 263`, `Community 9`, `Community 143`, `Community 26`, `Community 30`, `Community 159`, `Community 39`, `Community 46`, `Community 816`, `Community 55`, `Community 60`, `Community 69`, `Community 199`, `Community 72`, `Community 202`, `Community 80`, `Community 83`, `Community 84`, `Community 596`, `Community 597`, `Community 88`, `Community 90`, `Community 91`, `Community 93`, `Community 98`, `Community 109`, `Community 631`?**
-  _High betweenness centrality (0.049) - this node is a cross-community bridge._
-- **Why does `RiskManager` connect `Community 112` to `Community 0`, `Community 129`, `Community 389`, `Community 390`, `Community 6`, `Community 267`, `Community 141`, `Community 789`, `Community 21`, `Community 533`, `Community 149`, `Community 795`, `Community 796`, `Community 412`, `Community 413`, `Community 415`, `Community 160`, `Community 801`, `Community 417`, `Community 416`, `Community 289`, `Community 421`, `Community 414`, `Community 41`, `Community 171`, `Community 184`, `Community 196`, `Community 73`, `Community 349`, `Community 350`, `Community 352`, `Community 353`, `Community 234`, `Community 492`, `Community 116`?**
-  _High betweenness centrality (0.040) - this node is a cross-community bridge._
-- **Why does `SignalType` connect `Community 41` to `Community 0`, `Community 1`, `Community 39`, `Community 171`, `Community 112`, `Community 533`?**
-  _High betweenness centrality (0.028) - this node is a cross-community bridge._
-- **Are the 55 inferred relationships involving `RiskManager` (e.g. with `str` and `int`) actually correct?**
-  _`RiskManager` has 55 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 30 inferred relationships involving `QuestDBWriter` (e.g. with `Path` and `bool`) actually correct?**
+- **Why does `timedelta` connect `Community 108` to `Community 130`, `Community 2`, `Community 132`, `Community 263`, `Community 9`, `Community 10`, `Community 143`, `Community 410`, `Community 26`, `Community 157`, `Community 30`, `Community 159`, `Community 419`, `Community 39`, `Community 172`, `Community 46`, `Community 55`, `Community 58`, `Community 60`, `Community 63`, `Community 202`, `Community 80`, `Community 83`, `Community 84`, `Community 596`, `Community 597`, `Community 98`, `Community 109`, `Community 242`, `Community 630`, `Community 631`?**
+  _High betweenness centrality (0.042) - this node is a cross-community bridge._
+- **Why does `RiskManager` connect `Community 149` to `Community 0`, `Community 129`, `Community 389`, `Community 390`, `Community 267`, `Community 21`, `Community 789`, `Community 795`, `Community 416`, `Community 289`, `Community 160`, `Community 422`, `Community 171`, `Community 184`, `Community 196`, `Community 73`, `Community 216`, `Community 858`, `Community 350`, `Community 352`, `Community 353`, `Community 234`, `Community 116`?**
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
+- **Why does `SignalType` connect `Community 41` to `Community 0`, `Community 64`, `Community 1`, `Community 39`, `Community 171`, `Community 149`, `Community 409`, `Community 795`, `Community 287`?**
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+- **Are the 30 inferred relationships involving `QuestDBWriter` (e.g. with `FastAPI` and `CurrentSignalResponse`) actually correct?**
   _`QuestDBWriter` has 30 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 55 inferred relationships involving `RiskManager` (e.g. with `int` and `float`) actually correct?**
+  _`RiskManager` has 55 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 54 inferred relationships involving `Direction` (e.g. with `BacktestConfig` and `Backtester`) actually correct?**
   _`Direction` has 54 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 41 inferred relationships involving `ExecutionSimulator` (e.g. with `BacktestConfig` and `Backtester`) actually correct?**
+- **Are the 41 inferred relationships involving `ExecutionSimulator` (e.g. with `SignalType` and `TradeStatus`) actually correct?**
   _`ExecutionSimulator` has 41 INFERRED edges - model-reasoned connections that need verification._

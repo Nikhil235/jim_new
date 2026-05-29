@@ -990,6 +990,105 @@ def get_prediction_log(limit: int = Query(default=100, ge=1, le=1000)):
 
 
 # ============================================================================
+# SAVE PREDICTION LOGS TO LOCAL FILESYSTEM
+# ============================================================================
+
+@router.post("/save-prediction-logs", summary="Save Prediction Logs to Local Storage")
+def save_prediction_logs(logs: List[Dict[str, Any]] = None):
+    """
+    Save prediction logs to local filesystem with session-wise organization.
+    
+    Saves logs to: E:\PRO\JIMxNik\PredictionLogs\PredictionLogs_DDMMYYYY_HHMMSS.csv
+    Creates a new session log on first call, then saves every 5 minutes.
+    
+    Args:
+        logs: List of prediction log entries to save (if None, reads from API)
+    
+    Returns:
+        {
+            "status": "success",
+            "file_path": "...",
+            "records_saved": N,
+            "session_id": "..."
+        }
+    """
+    try:
+        import os
+        import csv
+        from datetime import datetime
+        
+        # Define local storage path
+        LOGS_DIR = r"E:\PRO\JIMxNik\PredictionLogs"
+        os.makedirs(LOGS_DIR, exist_ok=True)
+        
+        # If logs not provided, read from API CSV
+        if logs is None:
+            from src.paper_trading.prediction_logger import get_csv_path
+            csv_path = get_csv_path()
+            if not os.path.exists(csv_path):
+                return {"status": "ok", "records_saved": 0, "message": "No logs available"}
+            
+            with open(csv_path, "r", newline="") as f:
+                reader = csv.DictReader(f)
+                logs = list(reader)
+        
+        if not logs:
+            return {"status": "ok", "records_saved": 0, "message": "No logs to save"}
+        
+        # Create session file with timestamp
+        now = datetime.now()
+        session_id = now.strftime("%d%m%Y_%H%M%S")
+        filename = f"PredictionLogs_{session_id}.csv"
+        filepath = os.path.join(LOGS_DIR, filename)
+        
+        # Get headers from first log entry
+        headers = list(logs[0].keys())
+        
+        # Check if session file already exists
+        records_saved = len(logs)
+        if os.path.exists(filepath):
+            # Read existing logs
+            with open(filepath, "r", newline="", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                existing_logs = list(reader)
+            
+            # Deduplicate by timestamp
+            existing_timestamps = {log.get("timestamp") for log in existing_logs}
+            new_logs = [log for log in logs if log.get("timestamp") not in existing_timestamps]
+            records_saved = len(new_logs)
+            
+            # Append new logs only
+            if new_logs:
+                with open(filepath, "a", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=headers)
+                    writer.writerows(new_logs)
+        else:
+            # Create new session file with headers
+            with open(filepath, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=headers)
+                writer.writeheader()
+                writer.writerows(logs)
+        
+        # Count total records in file
+        with open(filepath, "r", newline="", encoding="utf-8") as f:
+            total_records = sum(1 for _ in f) - 1  # Subtract header row
+        
+        logger.info(f"Saved {records_saved} prediction logs to: {filepath}")
+        
+        return {
+            "status": "success",
+            "file_path": filepath,
+            "records_saved": records_saved,
+            "session_id": session_id,
+            "total_records_in_session": total_records
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to save prediction logs: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
 # WEBSOCKET ENDPOINT
 # ============================================================================
 
