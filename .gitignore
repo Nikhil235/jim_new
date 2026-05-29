@@ -60,3 +60,11 @@ mlartifacts/
 .claude/
 .codex/
 .cursor/
+
+# Graphify caching (keep graph data, exclude cache)
+graphify-out/cache/
+graphify-out/.graphify_root
+graphify-out/.graphify_labels.json
+
+# Git hooks location
+.githooks/
