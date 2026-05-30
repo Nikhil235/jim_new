@@ -641,7 +641,7 @@ async def inject_signal(request: Request, signal_request: SignalInjectionRequest
         raise HTTPException(status_code=409, detail="Paper trading engine is not running")
     
     # Validate model name
-    valid_models = ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp", "ensemble"]
+    valid_models = ["wavelet", "hmm", "lstm", "tft", "genetic", "hmm_pro", "ensemble"]
     if signal_request.model_name not in valid_models:
         raise HTTPException(
             status_code=400,
@@ -987,6 +987,102 @@ def get_prediction_log(limit: int = Query(default=100, ge=1, le=1000)):
     except Exception as e:
         logger.error(f"Failed to read prediction log: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/correlation-matrix", summary="Get Model Correlation Matrix")
+def get_correlation_matrix(limit: int = Query(default=500, ge=10, le=5000)):
+    """
+    Calculate the correlation matrix and consensus metrics dynamically from prediction_log.csv.
+    """
+    try:
+        from src.paper_trading.prediction_logger import get_csv_path
+        import os
+        import csv
+        
+        csv_path = get_csv_path()
+        if not os.path.exists(csv_path):
+            return {"status": "ok", "correlationMatrix": {}, "avgPairwiseAgreement": {}, "consensusAnalysis": []}
+            
+        with open(csv_path, "r", newline="") as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+            
+        recent_rows = rows[-limit:] if limit > 0 else rows
+        
+        # We define agreement as matching exactly (LONG == LONG, SHORT == SHORT, HOLD == HOLD)
+        models_map = {
+            "wavelet": "wavelet_pro_signal",
+            "hmm": "hmm_pro_signal",
+            "lstm": "lstm_signal",
+            "tft": "tft_signal",
+            "genetic": "genetic_signal",
+            "ensemble": "ensemble_signal"
+        }
+        
+        model_keys = list(models_map.keys())
+        base_models = [m for m in model_keys if m != "ensemble"]
+        
+        # Initialize counts
+        agree_counts = {m: {m2: 0 for m2 in model_keys} for m in model_keys}
+        valid_rows_count = 0
+        
+        for row in recent_rows:
+            # Check if all keys exist in row, if not skip
+            missing = False
+            for k, csv_col in models_map.items():
+                if csv_col not in row or not row[csv_col]:
+                    missing = True
+                    break
+            if missing:
+                continue
+            
+            valid_rows_count += 1
+            for m1 in model_keys:
+                sig1 = row[models_map[m1]]
+                for m2 in model_keys:
+                    sig2 = row[models_map[m2]]
+                    if sig1 == sig2:
+                        agree_counts[m1][m2] += 1
+                        
+        if valid_rows_count == 0:
+            return {"status": "ok", "correlationMatrix": {}, "avgPairwiseAgreement": {}, "consensusAnalysis": []}
+            
+        # 1. Correlation Matrix
+        correlation_matrix = {}
+        for m1 in model_keys:
+            correlation_matrix[m1] = {}
+            for m2 in model_keys:
+                correlation_matrix[m1][m2] = int(round((agree_counts[m1][m2] / valid_rows_count) * 100))
+                
+        # 2. Avg Pairwise Agreement (among base models)
+        avg_pairwise = {}
+        for m1 in base_models:
+            total_agree = 0
+            for m2 in base_models:
+                if m1 != m2:
+                    total_agree += correlation_matrix[m1][m2]
+            avg_pairwise[m1] = int(round(total_agree / (len(base_models) - 1))) if len(base_models) > 1 else 100
+            
+        # 3. Consensus Analysis
+        consensus_analysis = []
+        for m1 in base_models:
+            consensus_analysis.append({
+                "model": m1,
+                "name": m1.capitalize(),
+                "agreement": correlation_matrix[m1]["ensemble"]
+            })
+            
+        return {
+            "status": "ok",
+            "correlationMatrix": correlation_matrix,
+            "avgPairwiseAgreement": avg_pairwise,
+            "consensusAnalysis": consensus_analysis
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to calculate correlation matrix: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 # ============================================================================

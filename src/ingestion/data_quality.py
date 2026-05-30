@@ -126,11 +126,20 @@ class DataQualityMonitor:
         median_diff = time_diffs.median()
         median_seconds = median_diff.total_seconds() if hasattr(median_diff, 'total_seconds') else float(median_diff)
 
+        # Source-aware gap thresholds
+        # Macro data (forex, bonds, commodities) naturally has larger gaps than intraday trading data
+        is_macro = any(x in source.lower() for x in ['macro', 'cny', 'dxy', 'vix', 'fred', 'bonds'])
+        
         # Dynamic gap threshold based on the data's native resolution
-        # For daily data, holidays can cause gaps up to 4 days (96h).
-        # We use a multiplier of 4.5 to safely account for these long holiday weekends.
-        base_threshold = pd.Timedelta(hours=self.max_gap_hours)
-        dynamic_threshold = median_diff * 4.5
+        # For macro data: allow up to 5 days (120h) to cover weekends
+        # For trading data: use default 1 hour threshold
+        if is_macro:
+            base_threshold = pd.Timedelta(hours=120)  # 5 days for forex/macro
+            dynamic_threshold = median_diff * 6.0      # 6x median for extra safety
+        else:
+            base_threshold = pd.Timedelta(hours=self.max_gap_hours)  # 1 hour for intraday
+            dynamic_threshold = median_diff * 4.5       # 4.5x median
+        
         gap_threshold = max(base_threshold, dynamic_threshold)
 
         gaps = time_diffs[time_diffs > gap_threshold]
@@ -141,14 +150,16 @@ class DataQualityMonitor:
                 prev_loc = df.index.get_loc(gap_idx)
                 if prev_loc > 0:
                     prev_idx = df.index[prev_loc - 1]
-                    if hasattr(prev_idx, 'weekday') and prev_idx.weekday() == 4:
+                    # Skip Friday-to-Monday gaps (normal for forex/weekend closure)
+                    if hasattr(prev_idx, 'weekday') and prev_idx.weekday() == 4 and gap_val < pd.Timedelta(hours=72):
                         continue
             trading_gaps.append({"timestamp": str(gap_idx), "gap_hours": gap_val.total_seconds() / 3600})
 
-        if trading_gaps:
+        if trading_gaps and not is_macro:
+            # Only warn about gaps for non-macro data; macro gaps are expected
             threshold_hrs = gap_threshold.total_seconds() / 3600
             self._add_alert("warning", source, "gap",
-                            f"{len(trading_gaps)} gap(s) > {threshold_hrs:.1f}h in trading hours")
+                            f"{len(trading_gaps)} gap(s) > {threshold_hrs:.1f}h detected")
 
         return {"gaps_found": len(trading_gaps), "trading_gaps": trading_gaps[:10], "median_interval_seconds": median_seconds}
 

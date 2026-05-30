@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, classification_report
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.paper_trading.live_inference import run_wavelet, run_hmm, run_lstm, run_tft, run_genetic
-from src.models.nlp_sentiment import run_nlp_sentiment
+from src.models.hmm_pro import run_hmm_pro
 
 def fetch_historical_data(years: int = 2) -> pd.DataFrame:
     """Fetch historical daily data for training the meta-learner."""
@@ -105,8 +105,8 @@ def generate_signals_and_labels(df: pd.DataFrame) -> tuple:
             
         hmm_res = {"signal": hmm_sig, "confidence": 0.65, "regime": regime}
         
-        # Fast proxy for NLP to avoid loading FinBERT model in loop
-        nlp_res = {"signal": "HOLD", "confidence": 0.0, "regime": "NORMAL"}
+        # Fast proxy for HMM Pro to avoid full GMMHMM inference in loop
+        hmm_pro_res = {"signal": "HOLD", "confidence": 0.0, "regime": "NORMAL"}
         
         individual = {
             "wavelet": wavelet_res,
@@ -114,14 +114,14 @@ def generate_signals_and_labels(df: pd.DataFrame) -> tuple:
             "lstm": lstm_res,
             "tft": tft_res,
             "genetic": genetic_res,
-            "nlp": nlp_res,
+            "hmm_pro": hmm_pro_res,
         }
         
         # Build feature vector matching live_inference.py line 458
         regime = hmm_res.get("regime", "NORMAL")
         
         feature_vec = []
-        for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp"]:
+        for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "hmm_pro"]:
             sig = individual.get(model, {})
             direction = 1 if sig.get("signal") == "LONG" else (-1 if sig.get("signal") == "SHORT" else 0)
             feature_vec.append(direction * float(sig.get("confidence", 0.0)))

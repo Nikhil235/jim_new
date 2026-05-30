@@ -1,62 +1,40 @@
 import { useState, useEffect, useRef } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Target, Activity, Wifi, WifiOff } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { fetchHealth, fetchRegime, fetchGoldPrice, fetchPaperTradingStatus, fetchPaperTradingPerformance, fetchLiveSignals } from '../data/api';
-import { phaseProgress } from '../data/mockData';
+import { fetchHealth, fetchPaperTradingStatus, fetchPaperTradingPerformance, fetchLiveSignals } from '../data/api';
+import MarketData from './MarketData';
 
-const ChartTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (<div className="custom-tooltip"><div className="label">{label}</div>
-    {payload.map((p, i) => (<div key={i} className="value" style={{ color: p.color }}>{p.name}: {typeof p.value === 'number' ? p.value.toLocaleString() : p.value}</div>))}
-  </div>);
-};
+
 
 export default function Overview() {
   const [live, setLive] = useState(false);
   const [health, setHealth] = useState(null);
   const [ptStatus, setPtStatus] = useState(null);
   const [ptPerf, setPtPerf] = useState(null);
-  const [regime, setRegime] = useState(null);
   const [liveSignals, setLiveSignals] = useState(null);
-  const [goldData, setGoldData] = useState(null);
-  const [eqHistory, setEqHistory] = useState([]);
 
   const refreshRef = useRef(null);
   refreshRef.current = async () => {
-    try { const h = await fetchHealth(); setHealth(h); setLive(true); } catch { /* offline */ }
-    try {
-      const s = await fetchPaperTradingStatus(); setPtStatus(s);
-      if (s?.portfolio?.total_value) {
-        setEqHistory(prev => {
-          const n = [...prev, { date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), equity: s.portfolio.total_value }];
-          return n.length > 200 ? n.slice(-200) : n;
-        });
-      }
-    } catch { /* offline */ }
+    try { const h = await fetchHealth(); setHealth(h); setLive(true); } catch { setLive(false); }
+    try { setPtStatus(await fetchPaperTradingStatus()); } catch { /* offline */ }
     try { setPtPerf(await fetchPaperTradingPerformance()); } catch { /* offline */ }
-    try { setRegime(await fetchRegime()); } catch { /* offline */ }
     try { setLiveSignals(await fetchLiveSignals()); } catch { /* offline */ }
-    try { setGoldData(await fetchGoldPrice('1d', '3mo')); } catch { /* offline */ }
   };
 
-  useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 5000); return () => clearInterval(t); }, []);
+  useEffect(() => { refreshRef.current?.(); const t = setInterval(() => refreshRef.current?.(), 30000); return () => clearInterval(t); }, []);
 
   const pv = ptStatus?.portfolio;
+  const goldPrice = liveSignals?.current_price || 0;
+  const goldChange = liveSignals?.price_change || 0;
   const kpis = [
     { label: 'Portfolio Value', value: pv ? `$${(pv.total_value||0).toLocaleString(undefined,{maximumFractionDigits:0})}` : '—', change: pv ? `${(pv.return_pct||0)>=0?'+':''}${(pv.return_pct||0).toFixed(2)}%` : 'Awaiting data', positive: (pv?.return_pct||0)>=0, icon: <DollarSign size={18}/>, bg: 'var(--gold-glow)', color: 'var(--gold-primary)' },
     { label: 'Daily P&L', value: pv ? `${(pv.pnl_daily||0)>=0?'+':''}$${Math.abs(pv.pnl_daily||0).toFixed(2)}` : '—', change: pv ? `Total: $${(pv.pnl_total||0).toFixed(2)}` : 'Awaiting data', positive: (pv?.pnl_daily||0)>=0, icon: <TrendingUp size={18}/>, bg: 'var(--green-dim)', color: 'var(--green)' },
     { label: 'Sharpe Ratio', value: ptPerf ? (ptPerf.sharpe_ratio||0).toFixed(2) : '—', change: ptPerf ? ((ptPerf.sharpe_ratio||0)>=2.0?'DSR Validated ✓':'Below target') : 'Awaiting data', positive: (ptPerf?.sharpe_ratio||0)>=1.5, icon: <BarChart3 size={18}/>, bg: 'var(--blue-dim)', color: 'var(--blue)' },
     { label: 'Win Rate', value: ptPerf ? `${((ptPerf.win_rate||0)*100).toFixed(1)}%` : '—', change: ptPerf ? `${ptPerf.num_trades||0} trades` : 'Awaiting data', positive: (ptPerf?.win_rate||0)>=0.5, icon: <Target size={18}/>, bg: 'var(--purple-dim)', color: 'var(--purple)' },
-    { label: 'Gold (XAU/USD)', value: goldData?.current_price ? `$${goldData.current_price.toLocaleString(undefined,{maximumFractionDigits:2})}` : '—', change: goldData ? `${(goldData.change||0)>=0?'+':''}${(goldData.change||0).toFixed(2)}` : 'Awaiting data', positive: (goldData?.change||0)>=0, icon: <Activity size={18}/>, bg: 'var(--orange-dim)', color: 'var(--orange)' },
+    { label: 'Gold (XAU/USD)', value: goldPrice > 0 ? `$${goldPrice.toLocaleString(undefined,{maximumFractionDigits:2})}` : '—', change: goldChange !== 0 ? `${goldChange>=0?'+':''}${goldChange.toFixed(2)}` : 'Awaiting data', positive: goldChange>=0, icon: <Activity size={18}/>, bg: 'var(--orange-dim)', color: 'var(--orange)' },
     { label: 'Max Drawdown', value: ptPerf ? `${(ptPerf.max_drawdown||0).toFixed(2)}%` : '—', change: 'Limit: -15%', positive: false, icon: <TrendingDown size={18}/>, bg: 'var(--red-dim)', color: 'var(--red)' },
   ];
 
-  const regimeDisplay = regime ? { current: regime.regime||'UNKNOWN', confidence: regime.confidence||0, probabilities: regime.regime_probabilities||{} }
-    : { current: 'UNKNOWN', confidence: 0, probabilities: {} };
 
-  const signalItems = liveSignals?.models
-    ? Object.entries(liveSignals.models).slice(0,4).map(([name,s],i) => ({ id:i, type:s.signal||'HOLD', source:name.charAt(0).toUpperCase()+name.slice(1), confidence:s.confidence||0, status:s.signal?'active':'idle' }))
-    : [];
 
   return (<>
     <div className="page-header">
@@ -90,51 +68,10 @@ export default function Overview() {
         </div>
       )}
 
-      <div className="grid-2-1" style={{marginBottom:16}}>
-        <div className="card animate-in">
-          <div className="card-header"><span className="card-title">Equity Curve</span><span className={`card-badge ${live&&eqHistory.length>0?'badge-green':'badge-orange'}`}>{live&&eqHistory.length>0?'LIVE':'WAITING'}</span></div>
-          {eqHistory.length > 2 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={eqHistory}>
-                <defs><linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f0b90b" stopOpacity={0.3}/><stop offset="100%" stopColor="#f0b90b" stopOpacity={0}/></linearGradient></defs>
-                <XAxis dataKey="date" tick={{fontSize:10,fill:'#6b7280'}} interval={Math.max(1,Math.floor(eqHistory.length/8))}/>
-                <YAxis tick={{fontSize:10,fill:'#6b7280'}} domain={['auto','auto']} tickFormatter={v=>`$${(v/1000).toFixed(0)}k`}/>
-                <Tooltip content={<ChartTooltip/>}/><Area type="monotone" dataKey="equity" stroke="#f0b90b" strokeWidth={2} fill="url(#eqGrad)" name="Portfolio"/>
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (<div style={{height:280,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text-muted)',fontSize:13}}>Awaiting equity data...</div>)}
-        </div>
-
-        <div style={{display:'flex',flexDirection:'column',gap:16}}>
-          <div className="card animate-in">
-            <div className="card-header"><span className="card-title">Market Regime</span>
-              <span className={`card-badge ${regimeDisplay.current==='GROWTH'?'badge-green':regimeDisplay.current==='CRISIS'?'badge-red':'badge-orange'}`}>
-                {regimeDisplay.current} {(regimeDisplay.confidence*100).toFixed(0)}%
-              </span>
-            </div>
-            {Object.keys(regimeDisplay.probabilities).length > 0 ? (
-              <div className="regime-bar">
-                {Object.entries(regimeDisplay.probabilities).map(([r,p]) => (
-                  <div key={r} className={`regime-segment regime-${r.toLowerCase()} ${r===regimeDisplay.current?'active':''}`}>{r} {(p*100).toFixed(0)}%</div>
-                ))}
-              </div>
-            ) : (<div style={{padding:12,color:'var(--text-muted)',fontSize:12}}>Awaiting regime data...</div>)}
-          </div>
-
-          <div className="card animate-in" style={{flex:1}}>
-            <div className="card-header"><span className="card-title">Latest Signals</span><span className="card-badge badge-gold">{signalItems.filter(s=>s.type!=='HOLD'&&s.type!=='IDLE').length} Active</span></div>
-            {signalItems.length > 0 ? signalItems.map(s => (
-              <div key={s.id} className="signal-item">
-                <div>
-                  <span style={{background:s.type==='LONG'?'var(--green-dim)':s.type==='SHORT'?'var(--red-dim)':'var(--blue-dim)',padding:'2px 8px',borderRadius:12,fontSize:11,fontWeight:600,color:s.type==='LONG'?'var(--green)':s.type==='SHORT'?'var(--red)':'var(--blue)'}}>{s.type}</span>
-                  <span style={{marginLeft:10,fontSize:12}}>{s.source}</span>
-                </div>
-                <div><span className="mono" style={{color:'var(--text-secondary)'}}>{(s.confidence*100).toFixed(0)}%</span></div>
-              </div>
-            )) : (<div style={{padding:12,color:'var(--text-muted)',fontSize:12}}>Awaiting signals...</div>)}
-          </div>
-        </div>
+      <div style={{ marginTop: '32px', marginBottom: '16px' }}>
+        <MarketData embedded={true} />
       </div>
+
 
       {health && (
         <div className="card animate-in" style={{marginBottom:16}}>
@@ -150,19 +87,6 @@ export default function Overview() {
           </div>
         </div>
       )}
-
-      <div className="card animate-in">
-        <div className="card-header"><span className="card-title">Development Roadmap</span><span className="card-badge badge-green">100% Complete</span></div>
-        <div className="phase-timeline">
-          {phaseProgress.map(p => (<div key={p.phase} className="phase-row" style={{ flexWrap: 'wrap' }}>
-            <div className="phase-label" style={{ minWidth: 'min(260px, 100%)' }}><span className={`phase-num ${p.status}`}>P{p.phase}</span><span className="phase-name">{p.name}</span></div>
-            <div className="phase-bar-wrap" style={{ minWidth: '200px' }}>
-              <div className="progress-bar" style={{height:8,flex:1}}><div className="progress-fill" style={{width:`${p.progress}%`,background:p.status==='complete'?'var(--green)':p.status==='in-progress'?'var(--gold-primary)':'var(--bg-input)'}}/></div>
-              <span className="mono" style={{fontSize:11,minWidth:36,textAlign:'right'}}>{p.progress}%</span>
-            </div>
-          </div>))}
-        </div>
-      </div>
     </div>
   </>);
 }

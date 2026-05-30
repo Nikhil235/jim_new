@@ -19,10 +19,20 @@ All 6 models run on every tick:
 import asyncio
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Callable, Any
+import warnings
 import numpy as np
 import pandas as pd
 from loguru import logger
-from src.models.nlp_sentiment import run_nlp_sentiment
+
+# Suppress warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+warnings.filterwarnings("ignore", message=".*InconsistentVersionWarning.*")
+warnings.filterwarnings("ignore", category=FutureWarning, module="yfinance")
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="hmmlearn")
+warnings.filterwarnings("ignore", module="torch")
+
+from src.models.hmm_pro import run_hmm_pro
+from src.models.wavelet_pro import run_wavelet_pro
 from src.paper_trading.prediction_logger import log_prediction_cycle, update_pnl_for_trade
 
 # ============================================================================
@@ -40,7 +50,7 @@ LIVE_MODEL_SIGNALS: Dict[str, Dict] = {
         "last_updated": None,
         "error": None,
     }
-    for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp", "ensemble"]
+    for model in ["wavelet_pro", "wavelet_basic", "hmm", "lstm", "tft", "genetic", "hmm_pro", "ensemble"]
 }
 
 # Current gold price (updated on each fetch)
@@ -75,7 +85,7 @@ def fetch_live_gold_data(period: str = "5d", interval: str = "1m") -> Optional[p
         
         df_all = pd.DataFrame()
         for attempt in range(3):
-            df_all = yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False)
+            df_all = yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False, auto_adjust=False)
             if not df_all.empty and "GC=F" in df_all:
                 break
             logger.warning(f"yfinance returned empty dataframe (attempt {attempt+1}/3), retrying...")
@@ -275,13 +285,99 @@ def fetch_metalpriceapi_gs_spot() -> tuple[Optional[float], Optional[float]]:
 # ============================================================================
 
 def run_wavelet(df: pd.DataFrame) -> Dict:
-    """Wavelet denoiser signal: trend direction from denoised price series."""
+    """
+    Wavelet signal using WaveletPro (professional 6-level DWT model).
+    
+    This replaces the basic 5-level model with the production-ready WaveletPro
+    that includes:
+    - 6-level DWT decomposition
+    - Wavelet Oscillator (D3 + D4)
+    - Continuous Wavelet Transform (CWT)
+    - 30+ engineered features
+    """
+    try:
+        return run_wavelet_pro(df)
+    except Exception as e:
+        logger.warning(f"Wavelet Pro fallback to basic model: {e}")
+        # Fallback to basic wavelet if WaveletPro fails
+        try:
+            prices = df["close"].values
+
+            # Need at least 32 samples (2^5 for 5-level decomposition)
+            if len(prices) < 32:
+                return {"signal": "HOLD", "confidence": 0.0, "reasoning": "Insufficient data"}
+
+            try:
+                import pywt
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    coeffs = pywt.wavedec(prices, "db4", level=5)
+                    # Zero out detail coefficients to denoise
+                    coeffs[1:] = [np.zeros_like(v) for v in coeffs[1:]]
+                    trend = pywt.waverec(coeffs, "db4")
+                pywt_available = True
+            except ImportError:
+                # Proxy if pywt is unavailable
+                trend = pd.Series(prices).rolling(window=10).mean().bfill().values
+                pywt_available = False
+
+            # Signal: compare last 3 denoised values to determine trend
+            if len(trend) >= 3:
+                slope = (trend[-1] - trend[-3]) / (abs(trend[-3]) + 1e-8)
+                
+                # Dynamic confidence based on slope magnitude
+                abs_slope = abs(slope)
+                # Base 50% + up to 45% based on slope (0.001 slope adds 40%)
+                base_conf = 0.50 + min(abs_slope * 400.0, 0.45)
+                
+                # Penalty if using fallback model
+                confidence = base_conf if pywt_available else base_conf * 0.70
+
+                if slope > 0.0001:
+                    signal = "LONG"
+                    reasoning = f"Wavelet trend slope +{slope:.4f} → uptrend detected"
+                elif slope < -0.0001:
+                    signal = "SHORT"
+                    reasoning = f"Wavelet trend slope {slope:.4f} → downtrend detected"
+                else:
+                    signal = "HOLD"
+                    confidence = 0.15
+                    reasoning = f"Wavelet trend flat (slope={slope:.6f})"
+            else:
+                signal = "HOLD"
+                confidence = 0.0
+                reasoning = "Insufficient trend data"
+
+            return {"signal": signal, "confidence": round(confidence, 3), "reasoning": reasoning}
+
+        except Exception as e_fallback:
+            logger.error(f"Both Wavelet Pro and basic fallback failed: {e_fallback}")
+            return {
+                "signal": "HOLD",
+                "confidence": 0.0,
+                "reasoning": f"Wavelet error: {str(e_fallback)[:80]}"
+            }
+        logger.warning(f"Wavelet model error: {e}")
+        return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
+
+
+def run_wavelet_basic(df: pd.DataFrame) -> Dict:
+    """
+    Basic 5-level wavelet signal (original model for comparison).
+    
+    Features:
+    - 5-level DWT decomposition using Daubechies-4 (db4)
+    - Simple trend detection via coefficient zeroing
+    - Lightweight, fast execution
+    - For comparison with WaveletPro (6-level + CWT + features)
+    """
     try:
         prices = df["close"].values
 
         # Need at least 32 samples (2^5 for 5-level decomposition)
         if len(prices) < 32:
-            return {"signal": "HOLD", "confidence": 0.0, "reasoning": "Insufficient data"}
+            return {"signal": "HOLD", "confidence": 0.0, "reasoning": "Insufficient data for 5-level DWT"}
 
         try:
             import pywt
@@ -304,7 +400,7 @@ def run_wavelet(df: pd.DataFrame) -> Dict:
             
             # Dynamic confidence based on slope magnitude
             abs_slope = abs(slope)
-            # Base 50% + up to 45% based on slope (0.001 slope adds 40%)
+            # Base 50% + up to 45% based on slope
             base_conf = 0.50 + min(abs_slope * 400.0, 0.45)
             
             # Penalty if using fallback model
@@ -312,14 +408,14 @@ def run_wavelet(df: pd.DataFrame) -> Dict:
 
             if slope > 0.0001:
                 signal = "LONG"
-                reasoning = f"Wavelet trend slope +{slope:.4f} → uptrend detected"
+                reasoning = f"Basic 5-level: trend slope +{slope:.4f} → uptrend"
             elif slope < -0.0001:
                 signal = "SHORT"
-                reasoning = f"Wavelet trend slope {slope:.4f} → downtrend detected"
+                reasoning = f"Basic 5-level: trend slope {slope:.4f} → downtrend"
             else:
                 signal = "HOLD"
                 confidence = 0.15
-                reasoning = f"Wavelet trend flat (slope={slope:.6f})"
+                reasoning = f"Basic 5-level: flat trend (slope={slope:.6f})"
         else:
             signal = "HOLD"
             confidence = 0.0
@@ -328,7 +424,7 @@ def run_wavelet(df: pd.DataFrame) -> Dict:
         return {"signal": signal, "confidence": round(confidence, 3), "reasoning": reasoning}
 
     except Exception as e:
-        logger.warning(f"Wavelet model error: {e}")
+        logger.error(f"Basic wavelet failed: {e}")
         return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
 
 
@@ -690,15 +786,15 @@ except Exception as e:
 _REGIME_WEIGHTS = {
     "GROWTH": {
         "wavelet": 0.20, "hmm": 0.20, "lstm": 0.15,
-        "tft": 0.15, "genetic": 0.15, "nlp": 0.15,
+        "tft": 0.13, "genetic": 0.13, "hmm_pro": 0.12,
     },
     "NORMAL": {
         "wavelet": 0.20, "hmm": 0.15, "lstm": 0.25,
-        "tft": 0.20, "genetic": 0.10, "nlp": 0.10,
+        "tft": 0.18, "genetic": 0.08, "hmm_pro": 0.15,
     },
     "CRISIS": {
-        "wavelet": 0.15, "hmm": 0.25, "lstm": 0.20,
-        "tft": 0.20, "genetic": 0.10, "nlp": 0.10,
+        "wavelet": 0.15, "hmm": 0.25, "lstm": 0.18,
+        "tft": 0.18, "genetic": 0.11, "hmm_pro": 0.13,
     },
 }
 
@@ -713,9 +809,30 @@ def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", ma
     3. Agreement bonus / conflict penalty
     4. Minimum quorum (≥2 directional votes)
     5. Macro data adjustment (DXY / yields)
+    
+    NOTE: Handles both WaveletPro and basic wavelet for comparison.
+          Uses the wavelet signal with higher confidence for ensemble voting.
     """
     try:
-        models = ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp"]
+        # Prepare individual signals dict with unified wavelet vote
+        signals_for_ensemble = individual_signals.copy()
+        
+        # If both wavelet models are present, use the one with higher confidence
+        wavelet_pro_sig = individual_signals.get("wavelet_pro", {})
+        wavelet_basic_sig = individual_signals.get("wavelet_basic", {})
+        
+        if wavelet_pro_sig and wavelet_basic_sig:
+            pro_conf = float(wavelet_pro_sig.get("confidence", 0.0))
+            basic_conf = float(wavelet_basic_sig.get("confidence", 0.0))
+            # Use the wavelet model with higher confidence as the unified "wavelet" vote
+            best_wavelet = wavelet_pro_sig if pro_conf >= basic_conf else wavelet_basic_sig
+            signals_for_ensemble["wavelet"] = best_wavelet
+        elif wavelet_pro_sig:
+            signals_for_ensemble["wavelet"] = wavelet_pro_sig
+        elif wavelet_basic_sig:
+            signals_for_ensemble["wavelet"] = wavelet_basic_sig
+        
+        models = ["wavelet", "hmm", "lstm", "tft", "genetic", "hmm_pro"]
 
         # ── 1. Get regime-specific weights ──
         weights = _REGIME_WEIGHTS.get(regime, _REGIME_WEIGHTS["NORMAL"]).copy()
@@ -729,7 +846,7 @@ def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", ma
         hold_voters = []
 
         for model in models:
-            sig = individual_signals.get(model, {})
+            sig = signals_for_ensemble.get(model, {})
             direction = sig.get("signal", "HOLD")
             conf = float(sig.get("confidence", 0.0))
             w = weights.get(model, 0.10)
@@ -973,25 +1090,27 @@ class LiveInferenceLoop:
         if self.engine and self.engine.status == "RUNNING":
             self.engine.update_price(current_price, datetime.now())
 
-        logger.info(f"[Inference #{self.iteration}] Gold @ ${current_price:.2f} — running 6 models...")
+        logger.info(f"[Inference #{self.iteration}] Gold @ ${current_price:.2f} — running 8 models (2 wavelet variants)...")
 
         # 2. Run individual models (in executor to avoid blocking event loop)
         loop = asyncio.get_event_loop()
 
-        wavelet_res = await loop.run_in_executor(None, run_wavelet, df)
+        wavelet_pro_res = await loop.run_in_executor(None, run_wavelet, df)
+        wavelet_basic_res = await loop.run_in_executor(None, run_wavelet_basic, df)
         hmm_res = await loop.run_in_executor(None, run_hmm, df)
         lstm_res = await loop.run_in_executor(None, run_lstm, df)
         tft_res = await loop.run_in_executor(None, run_tft, df)
         genetic_res = await loop.run_in_executor(None, run_genetic, df)
-        nlp_res = await loop.run_in_executor(None, run_nlp_sentiment, df)
+        hmm_pro_res = await loop.run_in_executor(None, run_hmm_pro, df)
 
         individual = {
-            "wavelet": wavelet_res,
+            "wavelet_pro": wavelet_pro_res,    # 6-level DWT + CWT + features (new)
+            "wavelet_basic": wavelet_basic_res, # 5-level DWT only (original)
             "hmm": hmm_res,
             "lstm": lstm_res,
             "tft": tft_res,
             "genetic": genetic_res,
-            "nlp": nlp_res,
+            "hmm_pro": hmm_pro_res,
         }
 
         # 3. Get Regime for Meta-Labeling

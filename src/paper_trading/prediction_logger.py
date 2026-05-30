@@ -26,12 +26,13 @@ HEADER = [
     "timestamp",
     "price",
     "regime",
-    "wavelet_signal", "wavelet_conf",
+    "wavelet_pro_signal", "wavelet_pro_conf",
+    "wavelet_basic_signal", "wavelet_basic_conf",
     "hmm_signal", "hmm_conf",
     "lstm_signal", "lstm_conf",
     "tft_signal", "tft_conf",
     "genetic_signal", "genetic_conf",
-    "nlp_signal", "nlp_conf",
+    "hmm_pro_signal", "hmm_pro_conf",
     "ensemble_signal", "ensemble_conf",
     "kelly_fraction",
     "trade_taken",
@@ -75,7 +76,7 @@ def log_prediction_cycle(
         price:          Current gold price at this cycle.
         regime:         Market regime (GROWTH / NORMAL / CRISIS).
         all_signals:    Dict of {model_name: {signal, confidence, ...}}
-                        Must contain keys: wavelet, hmm, lstm, tft, genetic, nlp, ensemble
+                        Must contain keys: wavelet_pro, wavelet_basic, hmm, lstm, tft, genetic, hmm_pro, ensemble
         kelly_fraction: Kelly fraction used for position sizing (if trade taken).
         trade_taken:    Whether the ensemble signal triggered a trade this cycle.
     """
@@ -90,13 +91,14 @@ def log_prediction_cycle(
             datetime.now().isoformat(timespec="seconds"),
             round(price, 2),
             regime,
-            _sig("wavelet"),  round(_conf("wavelet"), 4),
-            _sig("hmm"),      round(_conf("hmm"), 4),
-            _sig("lstm"),     round(_conf("lstm"), 4),
-            _sig("tft"),      round(_conf("tft"), 4),
-            _sig("genetic"),  round(_conf("genetic"), 4),
-            _sig("nlp"),      round(_conf("nlp"), 4),
-            _sig("ensemble"), round(_conf("ensemble"), 4),
+            _sig("wavelet_pro"),    round(_conf("wavelet_pro"), 4),
+            _sig("wavelet_basic"),  round(_conf("wavelet_basic"), 4),
+            _sig("hmm"),            round(_conf("hmm"), 4),
+            _sig("lstm"),           round(_conf("lstm"), 4),
+            _sig("tft"),            round(_conf("tft"), 4),
+            _sig("genetic"),        round(_conf("genetic"), 4),
+            _sig("hmm_pro"),        round(_conf("hmm_pro"), 4),
+            _sig("ensemble"),       round(_conf("ensemble"), 4),
             round(kelly_fraction, 4) if kelly_fraction is not None else "",
             "YES" if trade_taken else "NO",
             "",  # pnl — filled retroactively

@@ -180,11 +180,13 @@ export default function PredictionLog() {
                 <th style={{ minWidth: '160px' }}>Timestamp</th>
                 <th>Price</th>
                 <th>Regime</th>
-                <th>Wavelet</th>
+                <th>WVP (Pro)</th>
+                <th>WVB (Basic)</th>
                 <th>HMM</th>
                 <th>LSTM</th>
                 <th>TFT</th>
                 <th>Genetic</th>
+                <th>HMP (GPU)</th>
                 <th>Ensemble</th>
                 <th>Kelly</th>
                 <th>Trade</th>
@@ -194,7 +196,7 @@ export default function PredictionLog() {
             <tbody>
               {logs.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan="12" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                  <td colSpan="14" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
                     No prediction logs found. Wait for the live inference loop to run.
                   </td>
                 </tr>
@@ -214,8 +216,14 @@ export default function PredictionLog() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontWeight: 600, color: getSignalColor(log.wavelet_signal), fontSize: '12px' }}>{log.wavelet_signal}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{(log.wavelet_conf * 100).toFixed(0)}%</span>
+                        <span style={{ fontWeight: 600, color: getSignalColor(log.wavelet_pro_signal), fontSize: '12px' }}>{log.wavelet_pro_signal}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{(log.wavelet_pro_conf * 100).toFixed(0)}%</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontWeight: 600, color: getSignalColor(log.wavelet_basic_signal), fontSize: '12px' }}>{log.wavelet_basic_signal}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{(log.wavelet_basic_conf * 100).toFixed(0)}%</span>
                       </div>
                     </td>
                     <td>
@@ -240,6 +248,12 @@ export default function PredictionLog() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span style={{ fontWeight: 600, color: getSignalColor(log.genetic_signal), fontSize: '12px' }}>{log.genetic_signal}</span>
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{(log.genetic_conf * 100).toFixed(0)}%</span>
+                      </div>
+                    </td>
+                    <td style={{ background: 'rgba(150, 100, 255, 0.1)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontWeight: 600, color: getSignalColor(log.hmm_pro_signal), fontSize: '12px' }}>{log.hmm_pro_signal}</span>
+                        <span style={{ fontSize: '11px', color: 'rgba(150, 100, 255, 0.7)' }}>{(log.hmm_pro_conf * 100).toFixed(0)}%</span>
                       </div>
                     </td>
                     <td style={{ background: 'rgba(255,184,0,0.05)' }}>

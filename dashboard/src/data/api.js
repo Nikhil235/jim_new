@@ -171,6 +171,10 @@ export async function fetchModelWeights() {
   return apiFetch('/paper-trading/model-weights');
 }
 
+export async function fetchCorrelationMatrix(limit = 500) {
+  return apiFetch(`/paper-trading/correlation-matrix?limit=${limit}`);
+}
+
 // ============================================================================
 // WEBSOCKET
 // ============================================================================

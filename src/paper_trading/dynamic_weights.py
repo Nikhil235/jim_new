@@ -44,7 +44,7 @@ REGIME_BASE_WEIGHTS: Dict[str, Dict[str, float]] = {
         "lstm":     0.17,   # Temporal momentum captures growth trends
         "tft":      0.11,   # Multi-horizon attention adds diversity
         "genetic":  0.08,   # Rule-based voting as contrarian check
-        "nlp":      0.04,   # Sentiment is a weak lagging signal for gold
+        "hmm_pro":  0.12,   # GMMHMM regime detector — strong directional signal
         "ensemble": 0.10,   # Meta output reserve — blended aggregator confidence
     },
     "NORMAL": {
@@ -53,7 +53,7 @@ REGIME_BASE_WEIGHTS: Dict[str, Dict[str, float]] = {
         "lstm":     0.15,   # EMA/MACD proxy captures mean-reversion
         "tft":      0.10,   # RSI/BB proxy provides multi-scale signal
         "genetic":  0.10,   # SMA crossover rules useful in ranging markets
-        "nlp":      0.05,   # Minimal — gold sentiment is noisy in normal regime
+        "hmm_pro":  0.14,   # GMMHMM regime detector — strong in range-bound markets
         "ensemble": 0.10,   # Meta output reserve — blended aggregator confidence
     },
     "CRISIS": {
@@ -62,7 +62,7 @@ REGIME_BASE_WEIGHTS: Dict[str, Dict[str, float]] = {
         "lstm":     0.09,   # Momentum models whipsaw in crisis — reduce
         "tft":      0.06,   # Multi-scale RSI less reliable in crisis
         "genetic":  0.12,   # Breakout detection valuable in volatile markets
-        "nlp":      0.06,   # Fear-driven headlines can precede continuation moves
+        "hmm_pro":  0.13,   # GMMHMM regime detector — crisis transition detection
         "ensemble": 0.10,   # Meta output reserve — blended aggregator confidence (constant)
     },
 }

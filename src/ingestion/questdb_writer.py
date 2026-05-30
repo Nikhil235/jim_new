@@ -51,6 +51,7 @@ class QuestDBWriter:
 
         self._connected = False
         self._ilp_sock = None
+        self._warned_unavailable = False  # Suppress repeated warnings
 
     def is_available(self) -> bool:
         """Check if QuestDB is reachable."""
@@ -72,7 +73,11 @@ class QuestDBWriter:
         return self._ilp_sock
 
     def _send_ilp(self, lines: List[str]) -> bool:
-        """Send ILP lines to QuestDB via TCP socket with automatic retry and connection pooling."""
+        """Send ILP lines to QuestDB via TCP socket with automatic retry and connection pooling.
+        
+        Falls back to parquet storage if QuestDB is unavailable. Only logs warning once
+        per session to avoid noise.
+        """
         payload = "\n".join(lines) + "\n"
         data = payload.encode("utf-8")
         
@@ -80,9 +85,15 @@ class QuestDBWriter:
             try:
                 sock = self._get_ilp_socket()
                 sock.sendall(data)
+                # Success — reset warning flag for next unavailability
+                self._warned_unavailable = False
                 return True
             except OSError as e:
-                logger.warning(f"QuestDB ILP send failed (attempt {attempt+1}/3): {e}")
+                # Only log detailed error on first attempt, then silently retry
+                if attempt == 0 and not self._warned_unavailable:
+                    logger.info(f"QuestDB unavailable at {self.host}:{self.ilp_port} — using parquet fallback")
+                    self._warned_unavailable = True
+                
                 if self._ilp_sock:
                     try:
                         self._ilp_sock.close()
@@ -91,7 +102,7 @@ class QuestDBWriter:
                     self._ilp_sock = None
                 time.sleep(0.5 * (attempt + 1))
                 
-        logger.error("QuestDB ILP send completely failed after 3 attempts")
+        # QuestDB unavailable — fallback is normal operation
         return False
 
     def _query_rest(self, sql: str) -> Optional[pd.DataFrame]:

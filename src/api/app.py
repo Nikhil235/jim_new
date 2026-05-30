@@ -622,7 +622,7 @@ async def backtest(strategy: str, request: BacktestRequest):
                 "lstm_temporal": "lstm",
                 "tft_forecaster": "tft",
                 "genetic_algo": "genetic",
-                "nlp_sentiment": "nlp",
+                "hmm_pro_gmmhmm": "hmm_pro",
                 "meta_learner": "ensemble"
             }
             # Fallback to strategy string if not mapped
@@ -954,7 +954,7 @@ async def get_gs_ratio(
     try:
         import yfinance as yf
         tickers = "GC=F SI=F"
-        df_all = yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False)
+        df_all = yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False, auto_adjust=False)
 
         if df_all.empty:
             raise HTTPException(status_code=503, detail="No data available")

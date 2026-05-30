@@ -61,7 +61,7 @@ def simulate_1000_dollars():
     # 2. Fetch Large Dataset (60 Days / 15-Min)
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     from src.paper_trading.live_inference import (
-        run_wavelet, run_hmm, run_lstm, run_tft, run_genetic, run_ensemble, fetch_live_gold_data, run_nlp_sentiment
+        run_wavelet, run_hmm, run_lstm, run_tft, run_genetic, run_ensemble, fetch_live_gold_data, run_hmm_pro
     )
     from src.paper_trading.prediction_logger import log_prediction_cycle
 
@@ -86,8 +86,8 @@ def simulate_1000_dollars():
     print("\n[HMM PRE-TRAINING] Training Hidden Markov Model on initial historical slice...")
     run_hmm(df_init)
 
-    print("\n[STEP 3] Preparing NLP Sentiment Proxy...")
-    print("   Note: Using dynamic price-action proxy for historical NLP to avoid network spam and static bias.")
+    print("\n[STEP 3] Preparing HMM Pro Proxy...")
+    print("   Note: Using dynamic price-action proxy for historical HMM Pro to avoid network spam and static bias.")
 
     print(f"\n[STEP 4] Running Simulation for {sim_length} bars...")
     print("=" * 60)
@@ -105,14 +105,14 @@ def simulate_1000_dollars():
         # Verbose progress indicator
         print(f"   [Step {step}] Price: ${current_price:.2f} | Bars since trade: {bars_since_last_trade}")
 
-        # Dynamically generate NLP proxy to avoid permanent bias (Macro inversion proxy)
+        # Dynamically generate HMM Pro proxy to avoid permanent bias (Macro inversion proxy)
         recent_ret = float(df_slice["returns"].iloc[-5:].mean())
         if recent_ret < -0.001:
-            nlp_res = {"signal": "LONG", "confidence": 0.75, "reasoning": "Proxy: Risk-Off Flow"}
+            hmm_pro_res = {"signal": "LONG", "confidence": 0.75, "reasoning": "Proxy: Risk-Off Flow"}
         elif recent_ret > 0.001:
-            nlp_res = {"signal": "SHORT", "confidence": 0.75, "reasoning": "Proxy: Risk-On Flow"}
+            hmm_pro_res = {"signal": "SHORT", "confidence": 0.75, "reasoning": "Proxy: Risk-On Flow"}
         else:
-            nlp_res = {"signal": "HOLD", "confidence": 0.0, "reasoning": "Proxy: Neutral"}
+            hmm_pro_res = {"signal": "HOLD", "confidence": 0.0, "reasoning": "Proxy: Neutral"}
 
         # Run models silently on a bounded lookback slice to optimize performance
         df_slice_model = df_slice.iloc[-150:]
@@ -133,7 +133,7 @@ def simulate_1000_dollars():
         
         individual = {
             "wavelet": wavelet_res, "hmm": hmm_res, "lstm": lstm_res,
-            "tft": tft_res, "genetic": genetic_res, "nlp": nlp_res,
+            "tft": tft_res, "genetic": genetic_res, "hmm_pro": hmm_pro_res,
         }
         
         ensemble_res = run_ensemble(individual, regime, macro_data)

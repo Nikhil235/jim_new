@@ -886,7 +886,7 @@ class FeatureEngine:
             
         if "cot_open_interest" in df.columns:
             # 3. Open interest velocity (acceleration of speculative interest)
-            df["cot_oi_velocity"] = df["cot_open_interest"].pct_change(5).diff()
+            df["cot_oi_velocity"] = df["cot_open_interest"].pct_change(5, fill_method=None).diff()
 
         return df
 

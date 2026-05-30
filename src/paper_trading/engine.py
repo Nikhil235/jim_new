@@ -155,13 +155,14 @@ class PaperTradingConfig:
     # for the blended aggregator confidence. Its confidence still passes through
     # process_signal() unscaled to avoid double-counting.
     signal_weights: Dict[str, float] = field(default_factory=lambda: {
-        "wavelet": 0.30,   # Denoising — best in noisy/normal markets
+        "wavelet_pro": 0.12,   # Advanced 6-level DWT + CWT (new WaveletPro)
+        "wavelet_basic": 0.08, # Basic 5-level DWT (original, for comparison)
         "hmm":     0.20,   # Regime detection — critical during transitions
         "lstm":    0.15,   # Temporal momentum proxy (EMA/MACD)
         "tft":     0.10,   # Multi-scale RSI/BB proxy
         "genetic": 0.10,   # Rule-based voting (SMA/momentum/breakout)
-        "nlp":     0.05,   # FinBERT sentiment (lagging for gold)
-        "ensemble": 0.10,  # Meta output reserve — blended aggregator confidence
+        "hmm_pro": 0.12,   # GMMHMM regime detector (HMM Pro)
+        "ensemble": 0.13,  # Meta output reserve — blended aggregator confidence
     })
     use_dynamic_weights: bool = True       # Enable regime-adaptive weighting
     
@@ -218,7 +219,7 @@ class PaperTradingEngine:
         # Model signals
         self.last_signals: Dict[str, ModelSignal] = {}
         self.signal_history: Dict[str, List[ModelSignal]] = {
-            model: [] for model in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp", "ensemble"]
+            model: [] for model in ["wavelet_pro", "wavelet_basic", "hmm", "lstm", "tft", "genetic", "hmm_pro", "ensemble"]
         }
         
         # Dynamic weight adjuster (real-world regime-adaptive weighting)

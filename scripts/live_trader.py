@@ -4,7 +4,7 @@ Live Gold Trader — Mini-Medallion
 Autonomous live trading script that runs 24/7.
 
 Fetches real-time gold prices every 60 seconds, runs all 7 models
-(Wavelet, HMM, LSTM, TFT, Genetic, NLP, Ensemble Meta-Learner),
+(Wavelet, HMM, LSTM, TFT, Genetic, HMM Pro, Ensemble Meta-Learner),
 and executes trades through the paper trading engine with full
 risk management, trailing stops, and circuit breakers.
 
@@ -70,6 +70,21 @@ logger.add(
     format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {module}:{function}:{line} | {message}",
 )
 
+# ============================================================================
+# SUPPRESS WARNINGS
+# ============================================================================
+import warnings
+import os
+
+# Suppress sklearn version warnings (old models may have been pickled with different sklearn version)
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+warnings.filterwarnings("ignore", message=".*InconsistentVersionWarning.*")
+
+# Suppress torch/triton warnings
+warnings.filterwarnings("ignore", module="torch")
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="hmmlearn")
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 # ============================================================================
 # IMPORTS (after path setup)
@@ -93,13 +108,14 @@ from src.paper_trading.live_inference import (
     fetch_live_gold_data,
     fetch_metalpriceapi_spot,
     run_wavelet,
+    run_wavelet_basic,
     run_hmm,
     run_lstm,
     run_tft,
     run_genetic,
     run_ensemble,
 )
-from src.models.nlp_sentiment import run_nlp_sentiment
+from src.models.hmm_pro_gpu import run_hmm_pro_gpu
 from src.paper_trading.prediction_logger import log_prediction_cycle
 from src.risk.manager import RiskManager
 
@@ -155,13 +171,24 @@ def print_dashboard(
             f"(P&L: ${pos.pnl:+,.2f}){hedge_info}"
         )
 
-    # Signal summary
+    # Signal summary with distinct model labels
+    model_labels = {
+        "wavelet_pro": "WVP",      # WaveletPro (6-level DWT + CWT + features)
+        "wavelet_basic": "WVB",    # Basic 5-level wavelet (original)
+        "hmm": "HMM",              # Legacy HMM v3.0
+        "lstm": "LST",             # LSTM temporal
+        "tft": "TFT",              # TFT forecaster
+        "genetic": "GEN",          # Genetic algorithm
+        "hmm_pro": "HMP",          # HMM Pro (GMMHMM) — PRO
+        "ensemble": "ENS",         # Ensemble meta-learner
+    }
     sig_parts = []
-    for m in ["wavelet", "hmm", "lstm", "tft", "genetic", "nlp", "ensemble"]:
+    for m in ["wavelet_pro", "wavelet_basic", "hmm", "lstm", "tft", "genetic", "hmm_pro", "ensemble"]:
         s = signals.get(m, {})
         sig_val = s.get("signal", "?")[:1]
         conf = s.get("confidence", 0)
-        sig_parts.append(f"{m[:3].upper()}:{sig_val}{conf:.0%}")
+        label = model_labels.get(m, m[:3].upper())
+        sig_parts.append(f"{label}:{sig_val}{conf:.0%}")
 
     sig_line = " | ".join(sig_parts)
 
@@ -240,23 +267,62 @@ def run_single_cycle(
     # Update engine price (also ticks the Kalman hedge with T-1 silver data)
     engine.update_price(current_price, pd.Timestamp.now())
 
-    logger.info(f"[Tick #{iteration}] Gold @ ${current_price:,.2f} — running 7 models...")
+    logger.info(f"[Tick #{iteration}] Gold @ ${current_price:,.2f} — running 8 models (2 wavelet variants)...")
 
-    # 3. Run all individual models
-    wavelet_res = run_wavelet(df)
-    hmm_res = run_hmm(df)
-    lstm_res = run_lstm(df)
-    tft_res = run_tft(df)
-    genetic_res = run_genetic(df)
-    nlp_res = run_nlp_sentiment(df)
+    # 3. Run all individual models with robust error handling
+    # Fallback signal if model fails
+    fallback_sig = {"signal": "HOLD", "confidence": 0.0, "reasoning": "Model failed"}
+    
+    try:
+        wavelet_pro_res = run_wavelet(df)
+    except Exception as e:
+        logger.warning(f"WaveletPro failed: {e}")
+        wavelet_pro_res = fallback_sig.copy()
+    
+    try:
+        wavelet_basic_res = run_wavelet_basic(df)
+    except Exception as e:
+        logger.warning(f"Basic Wavelet failed: {e}")
+        wavelet_basic_res = fallback_sig.copy()
+    
+    try:
+        hmm_res = run_hmm(df)
+    except Exception as e:
+        logger.warning(f"HMM v3 failed: {e}")
+        hmm_res = {**fallback_sig.copy(), "regime": "NORMAL"}
+    
+    try:
+        lstm_res = run_lstm(df)
+    except Exception as e:
+        logger.warning(f"LSTM failed: {e}")
+        lstm_res = fallback_sig.copy()
+    
+    try:
+        tft_res = run_tft(df)
+    except Exception as e:
+        logger.warning(f"TFT failed: {e}")
+        tft_res = fallback_sig.copy()
+    
+    try:
+        genetic_res = run_genetic(df)
+    except Exception as e:
+        logger.warning(f"Genetic failed: {e}")
+        genetic_res = fallback_sig.copy()
+    
+    try:
+        hmm_pro_res = run_hmm_pro_gpu(df)
+    except Exception as e:
+        logger.warning(f"HMM Pro GPU failed: {e}")
+        hmm_pro_res = fallback_sig.copy()
 
     individual = {
-        "wavelet": wavelet_res,
+        "wavelet_pro": wavelet_pro_res,    # 6-level DWT + CWT (new)
+        "wavelet_basic": wavelet_basic_res, # 5-level DWT only (original)
         "hmm": hmm_res,
         "lstm": lstm_res,
         "tft": tft_res,
         "genetic": genetic_res,
-        "nlp": nlp_res,
+        "hmm_pro": hmm_pro_res,
     }
 
     # 4. Regime detection
@@ -270,8 +336,13 @@ def run_single_cycle(
         if "us10y_returns" in df.columns else 0.0,
     }
 
-    # 6. Run ensemble meta-learner
-    ensemble_res = run_ensemble(individual, regime, macro_data)
+    # 6. Run ensemble meta-learner with error handling
+    try:
+        ensemble_res = run_ensemble(individual, regime, macro_data)
+    except Exception as e:
+        logger.warning(f"Ensemble failed: {e}")
+        ensemble_res = fallback_sig.copy()
+    
     all_signals = {**individual, "ensemble": ensemble_res}
 
     # 7. Risk management checks
@@ -363,9 +434,19 @@ def run_single_cycle(
                 f"{trade_result.quantity:.2f}oz @ ${current_price:,.2f}"
             )
 
-    # Log signal summary
+    # Log signal summary with distinct labels
+    model_labels_log = {
+        "wavelet_pro": "WVP",      # WaveletPro
+        "wavelet_basic": "WVB",    # Basic 5-level wavelet
+        "hmm": "HMM",              # Legacy HMM v3.0
+        "lstm": "LST",             # LSTM
+        "tft": "TFT",              # TFT
+        "genetic": "GEN",          # Genetic
+        "hmm_pro": "HMP",          # HMM Pro
+        "ensemble": "ENS",         # Ensemble
+    }
     sig_summary = " | ".join(
-        f"{m[:3].upper()}:{v.get('signal', '?')}@{v.get('confidence', 0):.0%}"
+        f"{model_labels_log.get(m, m[:3].upper())}:{v.get('signal', '?')}@{v.get('confidence', 0):.0%}"
         for m, v in all_signals.items()
     )
     logger.info(f"  Signals: {sig_summary}")

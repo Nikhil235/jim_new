@@ -82,7 +82,7 @@ models:
     lstm: 0.15
     tft: 0.10
     genetic: 0.10
-    nlp: 0.05
+    hmm_pro: 0.12
     ensemble: 0.10
 
   wavelet:
@@ -143,13 +143,16 @@ models:
     n_rules_per_chromosome: 8    # Trading rules per strategy
     retrain_frequency: "daily"
 
-  nlp:
-    model: "ProsusAI/finbert"    # FinBERT model for financial sentiment
-    device: -1                   # -1=CPU, 0=GPU
-    max_headlines: 15            # Max headlines per scan
-    sentiment_momentum_window: 10  # Rolling sentiment window
-    min_relevance_score: 1.0     # Minimum keyword relevance
-    scan_interval_seconds: 300   # News scan interval (5 min)
+  hmm_pro:
+    model_type: "GMMHMM"          # GMMHMM | GaussianHMM
+    n_states: 4                    # Bullish / Neutral / Bearish / Reversal
+    n_components: 3                # Gaussian mixture components per state
+    covariance_type: "diag"        # diag (parameter-efficient)
+    max_iter: 200                  # Baum-Welch EM iterations
+    tol: 1e-4                      # Convergence tolerance
+    min_covariance: 1e-3           # Regularization floor
+    retrain_interval: 500          # Bars between retraining
+    random_state: 42
 
   ensemble:
     method: "stacking"           # stacking | voting
