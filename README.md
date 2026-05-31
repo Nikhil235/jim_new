@@ -1,72 +1,96 @@
-# Mini-Medallion: Project Summary & Architecture
-**Last Updated:** May 29, 2026
-**Asset Class:** XAU/USD (Gold)
-**Mode:** Live Autonomous Paper Trading
+# 🏆 Mini-Medallion: Gold (XAU) Trading Engine
 
-## 1. Project Overview
-Mini-Medallion is a production-grade, highly autonomous algorithmic trading engine designed to trade Gold (XAU/USD). It utilizes a multi-model machine learning ensemble architecture inspired by institutional quantitative hedge funds. The system operates 24/7, fetching data, computing features, running 7 distinct models, aggregating predictions via a Meta-Learner, applying strict risk management, and executing trades.
+> *"We are right 50.75% of the time, but we are 100% right 50.75% of the time."*
+> 
+> — Inspired by Jim Simons' Renaissance Technologies
 
----
-
-## 2. Core Architecture
-The system is divided into highly decoupled, microservice-like modules:
-
-### A. Data Ingestion & Feature Engineering
-- **Automated Data System:** Incremental, smart-syncing gold data pipeline that manages missing values, multiple timeframes (Minute, Hourly, Daily), and multi-format storage (SQLite, Parquet, CSV).
-- **Live Data:** Fetches real-time spot prices and macro indicators (DXY, US10Y, Silver) using `yfinance` and `Gold-API.com` / `MetalPriceAPI`.
-- **Feature Store:** Implements a high-performance pipeline using Parquet and Redis for caching.
-- **Transformations:** Computes over 25 features including ATR, ADX, rolling statistics, wavelet transforms, and custom indicators like `real_yield_proxy`.
-
-### B. The 7-Model Ensemble (The "Brain")
-The system does not rely on a single algorithm; it aggregates 6 diverse base models:
-1. **HMM (Hidden Markov Model):** Determines the market regime (`GROWTH`, `NORMAL`, `CRISIS`).
-2. **Wavelet Transform:** De-noises high-frequency price action to find the true underlying trend.
-3. **LSTM:** Temporal deep learning model for sequence prediction.
-4. **TFT (Temporal Fusion Transformer):** State-of-the-art transformer for multi-horizon quantile forecasting.
-5. **Genetic Algorithm:** Evaluates raw technical indicator rules using evolutionary computing.
-6. **NLP / Sentiment:** Fundamental proxy model (currently slated for a massive RAG upgrade).
-7. **The Meta-Learner (RandomForest):** The final arbiter. It takes the outputs of models 1-6 + the current HMM Regime + Macro Data, and predicts the final trade direction (`LONG/SHORT/HOLD`) and outputs a `Confidence Score`.
-
-### C. Risk Management (The "Shield")
-Before any trade is executed, it must pass through `manager.py`:
-- **Confidence Gate:** The Meta-Learner must have a confidence `> 55%`.
-- **Kelly Criterion:** Dynamic position sizing based on the current HMM regime (e.g., risking less capital during a `CRISIS`).
-- **Circuit Breakers:** Hard-coded limits that instantly halt trading to protect capital:
-  - Max Drawdown Limit (10%)
-  - Max Daily Loss (2%)
-  - Consecutive Loss Cooldown
-
-### D. Live Trading & Execution
-- **`live_trader.py`:** The continuous daemon running a 60-second execution loop via CLI.
-- **API Server (`main.py --mode api`):** Fast-API backend running the exact same trading engine in memory, exposing endpoints and WebSockets for real-time frontend integration.
-- **Paper Trading Engine:** Simulates real-world execution by artificially penalizing entry/exit prices with realistic Spread & Slippage (e.g., higher spread during volatile news windows).
-
-### E. Frontend Dashboard
-- **React UI:** A beautifully designed, real-time dashboard (`http://localhost:5173/live-trading`).
-- **Features:** Displays live pulse indicators, equity curves, active circuit breakers, a 7-model signal matrix, and real-time P&L KPIs.
-
-### F. Developer Tooling & Ecosystem
-- **Graphify:** Automated codebase knowledge graph integration to instantly map architectural changes and identify module relationships.
-- **Unified Dependencies:** Streamlined, CPU-first dependency management with clear options for CUDA-accelerated deployment.
+**Mini-Medallion** is a production-grade, highly autonomous algorithmic trading engine designed specifically to trade Gold (XAU/USD). Built on a "Radical Empiricism" philosophy (trusting data over narrative and finding non-obvious invariants), the system utilizes a multi-model machine learning ensemble architecture operating 24/7.
 
 ---
 
-## 3. Recent Milestones & Solved Blockers
-- **Graphify Integration:** Integrated local and CI/CD pipelines to automatically build a knowledge graph of the codebase structure on every commit.
-- **Gold Data Automation:** Replaced static CSVs with a robust, incremental SQLite/Parquet syncing engine that auto-updates on startup.
-- **Documentation Cleanup:** Consolidated sprawling setup guides into concise `GRAPHIFY.md`, `GOLD_DATA.md`, and a unified `requirements.txt`.
-- **Live UI Connection:** Correctly aligned the backend API (`LiveInferenceLoop`) with the Dashboard UI WebSockets for real-time trade monitoring.
-- **GPU Architecture Fixed:** Resolved PyTorch CUDA fallback warnings and optimized the `detect_gpu` initialization flow.
-- **Unblocking the Engine:** Solved issues where the Risk Manager was incorrectly blocking trades by adjusting the `min_confidence` threshold to `0.55` and relaxing the regime filter.
+## 🏗️ Architecture Overview
+
+The system runs on a 7-model machine learning ensemble aggregated via a Stacking Meta-Learner to produce `LONG/SHORT/HOLD` signals. 
+
+### Core Components
+- **Data Ingestion & Features:** Automates fetching of tick data, macro indicators (DXY, US10Y, Silver), and sentiment analysis.
+- **Ensemble Engine:** Incorporates 7 diverse models including **WaveletPro** (frequency-domain analysis), **HMM Pro** (temporal regime detection), LSTM, Temporal Fusion Transformers (TFT), Genetic Algorithms, and NLP.
+- **Risk Management (The "Shield"):** Validates trades using a Meta-Label Critic (must be > 65% confident), sizes positions via Dynamic Kelly / Half-Kelly Criterion, and enforces circuit breakers (e.g., Max Drawdown 10%). GPU Monte Carlo VaR simulations run continuously.
+- **Execution:** Paper Trading Engine with realistic slippage/commission models, and a low-latency C++ order router slated for Interactive Brokers.
+
+### Advanced Modeling
+1. **WaveletPro**: Uses a 6-level DWT (db4 wavelet) for decomposition, extracting a Wavelet Oscillator for mid-term cycles. Applies soft thresholding for denoising and Morlet CWT for volatility. Generates 36 features with ~10-15ms inference latency.
+2. **HMM Pro**: GMMHMM tracking 4 market regimes (Bullish, Neutral, Bearish, Reversal). Integrates macro data with automatic feature dimension padding. ~19ms inference latency.
 
 ---
 
-## 4. Immediate Roadmap (Next Steps)
-1. **RAG Integration (Fundamental Macro Analysis)**
-   - *Plan:* Replace the static NLP model with a local Retrieval-Augmented Generation (RAG) pipeline.
-   - *Tech Stack:* Ollama (`llama3.1` 8B for reasoning, `mxbai-embed-large` for embeddings) + LangChain + FAISS/ChromaDB.
-   - *Goal:* Ingest daily Fed reports and Reuters news to give the Meta-Learner real-time macroeconomic fundamental context.
-2. **Broker Integration**
-   - *Plan:* Swap the `PaperTradingEngine` with an `IBKR` (Interactive Brokers) API adapter to route live orders to a real brokerage account.
-3. **Continuous Training Daemon**
-   - *Plan:* Finalize the background script that re-trains the models (LSTM, TFT, HMM) automatically every weekend using the latest market data to prevent model decay.
+## 🛠️ Technology Stack
+
+- **Compute & Deep Learning:** PyTorch (CUDA), NVIDIA RAPIDS (cuDF, cuML), CuPy, cuSignal.
+- **Data Storage & Pipeline:** QuestDB (Tick Data), Redis (Feature Store), MinIO (Data Lake), Kafka.
+- **MLOps & Monitoring:** MLflow (Model Registry), Prometheus, Grafana.
+- **Execution:** Python (Research/Paper Trading), C++ (Live Order Router).
+- **Deployment:** Docker Compose stack.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Prerequisites
+- Python 3.11+
+- Docker & Docker Compose
+- NVIDIA GPU (Recommended) with CUDA toolkit installed
+
+### 2. Installation
+```bash
+# Clone the repository
+git clone <repository-url>
+cd jim_new
+
+# Create virtual environment and install dependencies
+python -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+python -m pip install -r requirements.txt
+```
+
+### 3. Launching the Infrastructure
+Copy `.env.example` to `.env` and populate any required secret values. Then start the infrastructure stack:
+```bash
+docker compose up -d
+```
+You can run the infrastructure health check to verify the services:
+```bash
+python scripts/check_infrastructure.py
+```
+
+### 4. Running the Pipeline
+To run a demo of the current trading pipeline:
+```bash
+python main.py --mode demo
+```
+
+---
+
+## 🗺️ Project Roadmap (7 Phases)
+
+The project follows a strict 7-phase roadmap, ensuring robust infrastructure before live capital deployment.
+
+- [x] **Phase 1:** Infrastructure & Compute 
+- [ ] **Phase 2:** Data Acquisition & Pipeline
+- [ ] **Phase 3:** Mathematical Modeling
+- [ ] **Phase 4:** Risk Management & Meta-Labeling
+- [ ] **Phase 5:** Backtesting & Validation (CPCV & Deflated Sharpe Ratio)
+- [ ] **Phase 6:** Paper Trading & Live Deployment (Staged from Alpha to Production)
+- [ ] **Phase 7:** Team Culture & Operations (No Silos, Shared Destiny)
+
+*(Currently, Phase 1 is in progress with WaveletPro and HMM Pro fully integrated and verified).*
+
+---
+
+## 📚 Documentation
+All extensive project documentation has been consolidated and can be explored via the [Graphify Report](./graphify-out/GRAPH_REPORT.md). The `GRAPH_REPORT.md` file contains a detailed topology of the codebase and includes a full system architecture and technical consolidation summary at the end of the file. 
+
+---
+
+## ⚠️ Disclaimer
+**For Research Purposes Only.** This software is provided as-is, and the creators are not responsible for any financial losses incurred from using this trading engine. Always backtest strategies thoroughly and use paper trading before committing live capital.
