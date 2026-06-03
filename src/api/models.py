@@ -33,6 +33,14 @@ class HealthResponse(BaseModel):
     # Phase 6: Extended metrics (optional)
     sla_compliant: Optional[bool] = Field(default=None, description="SLA compliance status")
     uptime_percent: Optional[float] = Field(default=None, description="Uptime percentage")
+    # System health (data feed, model crashes)
+    data_feed_stale: bool = Field(default=False, description="Data feed has consecutive failures")
+    consecutive_failures: int = Field(default=0, description="Consecutive data fetch failures")
+    dead_models: List[str] = Field(default_factory=list, description="Models with >5 consecutive errors")
+    model_errors: Dict[str, int] = Field(default_factory=dict, description="Per-model error counts")
+    total_cycles: int = Field(default=0, description="Total inference cycles run")
+    price_age_seconds: Optional[float] = Field(default=None, description="Seconds since last price update")
+    last_price: float = Field(default=0.0, description="Current gold price")
 
 
 class CurrentSignalResponse(BaseModel):

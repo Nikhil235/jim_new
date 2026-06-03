@@ -44,6 +44,7 @@ from src.models.performance_monitor import ModelPerformanceMonitor
 # Phase 6B: Paper trading API routes
 try:
     from src.api.paper_trading_routes import router as paper_trading_router
+    from src.api.dashboard_controls import router as dashboard_controls_router
     PAPER_TRADING_ROUTES_AVAILABLE = True
 except ImportError:
     PAPER_TRADING_ROUTES_AVAILABLE = False
@@ -80,6 +81,37 @@ LAST_SIGNAL_TIME = None
 # Integration: Advanced monitoring (Phase 6)
 HEALTH_MONITOR = None
 PERFORMANCE_MONITOR = None
+
+
+def get_system_health() -> Dict:
+    """Read system health from LiveInferenceLoop (data freshness, model crashes)."""
+    try:
+        from src.paper_trading.live_inference import SYSTEM_HEALTH, CURRENT_GOLD_PRICE, LAST_PRICE_UPDATE
+        errors = SYSTEM_HEALTH.get("model_errors", {})
+        dead = [m for m, c in errors.items() if c > 5]
+        price_age = None
+        if LAST_PRICE_UPDATE:
+            from datetime import datetime
+            price_age = (datetime.now() - LAST_PRICE_UPDATE).total_seconds()
+        return {
+            "data_feed_stale": SYSTEM_HEALTH.get("data_feed_stale", False),
+            "consecutive_failures": SYSTEM_HEALTH.get("consecutive_failures", 0),
+            "dead_models": dead,
+            "model_errors": dict(errors),
+            "total_cycles": SYSTEM_HEALTH.get("total_cycles", 0),
+            "price_age_seconds": price_age,
+            "last_price": CURRENT_GOLD_PRICE,
+        }
+    except Exception:
+        return {
+            "data_feed_stale": False,
+            "consecutive_failures": 0,
+            "dead_models": [],
+            "model_errors": {},
+            "total_cycles": 0,
+            "price_age_seconds": None,
+            "last_price": 0.0,
+        }
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -161,6 +193,7 @@ app.add_middleware(
 # Phase 6B: Include paper trading routes
 if PAPER_TRADING_ROUTES_AVAILABLE and paper_trading_router is not None:
     app.include_router(paper_trading_router)
+    app.include_router(dashboard_controls_router)
     logger.info("Paper trading routes included")
 
 # Mount static files for the trading dashboard
@@ -291,6 +324,7 @@ async def health_check():
             try:
                 health_data = HEALTH_MONITOR.run_full_health_check()
                 
+                sys_health = get_system_health()
                 return HealthResponse(
                     status=health_data.get("overall_status", "ok"),
                     gpu_available=gpu_available,
@@ -304,6 +338,13 @@ async def health_check():
                     # Phase 6: Extended metrics
                     sla_compliant=health_data.get("sla_compliant", False),
                     uptime_percent=health_data.get("uptime_percent", 0),
+                    data_feed_stale=sys_health.get("data_feed_stale", False),
+                    consecutive_failures=sys_health.get("consecutive_failures", 0),
+                    dead_models=sys_health.get("dead_models", []),
+                    model_errors=sys_health.get("model_errors", {}),
+                    total_cycles=sys_health.get("total_cycles", 0),
+                    price_age_seconds=sys_health.get("price_age_seconds"),
+                    last_price=sys_health.get("last_price", 0.0),
                 )
             except Exception as e:
                 logger.warning(f"Advanced health check failed, using fallback: {e}")
@@ -314,7 +355,7 @@ async def health_check():
             from src.ingestion.questdb_writer import QuestDBWriter
             writer = QuestDBWriter(CONFIG)
             writer.test_connection()
-        except:
+        except Exception:
             db_ok = False
         
         redis_ok = True
@@ -322,11 +363,12 @@ async def health_check():
             from src.utils.redis_client import get_redis_client
             r = get_redis_client()
             r.ping()
-        except:
+        except Exception:
             redis_ok = False
         
         status = "ok" if db_ok and redis_ok else ("degraded" if db_ok or redis_ok else "error")
         
+        sys_health = get_system_health()
         return HealthResponse(
             status=status,
             gpu_available=gpu_available,
@@ -337,6 +379,13 @@ async def health_check():
             models_loaded=GPU_ACCELERATORS is not None,
             hardware_gpu_detected=hw_gpu_detected,
             hardware_gpu_names=hw_gpu_names,
+            data_feed_stale=sys_health.get("data_feed_stale", False),
+            consecutive_failures=sys_health.get("consecutive_failures", 0),
+            dead_models=sys_health.get("dead_models", []),
+            model_errors=sys_health.get("model_errors", {}),
+            total_cycles=sys_health.get("total_cycles", 0),
+            price_age_seconds=sys_health.get("price_age_seconds"),
+            last_price=sys_health.get("last_price", 0.0),
         )
     
     except Exception as e:
@@ -413,15 +462,18 @@ async def get_regime():
             else:
                 break
         
+        regime_probs = {}
+        if hasattr(confidences, 'shape') and confidences.ndim > 1:
+            probs = confidences[-1]
+            if len(probs) >= 3:
+                regime_probs = dict(zip(["GROWTH", "NORMAL", "CRISIS"], [float(p) for p in probs[:3]]))
+
         return RegimeResponse(
             regime=regime_name,
-            confidence=float(confidences[-1]),
+            confidence=float(confidences[-1] if not isinstance(confidences[-1], (list, np.ndarray)) else np.max(confidences[-1])),
             volatility=gold_df["returns"].std(),
             regime_duration_days=regime_duration,
-            regime_probabilities={
-                name: np.random.rand()
-                for name in ["GROWTH", "NORMAL", "CRISIS"]
-            },
+            regime_probabilities=regime_probs,
         )
     
     except Exception as e:

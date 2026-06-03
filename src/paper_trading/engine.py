@@ -24,6 +24,9 @@ import os
 import numpy as np
 from loguru import logger
 from src.models.rl_execution_agent import get_rl_agent
+from src.models.model_retraining_orchestrator import (
+    get_retraining_orchestrator, ModelRetrainingOrchestrator, RetrainingStatus,
+)
 from src.paper_trading.silver_feed_adapter import SilverFeedAdapter
 from src.paper_trading.kalman_hedge import KalmanHedgeEngine
 from src.paper_trading.dynamic_weights import (
@@ -33,6 +36,9 @@ from src.paper_trading.dynamic_weights import (
 # Phase 5 backtester infrastructure
 from src.backtesting.execution import ExecutionSimulator, ExecutionConfig, SlippageModel
 from src.backtesting.portfolio import PortfolioTracker
+
+# Phase 6 model performance attribution
+from src.models.performance_tracker import get_performance_tracker
 
 # Phase 6 monitoring
 try:
@@ -227,8 +233,19 @@ class PaperTradingEngine:
         
         # Monitoring (Phase 6)
         self.health_monitor: Optional[HealthMonitor] = None
-        self.performance_monitor: Optional[ModelPerformanceMonitor] = None
+        if ModelPerformanceMonitor is not None:
+            self.performance_monitor = ModelPerformanceMonitor()
+        else:
+            self.performance_monitor = None
         
+        # Model Retraining Orchestrator (one per model)
+        self.retraining_orchestrators: Dict[str, ModelRetrainingOrchestrator] = {
+            model: get_retraining_orchestrator(model)
+            for model in self.config.signal_weights.keys()
+        }
+        self._retrain_thread: Optional[threading.Thread] = None
+        self._retrain_stop = threading.Event()
+
         # Silver Feed and Kalman Hedge
         self.silver_feed = SilverFeedAdapter(
             goldapi_key=os.getenv("GOLDAPI_KEY", ""),
@@ -255,7 +272,15 @@ class PaperTradingEngine:
         self.daily_pnl = 0.0
         
         self.silver_feed.start()
-        
+
+        # Start retraining scheduler
+        self._retrain_stop.clear()
+        self._retrain_thread = threading.Thread(
+            target=self._retraining_loop, daemon=True, name="retrain-scheduler"
+        )
+        self._retrain_thread.start()
+        logger.info("Retraining scheduler started")
+
         logger.info("Paper trading started")
         return {
             "status": "RUNNING",
@@ -281,8 +306,12 @@ class PaperTradingEngine:
         self.status = "STOPPED"
         self.stopped_at = datetime.now()
         
+        self._retrain_stop.set()
+        if self._retrain_thread and self._retrain_thread.is_alive():
+            self._retrain_thread.join(timeout=5)
+
         self.silver_feed.stop()
-        
+
         logger.info(f"Paper trading stopped. Final P&L: ${self.get_total_pnl():.2f}")
         return {
             "status": "STOPPED",
@@ -353,6 +382,8 @@ class PaperTradingEngine:
 
             # Store signal
             self.last_signals[model_name] = signal
+            if model_name not in self.signal_history:
+                self.signal_history[model_name] = []
             self.signal_history[model_name].append(signal)
             
             # --- Hard Confidence Gate (Bug 1 Fix) ---
@@ -554,6 +585,27 @@ class PaperTradingEngine:
         }
     
     # ========================================================================
+    # MODEL RETRAINING SCHEDULER
+    # ========================================================================
+
+    def _retraining_loop(self) -> None:
+        """Background thread: check every 60 min for pending retraining jobs."""
+        CHECK_INTERVAL_S = 3600
+        while not self._retrain_stop.is_set():
+            import asyncio
+            for model_name, orch in self.retraining_orchestrators.items():
+                pending = orch.get_retraining_jobs(status=RetrainingStatus.SCHEDULED)
+                for job in pending:
+                    if job.scheduled_time <= datetime.utcnow():
+                        logger.info(f"Executing scheduled retraining: {model_name} job {job.job_id}")
+                        try:
+                            asyncio.run(orch.execute_retraining_job(job.job_id))
+                        except Exception as e:
+                            logger.error(f"Retraining failed for {model_name}: {e}")
+            if not self._retrain_stop.is_set():
+                self._retrain_stop.wait(CHECK_INTERVAL_S)
+
+    # ========================================================================
     # PRIVATE METHODS
     # ========================================================================
     
@@ -704,7 +756,32 @@ class PaperTradingEngine:
                 pnl=trade.pnl,
                 return_pct=trade.pnl_pct,
             )
-        
+
+        # Feed closed trade to performance monitor
+        if self.performance_monitor is not None:
+            self.performance_monitor.track_trade(
+                model_name=trade.model_name,
+                trade={"pnl": trade.pnl},
+                regime=trade.regime,
+                date=trade.exit_time.strftime("%Y-%m-%d") if trade.exit_time else None,
+            )
+
+        # Feed closed trade to model attribution tracker
+        try:
+            tracker = get_performance_tracker()
+            tracker.record_trade(
+                model_name=trade.model_name or "ensemble",
+                entry_price=trade.entry_price,
+                exit_price=exit_price,
+                quantity=trade.quantity,
+                entry_time=trade.entry_time or timestamp,
+                exit_time=timestamp,
+                confidence=trade.confidence,
+                trade_id=trade.trade_id,
+            )
+        except Exception as e:
+            logger.debug(f"Performance tracker error: {e}")
+
         logger.info(f"Position closed: P&L ${trade.pnl:.2f} ({trade.pnl_pct:.2f}%)")
 
         # --- Retroactively update P&L in prediction CSV ---

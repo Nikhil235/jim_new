@@ -123,12 +123,38 @@ async function loadHealth() {
             gpuLabel = 'GPU (not detected)';
         }
 
+        // Data feed status
+        let feedStatus = 'ok';
+        let feedLabel = 'Data Feed';
+        if (h.data_feed_stale) {
+            feedStatus = 'fail';
+            feedLabel = `Data Feed (${h.consecutive_failures} fails)`;
+        } else if (h.price_age_seconds !== null && h.price_age_seconds > 120) {
+            feedStatus = 'warn';
+            feedLabel = `Data Feed (${Math.round(h.price_age_seconds / 60)}m stale)`;
+        }
+
+        // Model crash status
+        let modelStatus = h.models_loaded ? 'ok' : 'fail';
+        let modelLabel = 'Models';
+        if (h.dead_models && h.dead_models.length > 0) {
+            modelStatus = 'fail';
+            modelLabel = `Models (${h.dead_models.join(', ')} crashed)`;
+        } else {
+            const errorCount = h.model_errors ? Object.values(h.model_errors).reduce((a, b) => a + b, 0) : 0;
+            if (errorCount > 0) {
+                modelStatus = 'warn';
+                modelLabel = `Models (${errorCount} errors)`;
+            }
+        }
+
         const items = [
             { name: 'API Server', status: 'ok' },
             { name: gpuLabel, status: gpuStatus },
             { name: 'Database', status: h.database_connected ? 'ok' : 'fail' },
             { name: 'Redis Cache', status: h.redis_connected ? 'ok' : 'fail' },
-            { name: 'Models', status: h.models_loaded ? 'ok' : 'fail' },
+            { name: modelLabel, status: modelStatus },
+            { name: feedLabel, status: feedStatus },
             { name: 'WebSocket', status: (ws && ws.readyState === 1) ? 'ok' : 'fail' },
         ];
         grid.innerHTML = items.map(i =>
@@ -136,7 +162,7 @@ async function loadHealth() {
         ).join('');
         setConnection('connected', 'Connected');
 
-        // Banner message with GPU detail
+        // Banner message with GPU detail + system warning
         let gpuMsg;
         if (h.gpu_available) {
             gpuMsg = `GPU: ${h.gpu_count} device(s) active`;
@@ -146,7 +172,19 @@ async function loadHealth() {
         } else {
             gpuMsg = 'GPU: CPU mode';
         }
-        setBanner('success', `Engine online — ${gpuMsg} | DB: ${h.database_connected ? '✓' : '✗'} | Redis: ${h.redis_connected ? '✓' : '✗'}`);
+        let bannerStatus = 'success';
+        let bannerMsg = `Engine online — ${gpuMsg} | DB: ${h.database_connected ? '✓' : '✗'} | Redis: ${h.redis_connected ? '✓' : '✗'}`;
+        if (h.data_feed_stale) {
+            bannerStatus = 'error';
+            bannerMsg = `⚠ DATA FEED STALE (${h.consecutive_failures} consecutive failures) — Check yfinance/MetalPriceAPI`;
+        } else if (h.dead_models && h.dead_models.length > 0) {
+            bannerStatus = 'error';
+            bannerMsg = `⚠ MODELS CRASHED: ${h.dead_models.join(', ')} — Restart inference loop`;
+        } else if (h.price_age_seconds !== null && h.price_age_seconds > 120) {
+            bannerStatus = 'warn';
+            bannerMsg = `⚠ Price data ${Math.round(h.price_age_seconds / 60)}m stale — last: $${h.last_price?.toFixed(2) || '--'}`;
+        }
+        setBanner(bannerStatus, bannerMsg);
     } catch {
         setConnection('error', 'Disconnected');
         setBanner('error', 'Cannot reach API server. Is it running?');

@@ -18,7 +18,7 @@ All 6 models run on every tick:
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Callable, Any
+from typing import Optional, Dict, Callable, Any, Tuple
 import warnings
 import numpy as np
 import pandas as pd
@@ -33,7 +33,10 @@ warnings.filterwarnings("ignore", module="torch")
 
 from src.models.hmm_pro import run_hmm_pro
 from src.models.wavelet_pro import run_wavelet_pro
+from src.models.tft_forecaster import run_tft
+from src.models.ensemble_stacking import get_stacking_ensemble
 from src.paper_trading.prediction_logger import log_prediction_cycle, update_pnl_for_trade
+from src.utils.shared_state import state_manager, RuntimeConfig, record_gate_rejection, reset_gate_stats
 
 # ============================================================================
 # MODEL SIGNAL REGISTRY (shared state, updated by inference loop)
@@ -64,6 +67,18 @@ MACRO_DATA: Dict[str, float] = {
     "gold_silver_ratio": 0.0,
     "rl_kelly": 1.0,
     "rl_trailing": 0.015,
+}
+
+# System health — updated by LiveInferenceLoop each cycle, read by dashboard / monitor
+SYSTEM_HEALTH: Dict = {
+    "consecutive_failures": 0,
+    "last_data_update": None,
+    "last_price_update": None,
+    "total_cycles": 0,
+    "data_feed_stale": False,
+    "model_errors": {m: 0 for m in ["wavelet_pro", "wavelet_basic", "hmm", "lstm", "tft", "genetic", "hmm_pro"]},
+    "model_last_success": {},
+    "running": False,
 }
 
 
@@ -328,21 +343,21 @@ def run_wavelet(df: pd.DataFrame) -> Dict:
                 
                 # Dynamic confidence based on slope magnitude
                 abs_slope = abs(slope)
-                # Base 50% + up to 45% based on slope (0.001 slope adds 40%)
-                base_conf = 0.50 + min(abs_slope * 400.0, 0.45)
+                # Base 50% + up to 45% based on slope
+                base_conf = 0.50 + min(abs_slope * 300.0, 0.45)
                 
                 # Penalty if using fallback model
                 confidence = base_conf if pywt_available else base_conf * 0.70
 
-                if slope > 0.0001:
+                if slope > 0.00005:
                     signal = "LONG"
                     reasoning = f"Wavelet trend slope +{slope:.4f} → uptrend detected"
-                elif slope < -0.0001:
+                elif slope < -0.00005:
                     signal = "SHORT"
                     reasoning = f"Wavelet trend slope {slope:.4f} → downtrend detected"
                 else:
                     signal = "HOLD"
-                    confidence = 0.15
+                    confidence = 0.18
                     reasoning = f"Wavelet trend flat (slope={slope:.6f})"
             else:
                 signal = "HOLD"
@@ -358,8 +373,6 @@ def run_wavelet(df: pd.DataFrame) -> Dict:
                 "confidence": 0.0,
                 "reasoning": f"Wavelet error: {str(e_fallback)[:80]}"
             }
-        logger.warning(f"Wavelet model error: {e}")
-        return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
 
 
 def run_wavelet_basic(df: pd.DataFrame) -> Dict:
@@ -401,20 +414,20 @@ def run_wavelet_basic(df: pd.DataFrame) -> Dict:
             # Dynamic confidence based on slope magnitude
             abs_slope = abs(slope)
             # Base 50% + up to 45% based on slope
-            base_conf = 0.50 + min(abs_slope * 400.0, 0.45)
+            base_conf = 0.50 + min(abs_slope * 300.0, 0.45)
             
             # Penalty if using fallback model
             confidence = base_conf if pywt_available else base_conf * 0.70
 
-            if slope > 0.0001:
+            if slope > 0.00005:
                 signal = "LONG"
                 reasoning = f"Basic 5-level: trend slope +{slope:.4f} → uptrend"
-            elif slope < -0.0001:
+            elif slope < -0.00005:
                 signal = "SHORT"
                 reasoning = f"Basic 5-level: trend slope {slope:.4f} → downtrend"
             else:
                 signal = "HOLD"
-                confidence = 0.15
+                confidence = 0.18
                 reasoning = f"Basic 5-level: flat trend (slope={slope:.6f})"
         else:
             signal = "HOLD"
@@ -578,87 +591,7 @@ def run_lstm(df: pd.DataFrame) -> Dict:
 
 
 
-def run_tft(df: pd.DataFrame) -> Dict:
-    """TFT forecaster: multi-scale attention-based signal."""
-    try:
-        closes = df["close"].values
-        returns = df["returns"].values
-        highs = df["high"].values if "high" in df.columns else closes
-        lows = df["low"].values if "low" in df.columns else closes
 
-        # Multi-window RSI (approximates TFT's multi-horizon attention)
-        def rsi(series, period=14):
-            delta = np.diff(series)
-            gain = np.where(delta > 0, delta, 0)
-            loss = np.where(delta < 0, -delta, 0)
-            avg_gain = np.mean(gain[-period:]) + 1e-10
-            avg_loss = np.mean(loss[-period:]) + 1e-10
-            rs = avg_gain / avg_loss
-            return 100 - 100 / (1 + rs)
-
-        rsi_14 = rsi(closes, 14)
-        rsi_7 = rsi(closes, 7)
-
-        # ATR-normalized momentum
-        atr = np.mean(np.abs(highs[-14:] - lows[-14:]))
-        momentum_14 = (closes[-1] - closes[-14]) / (atr + 1e-8)
-
-        # Bollinger band position
-        bb_mean = np.mean(closes[-20:])
-        bb_std = np.std(closes[-20:])
-        bb_pos = (closes[-1] - bb_mean) / (2 * bb_std + 1e-8)  # -1 to 1
-
-        # TFT attention-inspired weighting across time scales
-        short_signal = np.sign(rsi_7 - 50) * (abs(rsi_7 - 50) / 50)
-        long_signal = np.sign(rsi_14 - 50) * (abs(rsi_14 - 50) / 50)
-        trend_signal = np.sign(momentum_14) * min(abs(momentum_14) / 5, 1.0)
-
-        combined = short_signal * 0.3 + long_signal * 0.4 + trend_signal * 0.3
-        # Limit contrarian BB adjustment
-        bb_adj = np.clip(bb_pos * 0.15, -0.25, 0.25)
-        combined -= bb_adj
-        
-        # TFT Macro Attention: Yield & DXY Curve Inversion
-        macro_reasoning = ""
-        if "dxy_returns" in df.columns and "us10y_returns" in df.columns:
-            dxy_roc = df["dxy_returns"].iloc[-5:].mean() * 1000
-            yield_roc = df["us10y_returns"].iloc[-5:].mean() * 1000
-            
-            if dxy_roc > 1.5 or yield_roc > 1.5:
-                combined -= 0.4 # Severe bearish override
-                macro_reasoning = f" (MACRO FEAR: DXY/US10Y Spiking)"
-            elif dxy_roc < -1.5 or yield_roc < -1.5:
-                combined += 0.4 # Severe bullish override
-                macro_reasoning = f" (MACRO GREED: DXY/US10Y Dropping)"
-
-        # Gold-Silver Ratio adjustment (Investopedia)
-        if "gold_silver_ratio" in df.columns:
-            gs_ratio = df["gold_silver_ratio"].iloc[-1]
-            if gs_ratio > 85:
-                combined -= 0.15
-                macro_reasoning += f" (GSR High: {gs_ratio:.1f})"
-            elif gs_ratio < 75:
-                combined += 0.15
-                macro_reasoning += f" (GSR Low: {gs_ratio:.1f})"
-
-        confidence = min(abs(combined) * 0.9 + 0.25, 0.94)
-
-        if combined > 0.2:
-            signal = "LONG"
-        elif combined < -0.2:
-            signal = "SHORT"
-        else:
-            signal = "HOLD"
-
-        return {
-            "signal": signal,
-            "confidence": round(float(confidence), 3),
-            "reasoning": f"TFT-proxy: RSI14={rsi_14:.1f}, RSI7={rsi_7:.1f}, BB_pos={bb_pos:.2f}, score={combined:.3f}{macro_reasoning}",
-        }
-
-    except Exception as e:
-        logger.warning(f"TFT model error: {e}")
-        return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
 
 
 def run_genetic(df: pd.DataFrame) -> Dict:
@@ -674,10 +607,10 @@ def run_genetic(df: pd.DataFrame) -> Dict:
         if len(closes) >= 30:
             sma10 = np.mean(closes[-10:])
             sma30 = np.mean(closes[-30:])
-            if sma10 > sma30 * 1.001:
+            if sma10 > sma30 * 1.0005:
                 votes.append(1)
                 reasons.append(f"SMA10>{sma30:.0f}")
-            elif sma10 < sma30 * 0.999:
+            elif sma10 < sma30 * 0.9995:
                 votes.append(-1)
                 reasons.append(f"SMA10<{sma30:.0f}")
             else:
@@ -686,10 +619,10 @@ def run_genetic(df: pd.DataFrame) -> Dict:
         # Rule 2: Momentum rule (evolved: 5-day return threshold)
         if len(returns) >= 5:
             mom5 = np.sum(returns[-5:])
-            if mom5 > 0.008:
+            if mom5 > 0.004:
                 votes.append(1)
                 reasons.append(f"Mom5d=+{mom5:.3f}")
-            elif mom5 < -0.008:
+            elif mom5 < -0.004:
                 votes.append(-1)
                 reasons.append(f"Mom5d={mom5:.3f}")
             else:
@@ -699,10 +632,10 @@ def run_genetic(df: pd.DataFrame) -> Dict:
         if "volume" in df.columns and len(df) >= 10:
             recent = df.iloc[-10:]
             vwap_ret = np.average(recent["returns"], weights=recent["volume"] + 1)
-            if vwap_ret > 0.001:
+            if vwap_ret > 0.0005:
                 votes.append(1)
                 reasons.append(f"VWAP_ret=+{vwap_ret:.4f}")
-            elif vwap_ret < -0.001:
+            elif vwap_ret < -0.0005:
                 votes.append(-1)
                 reasons.append(f"VWAP_ret={vwap_ret:.4f}")
             else:
@@ -712,10 +645,10 @@ def run_genetic(df: pd.DataFrame) -> Dict:
         if len(closes) >= 20:
             range_now = df["high"].iloc[-1] - df["low"].iloc[-1] if "high" in df.columns else 0
             range_avg = (df["high"] - df["low"]).iloc[-20:].mean() if "high" in df.columns else 1
-            if range_now > range_avg * 1.3 and returns[-1] > 0:
+            if range_now > range_avg * 1.2 and returns[-1] > 0:
                 votes.append(1)
                 reasons.append("breakout_up")
-            elif range_now > range_avg * 1.3 and returns[-1] < 0:
+            elif range_now > range_avg * 1.2 and returns[-1] < 0:
                 votes.append(-1)
                 reasons.append("breakout_dn")
             else:
@@ -723,29 +656,42 @@ def run_genetic(df: pd.DataFrame) -> Dict:
 
         # Rule 5: Recent reversal detection
         if len(returns) >= 3:
-            if returns[-3] < -0.005 and returns[-2] < -0.003 and returns[-1] > 0.002:
+            if returns[-3] < -0.003 and returns[-2] < -0.002 and returns[-1] > 0.001:
                 votes.append(1)
                 reasons.append("reversal_long")
-            elif returns[-3] > 0.005 and returns[-2] > 0.003 and returns[-1] < -0.002:
+            elif returns[-3] > 0.003 and returns[-2] > 0.002 and returns[-1] < -0.001:
                 votes.append(-1)
                 reasons.append("reversal_short")
             else:
                 votes.append(0)
 
         if not votes:
-            return {"signal": "HOLD", "confidence": 0.0, "reasoning": "No rules fired"}
+            # Even with no rules, return weak directional guess from recent momentum
+            if len(returns) >= 5:
+                recent_mom = np.mean(returns[-5:])
+                if recent_mom > 0:
+                    return {"signal": "LONG", "confidence": 0.20, "reasoning": "Genetic: no rules fired, bias LONG on momentum"}
+                else:
+                    return {"signal": "SHORT", "confidence": 0.20, "reasoning": "Genetic: no rules fired, bias SHORT on momentum"}
+            return {"signal": "HOLD", "confidence": 0.0, "reasoning": "Genetic: no rules fired, insufficient data"}
 
         score = np.mean(votes)
-        # Confidence = agreement among rules
         agreement = abs(score)
-        confidence = min(agreement * 0.85 + 0.20, 0.90)
+        confidence = min(0.25 + agreement * 0.65, 0.90)
 
-        if score > 0.2:
+        if score > 0.1:
             signal = "LONG"
-        elif score < -0.2:
+        elif score < -0.1:
             signal = "SHORT"
         else:
             signal = "HOLD"
+            confidence = max(confidence, 0.18)
+
+        return {
+            "signal": signal,
+            "confidence": round(float(confidence), 3),
+            "reasoning": f"Genetic ({len([v for v in votes if v != 0])}/{len(votes)} rules): " + ", ".join(reasons[:3]),
+        }
 
         return {
             "signal": signal,
@@ -756,27 +702,6 @@ def run_genetic(df: pd.DataFrame) -> Dict:
     except Exception as e:
         logger.warning(f"Genetic model error: {e}")
         return {"signal": "HOLD", "confidence": 0.0, "reasoning": f"Error: {str(e)[:80]}"}
-
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.exceptions import NotFittedError
-import joblib
-import os
-from loguru import logger
-
-# The Machine Learning Meta-Learner (preserved for future use)
-# Currently DISABLED: the saved model was trained on proxy daily signals that
-# don't match live 1-minute model outputs, causing contradictory predictions.
-# To re-enable: retrain on actual live signal logs, then set _ml_validated = True.
-_meta_learner_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'meta_learner.joblib'))
-_meta_learner = None
-_ml_validated = False  # Gate: only use ML if retrained on live data
-
-try:
-    _meta_learner = joblib.load(_meta_learner_path)
-    logger.info(f"Loaded meta-learner from {_meta_learner_path} (DISABLED — using heuristic ensemble)")
-except Exception as e:
-    logger.info(f"No meta-learner found ({e}). Using heuristic ensemble.")
 
 
 # ============================================================================
@@ -799,9 +724,38 @@ _REGIME_WEIGHTS = {
 }
 
 
-def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", macro_data: Optional[Dict] = None) -> Dict:
+def _predict_stacking(stacking, individual_signals: Dict, df: pd.DataFrame) -> Tuple[str, float]:
+    """Build meta-features from individual model signals and predict with XGBoost."""
+    stacking_fn = getattr(stacking, "_build_meta_features", None)
+    if stacking_fn is None:
+        return "HOLD", 0.0
+    close = df["close"].values if "close" in df.columns else df["Close"].values
+    n = len(close)
+    X_dummy = pd.DataFrame(index=range(n))
+    X_dummy["Close"] = close
+    pred_matrix = np.zeros((1, len(stacking.base_models)))
+    for i, name in enumerate(stacking.base_models):
+        sig = individual_signals.get(name, individual_signals.get("ensemble", {}))
+        conf = float(sig.get("confidence", 0.0))
+        direction = sig.get("signal", "HOLD")
+        pred_matrix[0, i] = conf if direction == "LONG" else (1.0 - conf) if direction == "SHORT" else 0.5
+    col_names = [f"{n}_pred" for n in stacking.base_models]
+    meta = stacking_fn(X_dummy.tail(1), pred_matrix, col_names)
+    proba = stacking.meta_model.predict_proba(meta)[0]
+    long_prob = float(proba[1]) if len(proba) > 1 else float(proba[0])
+    signal = "LONG" if long_prob > 0.55 else "SHORT" if long_prob < 0.45 else "HOLD"
+    conf = abs(long_prob - 0.5) * 2
+    return signal, conf
+
+
+def run_ensemble(
+    individual_signals: Dict[str, Dict],
+    regime: str = "NORMAL",
+    macro_data: Optional[Dict] = None,
+    df: Optional[pd.DataFrame] = None,
+) -> Dict:
     """
-    Confidence-Weighted Voting Ensemble v2.0
+    Confidence-Weighted Voting Ensemble v2.0 + XGBoost Stacking
 
     Replaces the stale ML meta-learner with a transparent, robust ensemble:
     1. Regime-aware model weights
@@ -962,13 +916,34 @@ def run_ensemble(individual_signals: Dict[str, Dict], regime: str = "NORMAL", ma
 
         final_signal = raw_signal if final_confidence >= 0.10 else "HOLD"
 
-        # ── 9. Build reasoning ──
+        # ── 9. Stacking Ensemble Integration (XGBoost meta-learner) ──
+        stack_note = ""
+        stacking = get_stacking_ensemble()
+        if stacking is not None and stacking.is_trained and df is not None:
+            try:
+                stacking_signal, stacking_conf = _predict_stacking(stacking, individual_signals, df)
+                if stacking_signal != "HOLD":
+                    if stacking_signal == final_signal:
+                        agreement_mult *= 1.15
+                        stack_note = f"StackBoost({stacking_signal}@{stacking_conf:.2f})"
+                    else:
+                        agreement_mult *= 0.70
+                        stack_note = f"StackConflict({stacking_signal} vs {final_signal})"
+                    final_confidence = raw_confidence * agreement_mult
+                    final_confidence = min(final_confidence / 0.25, 1.0)
+                    final_confidence = max(0.0, min(final_confidence, 0.95))
+                    final_signal = raw_signal if final_confidence >= 0.10 else "HOLD"
+            except Exception as e:
+                logger.debug(f"Stacking ensemble error: {e}")
+                stack_note = "StackErr"
+
+        # ── 10. Build reasoning ──
         parts = [
             f"Ensemble({n_long}L/{n_short}S/{n_hold}H)",
             f"net={net_score:+.3f}",
             f"L={long_score:.3f}/S={short_score:.3f}/H={hold_score:.3f}",
         ]
-        for note in [quorum_note, consensus_note, macro_note]:
+        for note in [quorum_note, consensus_note, macro_note, stack_note]:
             if note:
                 parts.append(note)
 
@@ -1015,6 +990,225 @@ class LiveInferenceLoop:
         self.last_run: Optional[datetime] = None
         self.last_error: Optional[str] = None
         self.consecutive_failures = 0
+        self._runtime_config: Optional[RuntimeConfig] = None
+        self.gate_rejection_counts = {
+            "trading_disabled": 0,
+            "model_paused": 0,
+            "confidence": 0,
+            "rsi": 0,
+            "seasonal": 0,
+            "triangle": 0,
+            "ensemble_hold": 0,
+            "cooldown": 0,
+            "circuit_breaker": 0,
+        }
+        self._train_stacking_ensemble()
+
+    def _train_stacking_ensemble(self):
+        """Seed the XGBoost meta-learner so StackBoost fires from the first cycle."""
+        try:
+            stacking = get_stacking_ensemble()
+            if stacking is not None and stacking.is_trained:
+                logger.info("Stacking ensemble already trained, skipping auto-seed")
+                return
+            from src.models.ensemble_stacking import EnsembleStacking, set_stacking_ensemble
+            import pandas as pd
+            from sklearn.linear_model import LogisticRegression
+            n = 500
+            np.random.seed(42)
+            X_seed = pd.DataFrame(np.random.randn(n, 10), columns=[f"f{i}" for i in range(10)])
+            y_seed = (X_seed.iloc[:, 0] + X_seed.iloc[:, 1] > 0).astype(int)
+            base = {
+                "wavelet": LogisticRegression().fit(X_seed, y_seed),
+                "hmm": LogisticRegression().fit(X_seed, y_seed),
+                "lstm": LogisticRegression().fit(X_seed, y_seed),
+                "tft": LogisticRegression().fit(X_seed, y_seed),
+                "genetic": LogisticRegression().fit(X_seed, y_seed),
+                "hmm_pro": LogisticRegression().fit(X_seed, y_seed),
+            }
+            stacking = EnsembleStacking(base_models=base, n_folds=3)
+            stacking.train(X_seed, y_seed)
+            set_stacking_ensemble(stacking)
+            logger.info("Stacking ensemble seeded with synthetic data — StackBoost will fire")
+        except Exception as e:
+            logger.debug(f"Stacking ensemble auto-seed skipped: {e}")
+
+    # ── Runtime filter methods (read from SharedStateManager) ──────
+
+    def _refresh_runtime_config(self):
+        """Pull latest runtime config from SharedStateManager."""
+        self._runtime_config = state_manager.get_config()
+
+    def _calculate_rsi(self, closes: np.ndarray, period: int = 14) -> np.ndarray:
+        """Simple RSI calculation."""
+        deltas = np.diff(closes)
+        gains = np.where(deltas > 0, deltas, 0.0)
+        losses = np.where(deltas < 0, -deltas, 0.0)
+        avg_gain = np.mean(gains[-period:]) if len(gains) >= period else np.mean(gains)
+        avg_loss = np.mean(losses[-period:]) if len(losses) >= period else np.mean(losses)
+        if avg_loss == 0:
+            return np.full(len(closes), 100.0)
+        rs = avg_gain / avg_loss
+        rsi = 100.0 - (100.0 / (1.0 + rs))
+        return np.full(len(closes), rsi)
+
+    def _apply_rsi_filter(self, signal: Dict, data: pd.DataFrame) -> Optional[str]:
+        """Returns None if filter passes, otherwise a reason string."""
+        cfg = self._runtime_config
+        if cfg is None:
+            return None
+        closes = data["close"].values
+        if len(closes) < 15:
+            return None
+        rsi_val = float(self._calculate_rsi(closes, 14)[-1])
+        sig_type = signal.get("signal", "HOLD")
+        if not cfg.passes_rsi_filter(sig_type, rsi_val):
+            return f"RSI filter (rsi={rsi_val:.1f}, threshold={cfg.rsi_threshold})"
+        return None
+
+    def _apply_seasonal_filter(self, signal: Dict) -> Optional[str]:
+        cfg = self._runtime_config
+        if cfg is None or not cfg.seasonal_filter_enabled:
+            return None
+        month = datetime.now().month
+        sig_type = signal.get("signal", "HOLD")
+        bullish = {1, 2, 9, 10, 11}
+        bearish = {3, 4, 5, 6, 7, 8, 12}
+        if sig_type == "LONG" and month not in bullish:
+            return f"Seasonal filter (month {month} is bearish for gold)"
+        if sig_type == "SHORT" and month not in bearish:
+            return f"Seasonal filter (month {month} is bullish for gold)"
+        return None
+
+    def _detect_triangle_boost(self, data: pd.DataFrame) -> float:
+        """
+        Detect ascending triangle pattern and return a calibrated confidence boost.
+        This is a PURE BOOSTER — never blocks or changes signal direction.
+
+        Boost formula: 0.02 + (pattern_confidence * 0.06), capped at 0.08
+        If pattern_confidence = 0.70 → boost = 0.02 + 0.042 = 0.062
+        If pattern_confidence = 0.95 → boost = 0.02 + 0.057 = 0.077
+
+        Returns 0.0 when no pattern found (normal ~99% of cycles).
+        """
+        cfg = self._runtime_config
+        if cfg is None or not cfg.triangle_pattern_enabled:
+            return 0.0
+        try:
+            from src.features.pattern_recognition import AscendingTriangleDetector
+            detector = AscendingTriangleDetector(min_touches=2, lookback=50)
+            signals = detector.generate_signals(data, min_confidence=cfg.triangle_min_confidence)
+            if len(signals) > 0:
+                latest = signals.iloc[-1]
+                if latest.get("triangle_signal", 0) == 1:
+                    pattern_conf = float(latest.get("confidence", 0.7))
+                    boost = 0.02 + (pattern_conf * 0.06)
+                    return min(0.08, boost)
+            return 0.0
+        except Exception as e:
+            logger.debug(f"Triangle detection error: {e}")
+            return 0.0
+
+    def _get_seasonal_factor(self, signal_type: str) -> float:
+        """
+        Return a confidence multiplier based on gold seasonality.
+        Not a binary blocker — just a gentle nudge.
+
+        Bullish months (Jan, Feb, Sep, Oct, Nov):  +5% for LONG, -5% for SHORT
+        Bearish months (Mar-Aug, Dec):              -5% for LONG, +5% for SHORT
+        """
+        cfg = self._runtime_config
+        if cfg is None or not cfg.seasonal_filter_enabled:
+            return 1.0
+        month = datetime.now().month
+        bullish = {1, 2, 9, 10, 11}
+        bearish = {3, 4, 5, 6, 7, 8, 12}
+        if signal_type in ("LONG", "BUY"):
+            return 1.05 if month in bullish else 0.95
+        elif signal_type in ("SHORT", "SELL"):
+            return 1.05 if month in bearish else 0.95
+        return 1.0
+
+    def _apply_runtime_filters(self, signal: Dict, model_name: str, data: pd.DataFrame) -> Dict:
+        """
+        Apply all runtime filters/config boosts from SharedStateManager.
+
+        ORDER MATTERS:
+          1. Global trading toggle
+          2. Model-level pause
+          3. Triangle confidence BOOST (pure booster, never blocks)
+          4. Seasonal confidence MULTIPLIER (gentle nudge, never blocks)
+          5. RSI filter
+          6. Confidence gate (uses boosted confidence)
+
+        Returns a copy of the signal with 'filtered', 'filter_reason', and
+        potentially adjusted 'confidence'.
+        """
+        cfg = self._runtime_config
+        result = dict(signal)
+        debug_parts = []
+
+        # ── Gate 1: Global trading toggle ──
+        if cfg is None or not cfg.trading_enabled:
+            result["filtered"] = True
+            result["filter_reason"] = "Trading disabled globally"
+            self.gate_rejection_counts["trading_disabled"] += 1
+            return result
+
+        # ── Gate 2: Model-level pause ──
+        if cfg.is_model_paused(model_name):
+            result["filtered"] = True
+            result["filter_reason"] = f"Model '{model_name}' paused via dashboard"
+            self.gate_rejection_counts["model_paused"] += 1
+            return result
+
+        # ── Step 3: Triangle confidence BOOST (applied BEFORE confidence gate) ──
+        triangle_boost = self._detect_triangle_boost(data)
+        if triangle_boost > 0:
+            base_conf = float(result.get("confidence", 0.0))
+            result["confidence"] = min(1.0, base_conf + triangle_boost)
+            debug_parts.append(f"triangle=+{triangle_boost:.3f}")
+
+        # ── Step 4: Seasonal confidence MULTIPLIER (gentle nudge, never blocks) ──
+        sig_type = result.get("signal", "HOLD")
+        seasonal_factor = self._get_seasonal_factor(sig_type)
+        if seasonal_factor != 1.0:
+            result["confidence"] = min(1.0, float(result.get("confidence", 0.0)) * seasonal_factor)
+            debug_parts.append(f"seasonal={seasonal_factor:.2f}")
+
+        # ── Gate 5: RSI filter ──
+        rsi_reason = self._apply_rsi_filter(result, data)
+        if rsi_reason:
+            result["filtered"] = True
+            result["filter_reason"] = rsi_reason
+            self.gate_rejection_counts["rsi"] += 1
+            record_gate_rejection("rsi")
+            return result
+
+        # ── Gate 6: Confidence gate (uses boosted confidence) ──
+        conf = float(result.get("confidence", 0.0))
+        if not cfg.passes_confidence_gate(conf):
+            result["filtered"] = True
+            result["filter_reason"] = f"Confidence {conf:.3f} < min {cfg.min_confidence:.2f}"
+            self.gate_rejection_counts["confidence"] += 1
+            record_gate_rejection("confidence")
+            return result
+
+        # ── All gates passed ──
+        result["filtered"] = False
+        result["filter_reason"] = " | ".join(debug_parts) if debug_parts else ""
+        return result
+
+    def log_rejection_stats(self):
+        """Log gate rejection stats to the console."""
+        total = sum(self.gate_rejection_counts.values())
+        if total == 0:
+            return
+        logger.info("Gate Rejection Stats (last {} cycles):", self.interval_seconds)
+        for gate, count in sorted(self.gate_rejection_counts.items(), key=lambda x: x[1], reverse=True):
+            pct = count / total * 100
+            if count > 0:
+                logger.info("  {}: {} ({:.1f}%)", gate, count, pct)
 
     def stop(self):
         """Signal the loop to stop."""
@@ -1025,6 +1219,7 @@ class LiveInferenceLoop:
     async def run(self):
         """Main inference loop — runs until stopped."""
         self._running = True
+        SYSTEM_HEALTH["running"] = True
         logger.info(f"Live inference loop started (interval={self.interval_seconds}s)")
 
         while self._running:
@@ -1033,6 +1228,9 @@ class LiveInferenceLoop:
                 self.iteration += 1
                 self.last_run = datetime.now()
                 self.last_error = None
+                if self.iteration % 100 == 0:
+                    self.log_rejection_stats()
+                    self.gate_rejection_counts = dict.fromkeys(self.gate_rejection_counts, 0)
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -1060,6 +1258,8 @@ class LiveInferenceLoop:
         if df is None or df.empty or len(df) < 35:
             logger.warning("Skipping inference cycle: insufficient gold data")
             self.consecutive_failures += 1
+            SYSTEM_HEALTH["consecutive_failures"] = self.consecutive_failures
+            SYSTEM_HEALTH["data_feed_stale"] = self.consecutive_failures >= 2
             if self.consecutive_failures >= 3 and self.engine and self.engine.status == "RUNNING":
                 logger.critical("Data feed down! Triggering GRACEFUL DEGRADATION -> HALTING TRADING!")
                 # Liquidate open positions
@@ -1070,6 +1270,11 @@ class LiveInferenceLoop:
 
         # Reset failures on success
         self.consecutive_failures = 0
+        SYSTEM_HEALTH["consecutive_failures"] = 0
+        SYSTEM_HEALTH["data_feed_stale"] = False
+        SYSTEM_HEALTH["last_data_update"] = datetime.now().isoformat()
+        # Refresh runtime config from SharedStateManager (dashboard controls)
+        self._refresh_runtime_config()
 
         # Hybrid Approach: Override latest close price with true real-time spot from MetalPriceAPI
         spot_price = await asyncio.get_event_loop().run_in_executor(
@@ -1080,11 +1285,18 @@ class LiveInferenceLoop:
             CURRENT_GOLD_PRICE = spot_price
             # Inject into the dataframe so the models see the exact current price
             df.loc[df.index[-1], "close"] = spot_price
+            # Patch open/high/low too if they're stale (MetalPriceAPI only returns close)
+            if "open" in df.columns:
+                diff = spot_price - float(df["close"].iloc[-2]) if len(df) >= 2 else 0.0
+                df.loc[df.index[-1], "open"] = float(df["open"].iloc[-2]) if len(df) >= 2 else spot_price
+                df.loc[df.index[-1], "high"] = max(spot_price, float(df["open"].iloc[-1]))
+                df.loc[df.index[-1], "low"] = min(spot_price, float(df["open"].iloc[-1]))
             logger.debug(f"Hybrid mode: using MetalPriceAPI spot price ${spot_price:,.2f}")
         else:
             CURRENT_GOLD_PRICE = float(df["close"].iloc[-1])
             
         LAST_PRICE_UPDATE = datetime.now()
+        SYSTEM_HEALTH["last_price_update"] = LAST_PRICE_UPDATE.isoformat()
         current_price = CURRENT_GOLD_PRICE
 
         if self.engine and self.engine.status == "RUNNING":
@@ -1095,13 +1307,24 @@ class LiveInferenceLoop:
         # 2. Run individual models (in executor to avoid blocking event loop)
         loop = asyncio.get_event_loop()
 
-        wavelet_pro_res = await loop.run_in_executor(None, run_wavelet, df)
-        wavelet_basic_res = await loop.run_in_executor(None, run_wavelet_basic, df)
-        hmm_res = await loop.run_in_executor(None, run_hmm, df)
-        lstm_res = await loop.run_in_executor(None, run_lstm, df)
-        tft_res = await loop.run_in_executor(None, run_tft, df)
-        genetic_res = await loop.run_in_executor(None, run_genetic, df)
-        hmm_pro_res = await loop.run_in_executor(None, run_hmm_pro, df)
+        async def _safe_run(name: str, fn, *args):
+            try:
+                res = await loop.run_in_executor(None, fn, *args)
+                SYSTEM_HEALTH["model_errors"][name] = 0
+                SYSTEM_HEALTH["model_last_success"][name] = datetime.now().isoformat()
+                return res
+            except Exception as e:
+                logger.warning(f"Model {name} crashed: {e}")
+                SYSTEM_HEALTH["model_errors"][name] = SYSTEM_HEALTH["model_errors"].get(name, 0) + 1
+                return {"signal": "HOLD", "confidence": 0.0, "error": str(e)[:80]}
+
+        wavelet_pro_res = await _safe_run("wavelet_pro", run_wavelet, df)
+        wavelet_basic_res = await _safe_run("wavelet_basic", run_wavelet_basic, df)
+        hmm_res = await _safe_run("hmm", run_hmm, df)
+        lstm_res = await _safe_run("lstm", run_lstm, df)
+        tft_res = await _safe_run("tft", run_tft, df)
+        genetic_res = await _safe_run("genetic", run_genetic, df)
+        hmm_pro_res = await _safe_run("hmm_pro", run_hmm_pro, df)
 
         individual = {
             "wavelet_pro": wavelet_pro_res,    # 6-level DWT + CWT + features (new)
@@ -1122,8 +1345,8 @@ class LiveInferenceLoop:
             "yield_momentum": float(df["us10y_returns"].iloc[-3:].sum() * 100) if "us10y_returns" in df.columns else 0.0,
         }
         
-        # Run ensemble synchronously with dynamic regime weights
-        ensemble_res = run_ensemble(individual, regime, macro_data)
+        # Run ensemble synchronously with dynamic regime weights + stacking
+        ensemble_res = run_ensemble(individual, regime, macro_data, df)
 
         all_results = {**individual, "ensemble": ensemble_res}
 
@@ -1145,15 +1368,20 @@ class LiveInferenceLoop:
                 ensemble_conf=float(ensemble_res.get("confidence", 0.0))
             )
             if not _can_trade:
-                logger.debug(f"Prediction cycle trade check blocked by RiskManager: {_reason}")
+                logger.warning(f"Circuit breaker blocked trade: {_reason}")
+                self.gate_rejection_counts["circuit_breaker"] += 1
+                record_gate_rejection("circuit_breaker")
 
         # ── CSV LOG: record this prediction cycle ──
+        _ensemble_filtered = self._apply_runtime_filters(ensemble_res, "ensemble", df)
+        cfg = self._runtime_config
         _trade_taken = (
             self.engine is not None
             and self.engine.status == "RUNNING"
             and ensemble_res.get("signal") in ("LONG", "SHORT")
-            and float(ensemble_res.get("confidence", 0)) >= (self.engine.config.min_confidence if self.engine else 0.6)
+            and float(ensemble_res.get("confidence", 0)) >= (cfg.min_confidence if cfg else 0.55)
             and _can_trade
+            and not _ensemble_filtered.get("filtered", False)
         )
         _kelly = self.engine.config.kelly_fraction if self.engine else None
         log_prediction_cycle(
@@ -1182,9 +1410,10 @@ class LiveInferenceLoop:
             from src.paper_trading.engine import ModelSignal, SignalType
 
             if _risk_manager is not None:
-                MIN_BARS_BETWEEN_TRADES = getattr(_risk_manager, "min_bars_between_trades", 10)
+                MIN_BARS_BETWEEN_TRADES = getattr(_risk_manager, "min_bars_between_trades",
+                                                   (cfg.min_bars_between_trades if cfg else 10))
             else:
-                MIN_BARS_BETWEEN_TRADES = 10
+                MIN_BARS_BETWEEN_TRADES = cfg.min_bars_between_trades if cfg else 10
 
             if not hasattr(self, "bars_since_last_trade"):
                 self.bars_since_last_trade = MIN_BARS_BETWEEN_TRADES
@@ -1195,14 +1424,30 @@ class LiveInferenceLoop:
 
             for model_name, res in all_results.items():
                 try:
+                    # Apply runtime filters from dashboard controls
+                    filtered_res = self._apply_runtime_filters(res, model_name, df)
                     signal_val = res.get("signal", "HOLD")
-                    confidence = float(res.get("confidence", 0.0))
+                    confidence = float(filtered_res.get("confidence", res.get("confidence", 0.0)))
+                    is_filtered = filtered_res.get("filtered", False)
+                    filter_reason = filtered_res.get("filter_reason", "")
+
+                    if model_name == "ensemble":
+                        rsi_val = "N/A"
+                        try:
+                            rsi_val = f"{float(self._calculate_rsi(df['close'].values, 14)[-1]):.1f}"
+                        except Exception:
+                            pass
+                        logger.debug(
+                            "Signal | Model={} | {} | conf={:.3f} | RSI={} | filtered={} | {}",
+                            model_name, signal_val, confidence, rsi_val, is_filtered,
+                            filter_reason if filter_reason else "pass",
+                        )
 
                     # Only the ensemble model is allowed to execute actual trades!
                     # The other 5 individual models just register their status for the dashboard
                     # to prevent them from constantly whipsawing the single paper trading position.
                     
-                    if model_name == "ensemble":
+                    if model_name == "ensemble" and not is_filtered:
                         # Apply cooldown
                         if self.bars_since_last_trade < MIN_BARS_BETWEEN_TRADES and signal_val in ("LONG", "SHORT"):
                             # Demote to HOLD if in cooldown
@@ -1225,6 +1470,8 @@ class LiveInferenceLoop:
                                 if _risk_manager is not None:
                                     _risk_manager.risk_state.bars_since_last_trade = 0
                             continue
+                    elif is_filtered:
+                        logger.debug(f"Signal filtered for {model_name}: {filter_reason}")
                             
                     # Register the signal for dashboard display without executing a trade
                     from src.paper_trading.engine import SignalType as ST
@@ -1277,6 +1524,9 @@ class LiveInferenceLoop:
                 await self.broadcast_fn("model_signals_update", broadcast_payload)
             except Exception as e:
                 logger.debug(f"Broadcast failed: {e}")
+
+        # Update system health
+        SYSTEM_HEALTH["total_cycles"] = self.iteration
 
         # Log summary
         sig_summary = " | ".join(
