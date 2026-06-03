@@ -1012,7 +1012,7 @@ def get_correlation_matrix(limit: int = Query(default=500, ge=10, le=5000)):
         # We define agreement as matching exactly (LONG == LONG, SHORT == SHORT, HOLD == HOLD)
         models_map = {
             "wavelet": "wavelet_pro_signal",
-            "hmm": "hmm_pro_signal",
+            "hmm": "hmm_signal",
             "lstm": "lstm_signal",
             "tft": "tft_signal",
             "genetic": "genetic_signal",
@@ -1064,11 +1064,12 @@ def get_correlation_matrix(limit: int = Query(default=500, ge=10, le=5000)):
             avg_pairwise[m1] = int(round(total_agree / (len(base_models) - 1))) if len(base_models) > 1 else 100
             
         # 3. Consensus Analysis
+        name_map = {"wavelet": "Wavelet", "hmm": "HMM", "lstm": "LSTM", "tft": "TFT", "genetic": "Genetic"}
         consensus_analysis = []
         for m1 in base_models:
             consensus_analysis.append({
                 "model": m1,
-                "name": m1.capitalize(),
+                "name": name_map.get(m1, m1.capitalize()),
                 "agreement": correlation_matrix[m1]["ensemble"]
             })
             

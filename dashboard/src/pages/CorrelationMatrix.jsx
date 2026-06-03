@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Grid3X3, Info, CheckCircle2, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Info, CheckCircle2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { fetchCorrelationMatrix } from '../data/api';
 
 const modelIcons = { wavelet: '🌊', hmm: '📊', lstm: '🧠', tft: '⚡', genetic: '🧬', ensemble: '🎯' };
@@ -8,24 +8,24 @@ const modelNames = ['wavelet', 'hmm', 'lstm', 'tft', 'genetic', 'ensemble'];
 
 // Default mock data structure as fallback
 const defaultCorrelationMatrix = {
-  wavelet: { wavelet: 100, hmm: 77, lstm: 27, tft: 37, genetic: 29, ensemble: 22 },
-  hmm: { wavelet: 39, hmm: 100, lstm: 58, tft: 28, genetic: 56, ensemble: 31 },
-  lstm: { wavelet: 69, hmm: 45, lstm: 100, tft: 78, genetic: 74, ensemble: 77 },
-  tft: { wavelet: 46, hmm: 54, lstm: 44, tft: 100, genetic: 68, ensemble: 66 },
-  genetic: { wavelet: 42, hmm: 67, lstm: 68, tft: 62, genetic: 100, ensemble: 28 },
-  ensemble: { wavelet: 78, hmm: 48, lstm: 28, tft: 53, genetic: 36, ensemble: 100 },
+  wavelet: { wavelet: 100, hmm: 58, lstm: 48, tft: 42, genetic: 36, ensemble: 50 },
+  hmm: { wavelet: 58, hmm: 100, lstm: 52, tft: 41, genetic: 62, ensemble: 40 },
+  lstm: { wavelet: 48, hmm: 52, lstm: 100, tft: 61, genetic: 71, ensemble: 53 },
+  tft: { wavelet: 42, hmm: 41, lstm: 61, tft: 100, genetic: 65, ensemble: 60 },
+  genetic: { wavelet: 36, hmm: 62, lstm: 71, tft: 65, genetic: 100, ensemble: 32 },
+  ensemble: { wavelet: 50, hmm: 40, lstm: 53, tft: 60, genetic: 32, ensemble: 100 },
 };
 
 const defaultAvgPairwise = {
-  wavelet: 43, hmm: 45, lstm: 65, tft: 51, genetic: 58
+  wavelet: 46, hmm: 53, lstm: 58, tft: 52, genetic: 59
 };
 
 const defaultConsensus = [
-  { model: 'wavelet', name: 'Wavelet', agreement: 22 },
-  { model: 'hmm', name: 'Hmm', agreement: 31 },
-  { model: 'lstm', name: 'Lstm', agreement: 77 },
-  { model: 'tft', name: 'Tft', agreement: 66 },
-  { model: 'genetic', name: 'Genetic', agreement: 28 },
+  { model: 'wavelet', name: 'Wavelet', agreement: 50 },
+  { model: 'hmm', name: 'HMM', agreement: 40 },
+  { model: 'lstm', name: 'LSTM', agreement: 53 },
+  { model: 'tft', name: 'TFT', agreement: 60 },
+  { model: 'genetic', name: 'Genetic', agreement: 32 },
 ];
 
 function getCellColor(val) {
@@ -49,35 +49,47 @@ export default function CorrelationMatrix() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const latestReq = useRef(0);
 
   const loadData = async () => {
+    const reqId = ++latestReq.current;
     try {
       setLoading(true);
       setError(null);
       const res = await fetchCorrelationMatrix(1000);
+      if (reqId !== latestReq.current) return;
       if (res && Object.keys(res.correlationMatrix || {}).length > 0) {
         setData(res);
       }
     } catch (err) {
+      if (reqId !== latestReq.current) return;
       setError(err.message || "Failed to load data");
     } finally {
-      setLoading(false);
+      if (reqId === latestReq.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    const mountReq = latestReq.current;
     loadData();
-    // Poll every 10 seconds to keep live
     const timer = setInterval(loadData, 10000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      latestReq.current = mountReq + 1;
+    };
   }, []);
 
   const { correlationMatrix, avgPairwiseAgreement, consensusAnalysis } = data;
   
-  // Calculate total avg agreement for the top badge
   const totalAvgAgreement = Object.values(avgPairwiseAgreement).length > 0 
     ? Math.round(Object.values(avgPairwiseAgreement).reduce((a, b) => a + b, 0) / Object.values(avgPairwiseAgreement).length) 
     : 0;
+  const consensusStatus = totalAvgAgreement >= 40 ? 'HEALTHY' : 'DIVERSE';
+  const consensusColor = totalAvgAgreement >= 40 ? '#00c48c' : '#f59e0b';
+  const consensusBg = totalAvgAgreement >= 40 ? '#00c48c20' : '#f59e0b20';
+  const consensusBorder = totalAvgAgreement >= 40 ? '#00c48c40' : '#f59e0b40';
 
   return (
     <>
@@ -104,6 +116,13 @@ export default function CorrelationMatrix() {
       </div>
       
       <div className="page-body">
+        
+        {error && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', background: '#3b1a1a', border: '1px solid #ef444460', borderRadius: 'var(--radius-sm)', color: '#fca5a5', fontSize: '13px', marginBottom: '20px' }}>
+            <AlertTriangle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
         
         {/* Top Grid: Matrix + Consensus */}
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '20px' }}>
@@ -136,10 +155,7 @@ export default function CorrelationMatrix() {
                   </div>
                   
                   {modelNames.map(colModel => {
-                    const isSelf = rowModel === colModel;
-                    // For self we just show empty or blank cell style according to the screenshot? 
-                    // Screenshot shows values for self as well sometimes (Wait, self is always 100%, but in screenshot they seem to hide it or show different values. Let's just use the mock data.)
-                    const val = correlationMatrix[rowModel]?.[colModel] || 0;
+                    const val = correlationMatrix[rowModel]?.[colModel] ?? 0;
                     const bg = getCellColor(val);
                     const color = getCellTextColor(val);
                     
@@ -181,8 +197,8 @@ export default function CorrelationMatrix() {
                 <Info size={16} style={{ color: 'var(--text-muted)' }} />
                 <span className="card-title" style={{ fontSize: '13px', letterSpacing: '0.5px' }}>CONSENSUS ANALYSIS</span>
               </div>
-              <span className="card-badge" style={{ background: '#00c48c20', color: '#00c48c', border: '1px solid #00c48c40', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <CheckCircle2 size={12} /> HEALTHY
+              <span className="card-badge" style={{ background: consensusBg, color: consensusColor, border: `1px solid ${consensusBorder}`, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <CheckCircle2 size={12} /> {consensusStatus}
               </span>
             </div>
             
@@ -226,7 +242,7 @@ export default function CorrelationMatrix() {
                 <span style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>{model}</span>
               </div>
               <div style={{ fontSize: '32px', fontWeight: 700, color: '#00c48c', fontFamily: 'var(--font-mono)', marginBottom: '8px' }}>
-                {avgPairwiseAgreement[model] || 0}%
+                {avgPairwiseAgreement[model] ?? 0}%
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Avg Pairwise Agreement</div>
             </div>
