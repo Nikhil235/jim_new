@@ -1,0 +1,33 @@
+{
+  "test_name": "canary_trading_model_v2_trading_model",
+  "control_metrics": {
+    "total_return": 1961.5863681181195,
+    "sharpe_ratio": -2.5510678945968133,
+    "max_drawdown": -0.070340059532204,
+    "win_rate": 0.63,
+    "profit_factor": 2.5339506486179104,
+    "avg_trade_pnl": 19.615863681181196,
+    "num_trades": 100
+  },
+  "treatment_metrics": {
+    "total_return": 2237.003504475683,
+    "sharpe_ratio": -1.5434497256315178,
+    "max_drawdown": -0.0378847719922135,
+    "win_rate": 0.68,
+    "profit_factor": 3.2908951703839846,
+    "avg_trade_pnl": 22.37003504475683,
+    "num_trades": 100
+  },
+  "improvement_pct": {
+    "sharpe_ratio": -39.49789698264952,
+    "total_return": 14.040530706878299,
+    "max_drawdown": -46.14054602147642,
+    "win_rate": 7.936507936507943,
+    "profit_factor": 29.872109868395956,
+    "avg_trade_pnl": 14.040530706878297,
+    "num_trades": 0.0
+  },
+  "statistical_significance": false,
+  "p_value": 0.6961884773051645,
+  "winner": "control"
+}

@@ -85,7 +85,8 @@ def _show_report(cfg):
     logger.info(f"Parquet files: {meta['parquet_files']} ({meta['total_parquet_size_mb']} MB)")
 
     # Check raw data files
-    raw_dir = Path(cfg.get("_project_root", ".")) / "data" / "raw"
+    from src.utils.config import PROJECT_ROOT
+    raw_dir = PROJECT_ROOT / "data" / "raw"
     if raw_dir.exists():
         logger.info("\n--- RAW DATA FILES ---")
         for f in sorted(raw_dir.glob("*.parquet")):

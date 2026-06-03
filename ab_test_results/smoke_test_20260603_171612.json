@@ -1,0 +1,33 @@
+{
+  "test_name": "smoke_test",
+  "control_metrics": {
+    "total_return": -1197.0644637652836,
+    "sharpe_ratio": -0.9403546501769984,
+    "max_drawdown": -1.0,
+    "win_rate": 0.46,
+    "profit_factor": 0.7637449647789597,
+    "avg_trade_pnl": -11.970644637652835,
+    "num_trades": 100
+  },
+  "treatment_metrics": {
+    "total_return": 671.7544963465051,
+    "sharpe_ratio": -1.50249254447637,
+    "max_drawdown": -0.9999831177444377,
+    "win_rate": 0.54,
+    "profit_factor": 1.166555002963154,
+    "avg_trade_pnl": 6.717544963465051,
+    "num_trades": 100
+  },
+  "improvement_pct": {
+    "sharpe_ratio": 59.77934965212997,
+    "total_return": -156.11681882473965,
+    "max_drawdown": -0.0016882255562289394,
+    "win_rate": 17.39130434782609,
+    "profit_factor": 52.74143290761649,
+    "avg_trade_pnl": -156.11681882473965,
+    "num_trades": 0.0
+  },
+  "statistical_significance": false,
+  "p_value": 0.22428079980341795,
+  "winner": "treatment"
+}

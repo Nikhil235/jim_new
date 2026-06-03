@@ -29,6 +29,7 @@ External Interface (unchanged, backward compatible):
 """
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import time
 from typing import Dict, List, Optional, Tuple, Any
@@ -260,7 +261,7 @@ class RegimeDetector(BaseModel):
         X = features.values.astype(np.float64)
 
         if len(X) == 0:
-            return X, features.index
+            return X, features.index  # type: ignore[return-value]
 
         # Compute normalization stats
         if fit:
@@ -270,7 +271,7 @@ class RegimeDetector(BaseModel):
         # Determine which stats to use for normalization
         if ext_stats is not None:
             f_mean, f_std = ext_stats
-        elif self._feature_mean is not None:
+        elif self._feature_mean is not None and self._feature_std is not None:
             f_mean, f_std = self._feature_mean, self._feature_std
         else:
             f_mean = X.mean(axis=0)
@@ -284,7 +285,7 @@ class RegimeDetector(BaseModel):
             f_std = X.std(axis=0) + 1e-8
             X = (X - f_mean) / f_std
 
-        return X, features.index
+        return X, features.index  # type: ignore[return-value]
 
     # ──────────────────────────────────────────────────────────
     # Multi-Timeframe Resampling (Upgrade 1)
@@ -296,7 +297,7 @@ class RegimeDetector(BaseModel):
             if not isinstance(df.index, pd.DatetimeIndex):
                 return None
 
-            agg_dict = {"open": "first", "high": "max", "low": "min", "close": "last"}
+            agg_dict: Any = {"open": "first", "high": "max", "low": "min", "close": "last"}
             if "volume" in df.columns:
                 agg_dict["volume"] = "sum"
 
@@ -335,6 +336,7 @@ class RegimeDetector(BaseModel):
             return {}
 
         # Save primary model stats (TF training will overwrite self._feature_mean/std)
+        assert self._feature_mean is not None and self._feature_std is not None
         primary_mean = self._feature_mean.copy()
         primary_std = self._feature_std.copy()
 
@@ -432,8 +434,8 @@ class RegimeDetector(BaseModel):
 
                     # Save TF-specific stats before they get overwritten
                     self._tf_feature_stats[tf] = (
-                        self._feature_mean.copy(),
-                        self._feature_std.copy(),
+                        self._feature_mean.copy() if self._feature_mean is not None else None,
+                        self._feature_std.copy() if self._feature_std is not None else None,
                     )
 
                     self._tf_models[tf].fit(tf_obs_cpu)
@@ -642,7 +644,7 @@ class RegimeDetector(BaseModel):
                     continue
 
                 raw_probs = self._tf_models[tf].predict_proba(tf_obs_cpu)[-1]
-                order = self._tf_orders.get(tf, {})
+                order = self._tf_orders.get(tf) or {}
                 reordered = np.zeros(3)
                 for old, new in order.items():
                     if old < len(raw_probs):
@@ -1182,8 +1184,8 @@ class RegimeDetector(BaseModel):
                 ),
                 "kelly_fraction": strategy.get("kelly_fraction", 0.5),
                 "regime_stats": (self._regime_stats or {}).get(internal_regime, {}),
-                "recent_return": round(float(recent_return_3), 6),
-                "recent_volatility": round(float(recent_vol), 6),
+                "recent_return": round(recent_return_3, 6),
+                "recent_volatility": round(recent_vol, 6),
                 "crisis_probability": round(crisis_trans, 4),
                 "growth_probability": round(growth_trans, 4),
                 "n_models_fused": n_total,
@@ -1284,12 +1286,12 @@ class RegimeDetector(BaseModel):
         vol_col = obs[:, 1] if obs.shape[1] >= 2 else np.abs(obs[:, 0])
 
         boundaries = np.linspace(0, 100, n_regimes + 1)
-        centers = []
+        center_list = []
         for i in range(n_regimes):
             low = np.percentile(vol_col, boundaries[i])
             high = np.percentile(vol_col, boundaries[i + 1])
-            centers.append((low + high) / 2)
-        centers = np.array(centers)
+            center_list.append((low + high) / 2)
+        centers = np.array(center_list)
 
         probs = np.zeros((len(obs), n_regimes))
         for i, v in enumerate(vol_col):

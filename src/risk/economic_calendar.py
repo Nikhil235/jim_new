@@ -65,6 +65,7 @@ class EconomicCalendar:
         Returns status regarding proximity to high impact news.
         - block_trade: True if within +/- 5 minutes
         - tighten_threshold: True if within +/- 30 minutes
+        Returns data for the NEXT upcoming event within the window, not a past one.
         """
         self.fetch_events()
         
@@ -74,13 +75,42 @@ class EconomicCalendar:
         # Ensure current_time_utc has a timezone for comparison
         if current_time_utc.tzinfo is None:
             current_time_utc = current_time_utc.replace(tzinfo=timezone.utc)
+
+        # Check both upcoming and recent events, prefer nearest
+        nearest_upcoming = None
+        nearest_upcoming_diff = None
+        nearest_recent = None
+        nearest_recent_diff = None
             
         for event_time in self.high_impact_events:
-            diff_seconds = abs((current_time_utc - event_time).total_seconds())
+            diff = (event_time - current_time_utc).total_seconds()
+            abs_diff = abs(diff)
             
-            if diff_seconds <= 5 * 60:
-                return {"block_trade": True, "tighten_threshold": True, "event_time": event_time}
-            elif diff_seconds <= 30 * 60:
-                return {"block_trade": False, "tighten_threshold": True, "event_time": event_time}
-                
-        return {"block_trade": False, "tighten_threshold": False, "event_time": None}
+            if abs_diff > 30 * 60:
+                continue
+
+            if diff >= 0:
+                # Upcoming event
+                if nearest_upcoming is None or diff < nearest_upcoming_diff:
+                    nearest_upcoming = event_time
+                    nearest_upcoming_diff = diff
+            else:
+                # Recent event (still within 30 min window)
+                if nearest_recent is None or abs_diff < nearest_recent_diff:
+                    nearest_recent = event_time
+                    nearest_recent_diff = abs_diff
+
+        # Prefer upcoming event over recent, nearest first
+        if nearest_upcoming is not None and (nearest_recent is None or nearest_upcoming_diff <= (nearest_recent_diff or float("inf"))):
+            event_time = nearest_upcoming
+            diff_seconds = nearest_upcoming_diff
+        elif nearest_recent is not None:
+            event_time = nearest_recent
+            diff_seconds = nearest_recent_diff
+        else:
+            return {"block_trade": False, "tighten_threshold": False, "event_time": None}
+
+        if diff_seconds <= 5 * 60:
+            return {"block_trade": True, "tighten_threshold": True, "event_time": event_time}
+        else:
+            return {"block_trade": False, "tighten_threshold": True, "event_time": event_time}

@@ -189,7 +189,7 @@ class FeatureStore:
         r = self._get_redis()
         if r is not None:
             try:
-                pattern = f"{self.prefix}:{symbol}:2*"
+                pattern = f"{self.prefix}:{symbol}:*"
                 keys = sorted(list(r.scan_iter(match=pattern, count=1000)))
                 keys = keys[-n_rows:]
                 rows = []

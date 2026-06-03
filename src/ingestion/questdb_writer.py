@@ -26,6 +26,20 @@ import pandas as pd
 import numpy as np
 from loguru import logger
 
+
+def _merge_parquet(existing_path: Path, new_df: pd.DataFrame, engine: str = "pyarrow") -> pd.DataFrame:
+    """Read existing parquet, merge with new data, deduplicate by index."""
+    if existing_path.exists():
+        try:
+            existing = pd.read_parquet(existing_path, engine=engine)
+            combined = pd.concat([existing, new_df])
+            combined = combined[~combined.index.duplicated(keep="last")]
+            combined = combined.sort_index()
+            return combined
+        except Exception:
+            pass
+    return new_df
+
 from src.utils.config import get_config, PROJECT_ROOT
 
 
@@ -201,10 +215,11 @@ class QuestDBWriter:
         return rows_written
 
     def _write_ohlcv_parquet(self, df: pd.DataFrame, table: str, symbol: str) -> int:
-        """Fallback: write to local parquet file."""
+        """Fallback: write to local parquet file (append + deduplicate)."""
         filepath = self.fallback_dir / f"{table}_{symbol}.parquet"
-        df.to_parquet(filepath, engine="pyarrow")
-        logger.info(f"Parquet fallback: Wrote {len(df)} rows to {filepath}")
+        merged = _merge_parquet(filepath, df)
+        merged.to_parquet(filepath, engine="pyarrow")
+        logger.info(f"Parquet fallback: Wrote {len(df)} rows to {filepath} (total {len(merged)})")
         return len(df)
 
     # ──────────────────────────────────────────────────────
@@ -251,8 +266,9 @@ class QuestDBWriter:
 
         if not self.is_available():
             filepath = self.fallback_dir / f"{table}.parquet"
-            fred_df.to_parquet(filepath, engine="pyarrow")
-            logger.info(f"Parquet fallback: FRED {len(fred_df)} rows → {filepath}")
+            merged = _merge_parquet(filepath, fred_df)
+            merged.to_parquet(filepath, engine="pyarrow")
+            logger.info(f"Parquet fallback: FRED {len(fred_df)} rows → {filepath} (total {len(merged)})")
             return len(fred_df)
 
         rows_written = 0
@@ -268,14 +284,24 @@ class QuestDBWriter:
                     rows_written += 1
 
                 if len(lines) >= self.batch_size:
-                    self._send_ilp(lines)
+                    if not self._send_ilp(lines):
+                        return self._write_fred_parquet(fred_df, table)
                     lines = []
 
         if lines:
-            self._send_ilp(lines)
+            if not self._send_ilp(lines):
+                return self._write_fred_parquet(fred_df, table)
 
         logger.info(f"QuestDB: Wrote {rows_written} FRED observations to '{table}'")
         return rows_written
+
+    def _write_fred_parquet(self, fred_df: pd.DataFrame, table: str) -> int:
+        """Fallback parquet write for FRED data."""
+        filepath = self.fallback_dir / f"{table}.parquet"
+        merged = _merge_parquet(filepath, fred_df)
+        merged.to_parquet(filepath, engine="pyarrow")
+        logger.info(f"Parquet fallback: FRED {len(fred_df)} rows → {filepath}")
+        return len(fred_df)
 
     # ──────────────────────────────────────────────────────
     # Alternative Data (COT, Sentiment, ETF)
@@ -315,14 +341,23 @@ class QuestDBWriter:
                 lines.append(line)
                 rows_written += 1
             if len(lines) >= self.batch_size:
-                self._send_ilp(lines)
+                if not self._send_ilp(lines):
+                    return self._write_cot_parquet(df, table)
                 lines = []
 
         if lines:
-            self._send_ilp(lines)
+            if not self._send_ilp(lines):
+                return self._write_cot_parquet(df, table)
 
         logger.info(f"QuestDB: Wrote {rows_written} COT rows to '{table}'")
         return rows_written
+
+    def _write_cot_parquet(self, df: pd.DataFrame, table: str) -> int:
+        """Fallback parquet write for COT data."""
+        filepath = self.fallback_dir / f"{table}.parquet"
+        merged = _merge_parquet(filepath, df)
+        merged.to_parquet(filepath, engine="pyarrow")
+        return len(df)
 
     def write_sentiment(self, df: pd.DataFrame, table: str = "sentiment_daily") -> int:
         """Write sentiment scores to QuestDB."""
@@ -331,7 +366,8 @@ class QuestDBWriter:
 
         if not self.is_available():
             filepath = self.fallback_dir / f"{table}.parquet"
-            df.to_parquet(filepath, engine="pyarrow")
+            merged = _merge_parquet(filepath, df)
+            merged.to_parquet(filepath, engine="pyarrow")
             return len(df)
 
         rows_written = 0
@@ -355,14 +391,23 @@ class QuestDBWriter:
                 lines.append(line)
                 rows_written += 1
             if len(lines) >= self.batch_size:
-                self._send_ilp(lines)
+                if not self._send_ilp(lines):
+                    return self._write_sentiment_parquet(df, table)
                 lines = []
 
         if lines:
-            self._send_ilp(lines)
+            if not self._send_ilp(lines):
+                return self._write_sentiment_parquet(df, table)
 
         logger.info(f"QuestDB: Wrote {rows_written} sentiment rows to '{table}'")
         return rows_written
+
+    def _write_sentiment_parquet(self, df: pd.DataFrame, table: str) -> int:
+        """Fallback parquet write for sentiment data."""
+        filepath = self.fallback_dir / f"{table}.parquet"
+        merged = _merge_parquet(filepath, df)
+        merged.to_parquet(filepath, engine="pyarrow")
+        return len(df)
 
     def write_etf_flows(self, etf_data: Dict[str, pd.DataFrame], table: str = "etf_flows_daily") -> int:
         """Write ETF flow data to QuestDB."""

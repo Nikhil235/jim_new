@@ -15,7 +15,7 @@ gpu = [
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -23,3 +23,4 @@ include = ["src*"]
 
 [tool.pyright]
 extraPaths = ["."]
+reportUnnecessaryCast = false  # ~100+ defensive float() calls guard against numpy type JSON serialization issues

@@ -194,7 +194,7 @@ class TestRiskManager:
 
     def test_circuit_breaker_daily_loss(self):
         """Should halt after hitting daily loss limit."""
-        self.rm.risk_state.daily_pnl = -2500  # -2.5% on 100K
+        self.rm.risk_state.daily_pnl = -3500  # -3.5% on 100K (exceeds 3% default limit)
         can_trade, reason = self.rm.check_circuit_breakers(100000)
         assert not can_trade
         assert "Daily loss" in reason
@@ -216,16 +216,16 @@ class TestRiskManager:
 
     def test_circuit_breaker_min_confidence(self):
         """Should halt/skip trade when ensemble confidence is below the min threshold."""
-        # When confidence is set and below the limit (default 0.65)
+        # When confidence is set and below the limit (default 0.75)
         can_trade, reason = self.rm.check_circuit_breakers(
-            100000, ensemble_conf=0.60
+            100000, ensemble_conf=0.70
         )
         assert not can_trade
         assert "LOW_CONFIDENCE" in reason
 
         # When confidence is above or equal to limit
         can_trade, reason = self.rm.check_circuit_breakers(
-            100000, ensemble_conf=0.68
+            100000, ensemble_conf=0.80
         )
         assert can_trade
         assert reason == "OK"
@@ -277,15 +277,22 @@ class TestRiskManager:
 
     def test_regime_cooldown_blocks_trade(self):
         """Should temporarily halt trading immediately after a regime switch."""
+        # Allow CRISIS regime so we can test cooldown specifically
+        self.rm.allowed_regimes = ["NORMAL", "CRISIS"]
+
         # Initial state should not block (starts high)
         can_trade, reason = self.rm.check_circuit_breakers(100000)
         assert can_trade
         assert reason == "OK"
 
         # Change regime from NORMAL to CRISIS
+        # Anti-whipsaw logic requires 3 consecutive bars of a new regime
+        # before confirming the switch
         self.rm.calculate_kelly_size(0.55, 100, 90, 100000, regime="CRISIS")
-        
-        # Bars since switch should reset to 0
+        self.rm.calculate_kelly_size(0.55, 100, 90, 100000, regime="CRISIS")
+        self.rm.calculate_kelly_size(0.55, 100, 90, 100000, regime="CRISIS")
+
+        # Bars since switch should reset to 0 after confirmation
         assert self.rm.risk_state.bars_since_regime_switch == 0
 
         # Should now block trading

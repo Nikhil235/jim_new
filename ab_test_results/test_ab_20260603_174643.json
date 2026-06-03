@@ -1,0 +1,33 @@
+{
+  "test_name": "test_ab",
+  "control_metrics": {
+    "total_return": 1480.7674130295306,
+    "sharpe_ratio": -3.4399989602907977,
+    "max_drawdown": 0.0,
+    "win_rate": 0.64,
+    "profit_factor": 2.292268686723115,
+    "avg_trade_pnl": 14.807674130295306,
+    "num_trades": 100
+  },
+  "treatment_metrics": {
+    "total_return": 2311.5229352496194,
+    "sharpe_ratio": -1.9693984641102253,
+    "max_drawdown": -0.08404062273787652,
+    "win_rate": 0.67,
+    "profit_factor": 3.344709721791127,
+    "avg_trade_pnl": 23.115229352496193,
+    "num_trades": 100
+  },
+  "improvement_pct": {
+    "sharpe_ratio": -42.75002734466688,
+    "total_return": 56.103039201844,
+    "max_drawdown": 0,
+    "win_rate": 4.687500000000004,
+    "profit_factor": 45.91263847749526,
+    "avg_trade_pnl": 56.103039201844,
+    "num_trades": 0.0
+  },
+  "statistical_significance": false,
+  "p_value": 0.20855075203590595,
+  "winner": "control"
+}

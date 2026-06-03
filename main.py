@@ -172,7 +172,7 @@ def run_paper_trading(cfg: dict):
             ModelSignal,
             SignalType,
         )
-        from src.risk.manager import RiskManager, RiskLimits
+        from src.paper_trading.risk_manager import RiskManager, RiskLimits
 
         pt_cfg = PaperTradingConfig(
             initial_capital=cfg.get("paper_trading", {}).get("initial_capital", 100000.0),
@@ -240,7 +240,7 @@ def run_paper_trading(cfg: dict):
     engine.start()
 
     # Generate signals from models (simulated for CLI mode)
-    model_names = ["wavelet", "hmm", "lstm", "tft", "genetic", "ensemble"]
+    model_names = ["wavelet_pro", "hmm", "lstm", "tft", "genetic", "hmm_pro", "ensemble"]
     np.random.seed(int(time.time()) % 10000)
 
     num_simulation_steps = 10
@@ -343,7 +343,7 @@ def run_demo(cfg: dict):
     logger.info("--- DEMO MODE ---")
 
     # Step 1: Fetch gold data
-    logger.info("[1/5] Fetching gold data...")
+    logger.info("[1/7] Fetching gold data...")
     from src.ingestion.gold_fetcher import GoldDataFetcher
     fetcher = GoldDataFetcher(cfg)
 
@@ -370,7 +370,7 @@ def run_demo(cfg: dict):
         gold_df["returns"] = gold_df["close"].pct_change()
 
     # Step 2: Generate features
-    logger.info("[2/5] Engineering features...")
+    logger.info("[2/7] Engineering features...")
     from src.features.engine import FeatureEngine
     feature_engine = FeatureEngine(cfg)
     features_df = feature_engine.generate_all(gold_df)
@@ -378,7 +378,7 @@ def run_demo(cfg: dict):
     logger.info(f"  Generated {len(feat_names)} features")
 
     # Step 3: Wavelet analysis
-    logger.info("[3/5] Running wavelet de-noising...")
+    logger.info("[3/7] Running wavelet de-noising...")
     from src.models.wavelet import WaveletDenoiser
     wavelet = WaveletDenoiser(
         wavelet=cfg.get("features", {}).get("wavelet", {}).get("family", "db4"),
@@ -395,7 +395,7 @@ def run_demo(cfg: dict):
     logger.info(f"  Frequency bands extracted: {list(bands.keys())}")
 
     # Step 4: Regime detection
-    logger.info("[4/5] Detecting market regimes...")
+    logger.info("[4/7] Detecting market regimes...")
     from src.models.hmm_regime import RegimeDetector
     hmm_cfg = cfg.get("models", {}).get("hmm", {})
     regime_model = RegimeDetector(

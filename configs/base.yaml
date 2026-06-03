@@ -111,7 +111,7 @@ models:
     bidirectional: true          # Bidirectional processing
     dropout: 0.2                 # Dropout rate
     sequence_length: 100         # Input sequence length (timesteps)
-    batch_size: 256              # Training batch size
+    batch_size: 64               # Training batch size (reduce if 4GB VRAM OOM)
     learning_rate: 0.001         # Initial learning rate
     epochs: 100                  # Maximum training epochs
     patience: 10                 # Early stopping patience
@@ -127,7 +127,7 @@ models:
     learning_rate: 0.0005        # Learning rate
     epochs: 80                   # Maximum epochs
     patience: 8                  # Early stopping patience
-    batch_size: 128              # Batch size
+    batch_size: 32               # Batch size (reduce if 4GB VRAM OOM)
     forecast_horizons: [1, 5, 10, 20]  # Multi-horizon (bars ahead)
     quantiles: [0.1, 0.25, 0.5, 0.75, 0.9]  # Quantile outputs
     retrain_frequency: "weekly"
